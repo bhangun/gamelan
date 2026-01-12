@@ -1,0 +1,499 @@
+// ============================================================================
+// SILAT WORKFLOW ENGINE - gRPC SERVICE DEFINITIONS
+// ============================================================================
+// Protocol Buffer definitions for high-performance RPC communication
+//
+// File: workflow_service.proto
+// Package: tech.kayys.silat.grpc.v1
+
+syntax = "proto3";
+
+package tech.kayys.silat.grpc.v1;
+
+option java_multiple_files = true;
+option java_package = "tech.kayys.silat.grpc.v1";
+option java_outer_classname = "WorkflowServiceProto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+// ==================== WORKFLOW SERVICE ====================
+
+/**
+ * Workflow Run Management Service
+ * Provides gRPC endpoints for workflow lifecycle operations
+ */
+service WorkflowService {
+  // Create a new workflow run
+  rpc CreateRun(CreateRunRequest) returns (RunResponse);
+
+  // Get workflow run details
+  rpc GetRun(GetRunRequest) returns (RunResponse);
+
+  // Start a workflow run
+  rpc StartRun(StartRunRequest) returns (RunResponse);
+
+  // Suspend a workflow run
+  rpc SuspendRun(SuspendRunRequest) returns (RunResponse);
+
+  // Resume a workflow run
+  rpc ResumeRun(ResumeRunRequest) returns (RunResponse);
+
+  // Cancel a workflow run
+  rpc CancelRun(CancelRunRequest) returns (google.protobuf.Empty);
+
+  // Send signal to workflow
+  rpc SignalRun(SignalRequest) returns (google.protobuf.Empty);
+
+  // Get execution history
+  rpc GetExecutionHistory(GetExecutionHistoryRequest)
+      returns (ExecutionHistoryResponse);
+
+  // Query workflow runs
+  rpc QueryRuns(QueryRunsRequest) returns (QueryRunsResponse);
+
+  // Get active runs count
+  rpc GetActiveRunsCount(GetActiveRunsCountRequest) returns (CountResponse);
+
+  // Stream run status updates (server streaming)
+  rpc StreamRunStatus(StreamRunStatusRequest) returns (stream RunStatusUpdate);
+}
+
+// ==================== EXECUTOR SERVICE ====================
+
+/**
+ * Executor Service
+ * Used by executors to receive tasks and report results
+ */
+service ExecutorService {
+  // Register executor
+  rpc RegisterExecutor(RegisterExecutorRequest) returns (ExecutorRegistration);
+
+  // Unregister executor
+  rpc UnregisterExecutor(UnregisterExecutorRequest)
+      returns (google.protobuf.Empty);
+
+  // Heartbeat
+  rpc Heartbeat(HeartbeatRequest) returns (google.protobuf.Empty);
+
+  // Stream tasks to executor (server streaming)
+  rpc StreamTasks(StreamTasksRequest) returns (stream ExecutionTask);
+
+  // Report task result (client streaming)
+  rpc ReportResults(stream TaskResult) returns (google.protobuf.Empty);
+
+  // Bidirectional streaming for real-time communication
+  rpc ExecuteStream(stream ExecutorMessage) returns (stream EngineMessage);
+}
+
+// ==================== REQUEST MESSAGES ====================
+
+message CreateRunRequest {
+  string tenant_id = 1;
+  string workflow_definition_id = 2;
+  google.protobuf.Struct inputs = 3;
+  map<string, string> labels = 4;
+  TriggerInfo trigger = 5;
+}
+
+message GetRunRequest {
+  string tenant_id = 1;
+  string run_id = 2;
+}
+
+message StartRunRequest {
+  string tenant_id = 1;
+  string run_id = 2;
+}
+
+message SuspendRunRequest {
+  string tenant_id = 1;
+  string run_id = 2;
+  string reason = 3;
+  string waiting_on_node_id = 4;
+}
+
+message ResumeRunRequest {
+  string tenant_id = 1;
+  string run_id = 2;
+  google.protobuf.Struct resume_data = 3;
+  string human_task_id = 4;
+}
+
+message CancelRunRequest {
+  string tenant_id = 1;
+  string run_id = 2;
+  string reason = 3;
+}
+
+message SignalRequest {
+  string run_id = 1;
+  string signal_name = 2;
+  string target_node_id = 3;
+  google.protobuf.Struct payload = 4;
+}
+
+message GetExecutionHistoryRequest {
+  string tenant_id = 1;
+  string run_id = 2;
+}
+
+message QueryRunsRequest {
+  string tenant_id = 1;
+  string workflow_definition_id = 2;
+  string status = 3;
+  int32 page = 4;
+  int32 size = 5;
+}
+
+message GetActiveRunsCountRequest { string tenant_id = 1; }
+
+message StreamRunStatusRequest {
+  string tenant_id = 1;
+  repeated string run_ids = 2;
+}
+
+// ==================== RESPONSE MESSAGES ====================
+
+message RunResponse {
+  string run_id = 1;
+  string tenant_id = 2;
+  string workflow_definition_id = 3;
+  string workflow_version = 4;
+  RunStatus status = 5;
+  google.protobuf.Struct variables = 6;
+  map<string, NodeExecution> node_executions = 7;
+  repeated string execution_path = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp completed_at = 11;
+  int64 duration_ms = 12;
+  map<string, string> labels = 13;
+  map<string, string> metadata = 14;
+}
+
+message ExecutionHistoryResponse {
+  string run_id = 1;
+  repeated ExecutionEvent events = 2;
+  int32 total_events = 3;
+}
+
+message QueryRunsResponse {
+  repeated RunResponse runs = 1;
+  int32 page = 2;
+  int32 size = 3;
+  int32 total_elements = 4;
+  bool has_more = 5;
+}
+
+message CountResponse { int64 count = 1; }
+
+message RunStatusUpdate {
+  string run_id = 1;
+  RunStatus status = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string message = 4;
+}
+
+// ==================== EXECUTOR MESSAGES ====================
+
+message RegisterExecutorRequest {
+  string executor_id = 1;
+  string executor_type = 2;
+  CommunicationType communication_type = 3;
+  string endpoint = 4;
+  map<string, string> metadata = 5;
+  repeated string supported_node_types = 6;
+  int32 max_concurrent_tasks = 7;
+}
+
+message ExecutorRegistration {
+  string executor_id = 1;
+  string status = 2;
+  google.protobuf.Timestamp registered_at = 3;
+}
+
+message UnregisterExecutorRequest { string executor_id = 1; }
+
+message HeartbeatRequest {
+  string executor_id = 1;
+  int32 current_task_count = 2;
+  ExecutorHealth health = 3;
+}
+
+message StreamTasksRequest {
+  string executor_id = 1;
+  int32 max_concurrent = 2;
+}
+
+message ExecutionTask {
+  string task_id = 1;
+  string run_id = 2;
+  string node_id = 3;
+  string node_name = 4;
+  string node_type = 5;
+  int32 attempt = 6;
+  string execution_token = 7;
+  google.protobuf.Struct context = 8;
+  google.protobuf.Struct configuration = 9;
+  int64 timeout_seconds = 10;
+  google.protobuf.Timestamp scheduled_at = 11;
+}
+
+message TaskResult {
+  string task_id = 1;
+  string run_id = 2;
+  string node_id = 3;
+  int32 attempt = 4;
+  string execution_token = 5;
+  TaskStatus status = 6;
+  google.protobuf.Struct output = 7;
+  ErrorInfo error = 8;
+  google.protobuf.Timestamp completed_at = 9;
+}
+
+// Bidirectional streaming messages
+message ExecutorMessage {
+  oneof message {
+    HeartbeatRequest heartbeat = 1;
+    TaskResult result = 2;
+    TaskAcknowledgement ack = 3;
+  }
+}
+
+message EngineMessage {
+  oneof message {
+    ExecutionTask task = 1;
+    TaskCancellation cancellation = 2;
+    ConfigurationUpdate config_update = 3;
+  }
+}
+
+message TaskAcknowledgement {
+  string task_id = 1;
+  google.protobuf.Timestamp acknowledged_at = 2;
+}
+
+message TaskCancellation {
+  string task_id = 1;
+  string reason = 2;
+}
+
+message ConfigurationUpdate { google.protobuf.Struct configuration = 1; }
+
+// ==================== NESTED MESSAGES ====================
+
+message TriggerInfo {
+  string type = 1;
+  string triggered_by = 2;
+  google.protobuf.Timestamp triggered_at = 3;
+  map<string, string> metadata = 4;
+}
+
+message NodeExecution {
+  string node_id = 1;
+  string node_name = 2;
+  string status = 3;
+  int32 attempt = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp completed_at = 6;
+  int64 duration_ms = 7;
+  google.protobuf.Struct output = 8;
+  ErrorInfo error = 9;
+}
+
+message ErrorInfo {
+  string code = 1;
+  string message = 2;
+  string stack_trace = 3;
+  google.protobuf.Struct context = 4;
+}
+
+message ExecutionEvent {
+  string event_id = 1;
+  string event_type = 2;
+  int64 sequence_number = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+  google.protobuf.Struct event_data = 5;
+}
+
+message ExecutorHealth {
+  string status = 1;
+  int32 current_tasks = 2;
+  int32 completed_tasks = 3;
+  int32 failed_tasks = 4;
+  double cpu_usage = 5;
+  double memory_usage = 6;
+}
+
+// ==================== ENUMS ====================
+
+enum RunStatus {
+  RUN_STATUS_UNSPECIFIED = 0;
+  RUN_STATUS_CREATED = 1;
+  RUN_STATUS_PENDING = 2;
+  RUN_STATUS_RUNNING = 3;
+  RUN_STATUS_SUSPENDED = 4;
+  RUN_STATUS_COMPLETED = 5;
+  RUN_STATUS_FAILED = 6;
+  RUN_STATUS_CANCELLED = 7;
+  RUN_STATUS_COMPENSATING = 8;
+  RUN_STATUS_COMPENSATED = 9;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_PENDING = 1;
+  TASK_STATUS_RUNNING = 2;
+  TASK_STATUS_COMPLETED = 3;
+  TASK_STATUS_FAILED = 4;
+  TASK_STATUS_SKIPPED = 5;
+  TASK_STATUS_RETRYING = 6;
+  TASK_STATUS_CANCELLED = 7;
+}
+
+enum CommunicationType {
+  COMMUNICATION_TYPE_UNSPECIFIED = 0;
+  COMMUNICATION_TYPE_GRPC = 1;
+  COMMUNICATION_TYPE_KAFKA = 2;
+  COMMUNICATION_TYPE_REST = 3;
+}
+
+// ============================================================================
+// WORKFLOW DEFINITION SERVICE
+// ============================================================================
+// File: workflow_definition_service.proto
+
+/**
+ * Workflow Definition Management Service
+ */
+service WorkflowDefinitionService {
+  // Create workflow definition
+  rpc CreateDefinition(CreateDefinitionRequest) returns (DefinitionResponse);
+
+  // Get workflow definition
+  rpc GetDefinition(GetDefinitionRequest) returns (DefinitionResponse);
+
+  // List workflow definitions
+  rpc ListDefinitions(ListDefinitionsRequest) returns (ListDefinitionsResponse);
+
+  // Update workflow definition
+  rpc UpdateDefinition(UpdateDefinitionRequest) returns (DefinitionResponse);
+
+  // Delete workflow definition
+  rpc DeleteDefinition(DeleteDefinitionRequest) returns (google.protobuf.Empty);
+
+  // Validate workflow definition
+  rpc ValidateDefinition(ValidateDefinitionRequest)
+      returns (ValidationResponse);
+}
+
+message CreateDefinitionRequest {
+  string tenant_id = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  repeated NodeDefinition nodes = 5;
+  map<string, InputDefinition> inputs = 6;
+  map<string, OutputDefinition> outputs = 7;
+  RetryPolicy default_retry_policy = 8;
+  CompensationPolicy compensation_policy = 9;
+  map<string, string> metadata = 10;
+}
+
+message GetDefinitionRequest {
+  string tenant_id = 1;
+  string definition_id = 2;
+}
+
+message ListDefinitionsRequest {
+  string tenant_id = 1;
+  bool active_only = 2;
+  int32 page = 3;
+  int32 size = 4;
+}
+
+message UpdateDefinitionRequest {
+  string tenant_id = 1;
+  string definition_id = 2;
+  string description = 3;
+  bool is_active = 4;
+  map<string, string> metadata = 5;
+}
+
+message DeleteDefinitionRequest {
+  string tenant_id = 1;
+  string definition_id = 2;
+}
+
+message ValidateDefinitionRequest { CreateDefinitionRequest definition = 1; }
+
+message DefinitionResponse {
+  string definition_id = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  repeated NodeDefinition nodes = 5;
+  bool is_active = 6;
+  google.protobuf.Timestamp created_at = 7;
+  map<string, string> metadata = 8;
+}
+
+message ListDefinitionsResponse {
+  repeated DefinitionResponse definitions = 1;
+  int32 total = 2;
+}
+
+message ValidationResponse {
+  bool is_valid = 1;
+  repeated string errors = 2;
+  repeated string warnings = 3;
+}
+
+message NodeDefinition {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  string executor_type = 4;
+  google.protobuf.Struct configuration = 5;
+  repeated string depends_on = 6;
+  repeated Transition transitions = 7;
+  RetryPolicy retry_policy = 8;
+  int64 timeout_seconds = 9;
+  bool critical = 10;
+}
+
+message Transition {
+  string target_node_id = 1;
+  string condition = 2;
+  string type = 3;
+}
+
+message RetryPolicy {
+  int32 max_attempts = 1;
+  int64 initial_delay_seconds = 2;
+  int64 max_delay_seconds = 3;
+  double backoff_multiplier = 4;
+  repeated string retryable_exceptions = 5;
+}
+
+message CompensationPolicy {
+  string strategy = 1;
+  int64 timeout_seconds = 2;
+  bool fail_on_compensation_error = 3;
+}
+
+message InputDefinition {
+  string name = 1;
+  string type = 2;
+  bool required = 3;
+  google.protobuf.Value default_value = 4;
+  string description = 5;
+}
+
+message OutputDefinition {
+  string name = 1;
+  string type = 2;
+  string description = 3;
+}

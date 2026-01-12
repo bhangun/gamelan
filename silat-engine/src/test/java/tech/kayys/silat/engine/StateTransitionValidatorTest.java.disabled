@@ -1,0 +1,85 @@
+package tech.kayys.silat.engine;
+
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
+
+import tech.kayys.silat.model.RunStatus;
+import tech.kayys.silat.model.ValidationResult;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@QuarkusTest
+class StateTransitionValidatorTest {
+
+    @Inject
+    StateTransitionValidator validator;
+
+    @Test
+    void validate_whenValidTransition_returnsSuccess() {
+        // Test some valid transitions
+        ValidationResult result1 = validator.validate(RunStatus.CREATED, RunStatus.RUNNING);
+        assertTrue(result1.isValid());
+        assertTrue(result1.message().isEmpty());
+
+        ValidationResult result2 = validator.validate(RunStatus.RUNNING, RunStatus.SUSPENDED);
+        assertTrue(result2.isValid());
+        assertTrue(result2.message().isEmpty());
+
+        ValidationResult result3 = validator.validate(RunStatus.SUSPENDED, RunStatus.RUNNING);
+        assertTrue(result3.isValid());
+        assertTrue(result3.message().isEmpty());
+    }
+
+    @Test
+    void validate_whenInvalidTransition_returnsFailure() {
+        // Test some invalid transitions
+        ValidationResult result1 = validator.validate(RunStatus.COMPLETED, RunStatus.RUNNING);
+        assertFalse(result1.isValid());
+        assertTrue(result1.message().contains("Invalid transition"));
+
+        ValidationResult result2 = validator.validate(RunStatus.FAILED, RunStatus.RUNNING);
+        assertFalse(result2.isValid());
+        assertTrue(result2.message().contains("Invalid transition"));
+
+        ValidationResult result3 = validator.validate(RunStatus.CANCELLED, RunStatus.RUNNING);
+        assertFalse(result3.isValid());
+        assertTrue(result3.message().contains("Invalid transition"));
+    }
+
+    @Test
+    void validate_whenSameStatus_returnsFailure() {
+        // Transitions to the same status should be invalid
+        ValidationResult result = validator.validate(RunStatus.CREATED, RunStatus.CREATED);
+        assertFalse(result.isValid());
+        assertTrue(result.message().contains("Invalid transition"));
+    }
+
+    @Test
+    void validate_whenCreatedToCancelled_returnsSuccess() {
+        ValidationResult result = validator.validate(RunStatus.CREATED, RunStatus.CANCELLED);
+        assertTrue(result.isValid());
+        assertTrue(result.message().isEmpty());
+    }
+
+    @Test
+    void validate_whenRunningToCompleted_returnsSuccess() {
+        ValidationResult result = validator.validate(RunStatus.RUNNING, RunStatus.COMPLETED);
+        assertTrue(result.isValid());
+        assertTrue(result.message().isEmpty());
+    }
+
+    @Test
+    void validate_whenRunningToFailed_returnsSuccess() {
+        ValidationResult result = validator.validate(RunStatus.RUNNING, RunStatus.FAILED);
+        assertTrue(result.isValid());
+        assertTrue(result.message().isEmpty());
+    }
+
+    @Test
+    void validate_whenRunningToCancelled_returnsSuccess() {
+        ValidationResult result = validator.validate(RunStatus.RUNNING, RunStatus.CANCELLED);
+        assertTrue(result.isValid());
+        assertTrue(result.message().isEmpty());
+    }
+}
