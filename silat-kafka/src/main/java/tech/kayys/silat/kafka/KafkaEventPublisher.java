@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Publishes domain events to Kafka
  */
+@Priority(APPLICATION + 10)
 @ApplicationScoped
 public class KafkaEventPublisher implements EventPublisher {
 

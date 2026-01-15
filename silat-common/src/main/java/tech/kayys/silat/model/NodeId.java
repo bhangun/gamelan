@@ -1,11 +1,13 @@
 package tech.kayys.silat.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Objects;
 
 /**
  * Node Identifier within a workflow
  */
-public record NodeId(String value) {
+public record NodeId(@JsonValue String value) {
     public NodeId {
         Objects.requireNonNull(value, "NodeId cannot be null");
     }

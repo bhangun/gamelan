@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,6 +21,7 @@ import tech.kayys.silat.model.ErrorInfo;
 /**
  * Runtime for managing executor lifecycle
  */
+@Startup
 @ApplicationScoped
 public class ExecutorRuntime {
 
@@ -31,18 +33,26 @@ public class ExecutorRuntime {
     private volatile boolean running = false;
 
     @jakarta.inject.Inject
-    public ExecutorRuntime(ExecutorTransportFactory transportFactory) {
+    public ExecutorRuntime(ExecutorTransportFactory transportFactory,
+            jakarta.enterprise.inject.Instance<WorkflowExecutor> discoveredExecutors) {
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
         this.transport = transportFactory.createTransport();
+
+        // Auto-discover and register executors
+        discoveredExecutors.forEach(executor -> {
+            String type = executor.getExecutorType();
+            executors.put(type, executor);
+            LOG.info("Auto-discovered and registered executor: {}", type);
+        });
     }
 
     /**
-     * Register an executor
+     * Register an executor manually if needed
      */
     public void registerExecutor(WorkflowExecutor executor) {
         String type = executor.getExecutorType();
         executors.put(type, executor);
-        LOG.info("Registered executor: {}", type);
+        LOG.info("Manually registered executor: {}", type);
     }
 
     /**
@@ -54,7 +64,10 @@ public class ExecutorRuntime {
         running = true;
 
         // Register with engine
-        transport.register(new ArrayList<>(executors.values()))
+        // Register with engine - delay to ensure listener is ready
+        io.smallrye.mutiny.Uni.createFrom().voidItem()
+                .onItem().delayIt().by(java.time.Duration.ofSeconds(2))
+                .flatMap(v -> transport.register(new ArrayList<>(executors.values())))
                 .subscribe().with(
                         v -> LOG.info("Registered with engine"),
                         error -> LOG.error("Failed to register", error));

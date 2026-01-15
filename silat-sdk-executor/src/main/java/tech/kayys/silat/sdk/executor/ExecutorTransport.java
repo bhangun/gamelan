@@ -37,6 +37,13 @@ public interface ExecutorTransport {
     Uni<Void> sendHeartbeat();
 
     /**
+     * Get the communication type of this transport
+     */
+    default tech.kayys.silat.model.CommunicationType getCommunicationType() {
+        return tech.kayys.silat.model.CommunicationType.UNSPECIFIED;
+    }
+
+    /**
      * Get configured heartbeat interval
      * 
      * @return Duration interval

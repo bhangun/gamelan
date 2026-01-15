@@ -14,202 +14,214 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tech.kayys.silat.model.NodeDefinition;
 import tech.kayys.silat.model.NodeId;
+import tech.kayys.silat.model.RunStatus;
 import tech.kayys.silat.model.WorkflowDefinition;
 import tech.kayys.silat.model.WorkflowRun;
 import tech.kayys.silat.saga.CompensationPolicy;
 import tech.kayys.silat.saga.CompensationResult;
+import tech.kayys.silat.saga.CompensationService;
 import tech.kayys.silat.workflow.WorkflowDefinitionRegistry;
 
 /**
  * Coordinates compensation (saga pattern) for failed workflows
  */
 @ApplicationScoped
-public class CompensationCoordinator {
+public class CompensationCoordinator implements CompensationService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CompensationCoordinator.class);
+        private static final Logger LOG = LoggerFactory.getLogger(CompensationCoordinator.class);
 
-    @Inject
-    WorkflowDefinitionRegistry definitionRegistry;
+        @Inject
+        WorkflowDefinitionRegistry definitionRegistry;
 
-    /**
-     * Execute compensation for a failed workflow
-     */
-    public Uni<CompensationResult> compensate(WorkflowRun run) {
-        LOG.info("Starting compensation for run: {}", run.getId().value());
+        /**
+         * Execute compensation for a failed workflow
+         */
+        public Uni<CompensationResult> compensate(WorkflowRun run) {
+                LOG.info("Starting compensation for run: {}", run.getId().value());
 
-        return definitionRegistry.getDefinition(run.getDefinitionId(), run.getTenantId())
-                .flatMap(definition -> {
-                    CompensationPolicy policy = definition.compensationPolicy();
+                return definitionRegistry.getDefinition(run.getDefinitionId(), run.getTenantId())
+                                .flatMap(definition -> {
+                                        CompensationPolicy policy = definition.compensationPolicy();
 
-                    if (policy == null) {
-                        LOG.warn("No compensation policy defined");
-                        return Uni.createFrom().item(
-                                new CompensationResult(true, "No compensation needed"));
-                    }
+                                        if (policy == null) {
+                                                LOG.warn("No compensation policy defined");
+                                                return Uni.createFrom().item(
+                                                                new CompensationResult(true, "No compensation needed"));
+                                        }
 
-                    // Get nodes to compensate (completed nodes in reverse order)
-                    List<NodeId> completedNodes = getCompletedNodes(run);
+                                        // Get nodes to compensate (completed nodes in reverse order)
+                                        List<NodeId> completedNodes = getCompletedNodes(run);
 
-                    if (completedNodes.isEmpty()) {
-                        return Uni.createFrom().item(
-                                new CompensationResult(true, "No nodes to compensate"));
-                    }
+                                        if (completedNodes.isEmpty()) {
+                                                return Uni.createFrom().item(
+                                                                new CompensationResult(true, "No nodes to compensate"));
+                                        }
 
-                    return executeCompensationStrategy(
-                            run, definition, completedNodes, policy);
+                                        return executeCompensationStrategy(
+                                                        run, definition, completedNodes, policy);
+                                });
+        }
+
+        /**
+         * Get list of completed nodes that need compensation
+         */
+        private List<NodeId> getCompletedNodes(WorkflowRun run) {
+                List<NodeId> completed = new ArrayList<>();
+
+                run.getAllNodeExecutions().forEach((nodeId, execution) -> {
+                        if (execution.isCompleted()) {
+                                completed.add(nodeId);
+                        }
                 });
-    }
 
-    /**
-     * Get list of completed nodes that need compensation
-     */
-    private List<NodeId> getCompletedNodes(WorkflowRun run) {
-        List<NodeId> completed = new ArrayList<>();
+                // Reverse order for sequential compensation
+                Collections.reverse(completed);
 
-        run.getAllNodeExecutions().forEach((nodeId, execution) -> {
-            if (execution.isCompleted()) {
-                completed.add(nodeId);
-            }
-        });
+                return completed;
+        }
 
-        // Reverse order for sequential compensation
-        Collections.reverse(completed);
+        /**
+         * Execute compensation based on strategy
+         */
+        private Uni<CompensationResult> executeCompensationStrategy(
+                        WorkflowRun run,
+                        WorkflowDefinition definition,
+                        List<NodeId> nodesToCompensate,
+                        CompensationPolicy policy) {
 
-        return completed;
-    }
+                return switch (policy.strategy()) {
+                        case SEQUENTIAL -> executeSequentialCompensation(
+                                        run, definition, nodesToCompensate, policy);
+                        case PARALLEL -> executeParallelCompensation(
+                                        run, definition, nodesToCompensate, policy);
+                        case CUSTOM -> executeCustomCompensation(
+                                        run, definition, nodesToCompensate, policy);
+                };
+        }
 
-    /**
-     * Execute compensation based on strategy
-     */
-    private Uni<CompensationResult> executeCompensationStrategy(
-            WorkflowRun run,
-            WorkflowDefinition definition,
-            List<NodeId> nodesToCompensate,
-            CompensationPolicy policy) {
+        /**
+         * Sequential compensation (one by one in reverse order)
+         */
+        private Uni<CompensationResult> executeSequentialCompensation(
+                        WorkflowRun run,
+                        WorkflowDefinition definition,
+                        List<NodeId> nodesToCompensate,
+                        CompensationPolicy policy) {
 
-        return switch (policy.strategy()) {
-            case SEQUENTIAL -> executeSequentialCompensation(
-                    run, definition, nodesToCompensate, policy);
-            case PARALLEL -> executeParallelCompensation(
-                    run, definition, nodesToCompensate, policy);
-            case CUSTOM -> executeCustomCompensation(
-                    run, definition, nodesToCompensate, policy);
-        };
-    }
+                LOG.info("Executing sequential compensation for {} nodes",
+                                nodesToCompensate.size());
 
-    /**
-     * Sequential compensation (one by one in reverse order)
-     */
-    private Uni<CompensationResult> executeSequentialCompensation(
-            WorkflowRun run,
-            WorkflowDefinition definition,
-            List<NodeId> nodesToCompensate,
-            CompensationPolicy policy) {
+                Uni<CompensationResult> chain = Uni.createFrom().item(
+                                new CompensationResult(true, "Starting compensation"));
 
-        LOG.info("Executing sequential compensation for {} nodes",
-                nodesToCompensate.size());
+                for (NodeId nodeId : nodesToCompensate) {
+                        chain = chain.flatMap(previousResult -> {
+                                if (!previousResult.success() && policy.failOnCompensationError()) {
+                                        return Uni.createFrom().item(previousResult);
+                                }
 
-        Uni<CompensationResult> chain = Uni.createFrom().item(
-                new CompensationResult(true, "Starting compensation"));
-
-        for (NodeId nodeId : nodesToCompensate) {
-            chain = chain.flatMap(previousResult -> {
-                if (!previousResult.success() && policy.failOnCompensationError()) {
-                    return Uni.createFrom().item(previousResult);
+                                return compensateNode(run, definition, nodeId)
+                                                .onFailure().recoverWithItem(error -> {
+                                                        LOG.error("Compensation failed for node: {}",
+                                                                        nodeId.value(), error);
+                                                        return new CompensationResult(false,
+                                                                        "Compensation failed: " + error.getMessage());
+                                                });
+                        });
                 }
 
-                return compensateNode(run, definition, nodeId)
-                        .onFailure().recoverWithItem(error -> {
-                            LOG.error("Compensation failed for node: {}",
-                                    nodeId.value(), error);
-                            return new CompensationResult(false,
-                                    "Compensation failed: " + error.getMessage());
-                        });
-            });
+                return chain.map(result -> new CompensationResult(true,
+                                "Sequential compensation completed"));
         }
 
-        return chain.map(result -> new CompensationResult(true,
-                "Sequential compensation completed"));
-    }
+        /**
+         * Parallel compensation (all at once)
+         */
+        private Uni<CompensationResult> executeParallelCompensation(
+                        WorkflowRun run,
+                        WorkflowDefinition definition,
+                        List<NodeId> nodesToCompensate,
+                        CompensationPolicy policy) {
 
-    /**
-     * Parallel compensation (all at once)
-     */
-    private Uni<CompensationResult> executeParallelCompensation(
-            WorkflowRun run,
-            WorkflowDefinition definition,
-            List<NodeId> nodesToCompensate,
-            CompensationPolicy policy) {
+                LOG.info("Executing parallel compensation for {} nodes",
+                                nodesToCompensate.size());
 
-        LOG.info("Executing parallel compensation for {} nodes",
-                nodesToCompensate.size());
+                List<Uni<CompensationResult>> compensations = nodesToCompensate.stream()
+                                .map(nodeId -> compensateNode(run, definition, nodeId)
+                                                .onFailure().recoverWithItem(error -> {
+                                                        LOG.error("Compensation failed for node: {}",
+                                                                        nodeId.value(), error);
+                                                        return new CompensationResult(false,
+                                                                        "Failed: " + error.getMessage());
+                                                }))
+                                .toList();
 
-        List<Uni<CompensationResult>> compensations = nodesToCompensate.stream()
-                .map(nodeId -> compensateNode(run, definition, nodeId)
-                        .onFailure().recoverWithItem(error -> {
-                            LOG.error("Compensation failed for node: {}",
-                                    nodeId.value(), error);
-                            return new CompensationResult(false,
-                                    "Failed: " + error.getMessage());
-                        }))
-                .toList();
+                return Uni.join().all(compensations).andFailFast()
+                                .map(results -> {
+                                        boolean allSuccess = results.stream()
+                                                        .allMatch(CompensationResult::success);
 
-        return Uni.join().all(compensations).andFailFast()
-                .map(results -> {
-                    boolean allSuccess = results.stream()
-                            .allMatch(CompensationResult::success);
-
-                    return new CompensationResult(allSuccess,
-                            "Parallel compensation completed");
-                });
-    }
-
-    /**
-     * Custom compensation (hook for extensions)
-     */
-    private Uni<CompensationResult> executeCustomCompensation(
-            WorkflowRun run,
-            WorkflowDefinition definition,
-            List<NodeId> nodesToCompensate,
-            CompensationPolicy policy) {
-
-        LOG.warn("Custom compensation not implemented, using sequential");
-        return executeSequentialCompensation(
-                run, definition, nodesToCompensate, policy);
-    }
-
-    /**
-     * Compensate a single node
-     */
-    private Uni<CompensationResult> compensateNode(
-            WorkflowRun run,
-            WorkflowDefinition definition,
-            NodeId nodeId) {
-
-        LOG.debug("Compensating node: {}", nodeId.value());
-
-        // Find node definition
-        Optional<NodeDefinition> nodeDefOpt = definition.findNode(nodeId);
-        if (nodeDefOpt.isEmpty()) {
-            return Uni.createFrom().item(
-                    new CompensationResult(false, "Node not found"));
+                                        return new CompensationResult(allSuccess,
+                                                        "Parallel compensation completed");
+                                });
         }
 
-        NodeDefinition nodeDef = nodeDefOpt.get();
+        /**
+         * Custom compensation (hook for extensions)
+         */
+        private Uni<CompensationResult> executeCustomCompensation(
+                        WorkflowRun run,
+                        WorkflowDefinition definition,
+                        List<NodeId> nodesToCompensate,
+                        CompensationPolicy policy) {
 
-        // Check if node has compensation handler
-        Object compensationHandler = nodeDef.configuration().get("compensationHandler");
-
-        if (compensationHandler == null) {
-            LOG.debug("No compensation handler for node: {}", nodeId.value());
-            return Uni.createFrom().item(
-                    new CompensationResult(true, "No compensation needed"));
+                LOG.warn("Custom compensation not implemented, using sequential");
+                return executeSequentialCompensation(
+                                run, definition, nodesToCompensate, policy);
         }
 
-        // Execute compensation handler
-        // In real implementation, this would invoke the compensation executor
-        return Uni.createFrom().item(
-                new CompensationResult(true, "Node compensated"))
-                .onItem().delayIt().by(Duration.ofMillis(100)); // Simulate work
-    }
+        /**
+         * Compensate a single node (implements CompensationService)
+         */
+        @Override
+        public Uni<CompensationResult> compensateNode(
+                        WorkflowRun run,
+                        WorkflowDefinition definition,
+                        NodeId nodeId) {
+
+                LOG.debug("Compensating node: {}", nodeId.value());
+
+                // Find node definition
+                Optional<NodeDefinition> nodeDefOpt = definition.findNode(nodeId);
+                if (nodeDefOpt.isEmpty()) {
+                        return Uni.createFrom().item(
+                                        new CompensationResult(false, "Node not found"));
+                }
+
+                NodeDefinition nodeDef = nodeDefOpt.get();
+
+                // Check if node has compensation handler
+                Object compensationHandler = nodeDef.configuration().get("compensationHandler");
+
+                if (compensationHandler == null) {
+                        LOG.debug("No compensation handler for node: {}", nodeId.value());
+                        return Uni.createFrom().item(
+                                        new CompensationResult(true, "No compensation needed"));
+                }
+
+                // Execute compensation handler
+                // In real implementation, this would invoke the compensation executor
+                return Uni.createFrom().item(
+                                new CompensationResult(true, "Node compensated"))
+                                .onItem().delayIt().by(Duration.ofMillis(100)); // Simulate work
+        }
+
+        /**
+         * Check if compensation is needed for a workflow
+         */
+        @Override
+        public boolean needsCompensation(WorkflowRun run) {
+                // Compensation is needed if workflow failed and has completed nodes
+                return run.getStatus() == RunStatus.FAILED && !getCompletedNodes(run).isEmpty();
+        }
 }

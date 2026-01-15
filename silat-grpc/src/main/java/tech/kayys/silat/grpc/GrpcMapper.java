@@ -200,14 +200,38 @@ public class GrpcMapper {
 
         @Override
         public ExecutionError getError() {
-            if (errorVal == null) return null;
+            if (errorVal == null)
+                return null;
             return new ExecutionError() {
-                @Override public String getCode() { return errorVal.code(); }
-                @Override public Category getCategory() { return Category.SYSTEM; }
-                @Override public String getMessage() { return errorVal.message(); }
-                @Override public boolean isRetriable() { return false; }
-                @Override public String getCompensationHint() { return null; }
-                @Override public Map<String, Object> getDetails() { return errorVal.context(); }
+                @Override
+                public String getCode() {
+                    return errorVal.code();
+                }
+
+                @Override
+                public Category getCategory() {
+                    return Category.SYSTEM;
+                }
+
+                @Override
+                public String getMessage() {
+                    return errorVal.message();
+                }
+
+                @Override
+                public boolean isRetriable() {
+                    return false;
+                }
+
+                @Override
+                public String getCompensationHint() {
+                    return null;
+                }
+
+                @Override
+                public Map<String, Object> getDetails() {
+                    return errorVal.context();
+                }
             };
         }
 

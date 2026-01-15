@@ -1,0 +1,295 @@
+
+version: '3.8'
+
+networks:
+  silat-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  kafka-data:
+  zookeeper-data:
+  keycloak-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+  # ==================== DATABASE ====================
+  
+  postgres:
+    image: postgres:16-alpine
+    container_name: silat-postgres
+    environment:
+      POSTGRES_DB: silat_db
+      POSTGRES_USER: silat
+      POSTGRES_PASSWORD: silat_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - silat-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U silat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== REDIS ====================
+  
+  redis:
+    image: redis:7-alpine
+    container_name: silat-redis
+    command: redis-server --appendonly yes --requirepass silat_redis_pass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - silat-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== KAFKA STACK ====================
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: silat-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - silat-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: silat-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - silat-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: silat-kafka-ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: silat-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8090:8080"
+    networks:
+      - silat-network
+
+  # ==================== KEYCLOAK ====================
+  
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: silat-keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/silat_db
+      KC_DB_USERNAME: silat
+      KC_DB_PASSWORD: silat_password
+      KC_DB_SCHEMA: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8180
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8180:8180"
+    depends_on:
+      - postgres
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+    networks:
+      - silat-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8180/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==================== SILAT CONTROL PLANE ====================
+  
+  silat-control-plane:
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.jvm
+    container_name: silat-control-plane
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: silat_db
+      DB_USERNAME: silat
+      DB_PASSWORD: silat_password
+      
+      # Redis
+      REDIS_HOST: redis://redis:6379
+      REDIS_PASSWORD: silat_redis_pass
+      
+      # Kafka
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      
+      # Keycloak
+      KEYCLOAK_URL: http://keycloak:8180
+      KEYCLOAK_CLIENT_SECRET: your-client-secret-here
+      
+      # Observability
+      OTEL_ENABLED: "true"
+      OTEL_ENDPOINT: http://jaeger:4317
+      
+      # Silat
+      TENANT_ISOLATION: strict
+      MAX_CONCURRENT_RUNS: 1000
+      EXECUTOR_REGISTRY: redis
+      
+      # AI Providers (configure as needed)
+      OPENAI_ENABLED: "false"
+      OPENAI_API_KEY: ""
+      ANTHROPIC_ENABLED: "false"
+      ANTHROPIC_API_KEY: ""
+      
+      # Java Options
+      JAVA_OPTS: "-Xms512m -Xmx2048m -XX:+UseG1GC"
+    ports:
+      - "8080:8080"  # HTTP
+      - "9090:9090"  # gRPC
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - keycloak
+    networks:
+      - silat-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ==================== MONITORING STACK ====================
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: silat-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - silat-network
+    depends_on:
+      - silat-control-plane
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: silat-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - silat-network
+    depends_on:
+      - prometheus
+
+  # ==================== TRACING ====================
+  
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: silat-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    networks:
+      - silat-network
+
+  # ==================== ADDITIONAL SERVICES ====================
+  
+  # PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: silat-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@silat.tech
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    networks:
+      - silat-network
+    depends_on:
+      - postgres
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: silat-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:silat_redis_pass
+    ports:
+      - "8081:8081"
+    networks:
+      - silat-network
+    depends_on:
+      - redis

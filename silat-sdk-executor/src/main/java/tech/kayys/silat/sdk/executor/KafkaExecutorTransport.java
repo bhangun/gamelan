@@ -63,6 +63,11 @@ public class KafkaExecutorTransport implements ExecutorTransport {
     }
 
     @Override
+    public tech.kayys.silat.model.CommunicationType getCommunicationType() {
+        return tech.kayys.silat.model.CommunicationType.KAFKA;
+    }
+
+    @Override
     public Uni<Void> register(List<WorkflowExecutor> executors) {
         LOG.info("Registering {} executors via Kafka", executors.size());
 

@@ -329,6 +329,14 @@ message ExecutorHealth {
 
 // ==================== ENUMS ====================
 
+enum CommunicationType {
+  COMMUNICATION_TYPE_UNSPECIFIED = 0;
+  COMMUNICATION_TYPE_GRPC = 1;
+  COMMUNICATION_TYPE_KAFKA = 2;
+  COMMUNICATION_TYPE_REST = 3;
+  COMMUNICATION_TYPE_LOCAL = 4;
+}
+
 enum RunStatus {
   RUN_STATUS_UNSPECIFIED = 0;
   RUN_STATUS_CREATED = 1;
@@ -351,13 +359,6 @@ enum TaskStatus {
   TASK_STATUS_SKIPPED = 5;
   TASK_STATUS_RETRYING = 6;
   TASK_STATUS_CANCELLED = 7;
-}
-
-enum CommunicationType {
-  COMMUNICATION_TYPE_UNSPECIFIED = 0;
-  COMMUNICATION_TYPE_GRPC = 1;
-  COMMUNICATION_TYPE_KAFKA = 2;
-  COMMUNICATION_TYPE_REST = 3;
 }
 
 // ============================================================================

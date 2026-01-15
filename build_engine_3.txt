@@ -1,0 +1,316 @@
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for tech.kayys.silat:silat-engine:jar:1.0.0-SNAPSHOT
+[WARNING] 'build.plugins.plugin.version' for org.apache.maven.plugins:maven-compiler-plugin is missing. @ line 177, column 21
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Silat Workflow Engine                                              [pom]
+[INFO] Silat Plugin API                                                   [jar]
+[INFO] silat-common                                                       [jar]
+[INFO] silat-api                                                          [jar]
+[INFO] silat-registry                                                     [jar]
+[INFO] silat-grpc                                                         [jar]
+[INFO] silat-kafka                                                        [jar]
+[INFO] silat-engine                                                       [jar]
+[INFO] 
+[INFO] -------------------< tech.kayys.silat:silat-parent >--------------------
+[INFO] Building Silat Workflow Engine 1.0.0-SNAPSHOT                      [1/8]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] -----------------< tech.kayys.silat:silat-plugin-api >------------------
+[INFO] Building Silat Plugin API 1.0.0-SNAPSHOT                           [2/8]
+[INFO]   from silat-plugin-api/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-plugin-api ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-plugin-api/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ silat-plugin-api ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-plugin-api ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-plugin-api/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ silat-plugin-api ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ silat-plugin-api ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-plugin-api ---
+[INFO] 
+[INFO] -------------------< tech.kayys.silat:silat-common >--------------------
+[INFO] Building silat-common 1.0.0-SNAPSHOT                               [3/8]
+[INFO]   from silat-common/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-common ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ silat-common ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- jandex:3.1.2:jandex (make-index) @ silat-common ---
+[INFO] Saving Jandex index: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-common/target/classes/META-INF/jandex.idx
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-common ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-common/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ silat-common ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ silat-common ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-common ---
+[INFO] 
+[INFO] ---------------------< tech.kayys.silat:silat-api >---------------------
+[INFO] Building silat-api 1.0.0-SNAPSHOT                                  [4/8]
+[INFO]   from silat-api/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-api ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-api/src/main/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ silat-api ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- jandex:3.1.2:jandex (make-index) @ silat-api ---
+[INFO] Saving Jandex index: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-api/target/classes/META-INF/jandex.idx
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-api ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-api/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ silat-api ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ silat-api ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-api ---
+[INFO] 
+[INFO] ------------------< tech.kayys.silat:silat-registry >-------------------
+[INFO] Building silat-registry 1.0.0-SNAPSHOT                             [5/8]
+[INFO]   from silat-registry/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-registry ---
+[INFO] Copying 3 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ silat-registry ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- jandex:3.1.2:jandex (make-index) @ silat-registry ---
+[INFO] Saving Jandex index: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-registry/target/classes/META-INF/jandex.idx
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-registry ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-registry/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ silat-registry ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ silat-registry ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-registry ---
+[INFO] 
+[INFO] --------------------< tech.kayys.silat:silat-grpc >---------------------
+[INFO] Building silat-grpc 1.0.0-SNAPSHOT                                 [6/8]
+[INFO]   from silat-grpc/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-grpc ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- quarkus:3.15.1:generate-code (default) @ silat-grpc ---
+[INFO] [io.quarkus.grpc.deployment.GrpcCodeGen] Successfully finished generating and post-processing sources from proto files
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ silat-grpc ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 119 source files with javac [debug release 21] to target/classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] --- jandex:3.1.2:jandex (make-index) @ silat-grpc ---
+[INFO] Saving Jandex index: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-grpc/target/classes/META-INF/jandex.idx
+[INFO] 
+[INFO] --- quarkus:3.15.1:generate-code-tests (default) @ silat-grpc ---
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-grpc ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-grpc/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ silat-grpc ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ silat-grpc ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-grpc ---
+[INFO] Building jar: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-grpc/target/silat-grpc-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --------------------< tech.kayys.silat:silat-kafka >--------------------
+[INFO] Building silat-kafka 1.0.0-SNAPSHOT                                [7/8]
+[INFO]   from silat-kafka/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[WARNING] The artifact io.quarkus:quarkus-smallrye-reactive-messaging-kafka:jar:3.15.1 has been relocated to io.quarkus:quarkus-messaging-kafka:jar:3.15.1: Update the artifactId in your project build file. Refer to https://github.com/quarkusio/quarkus/wiki/Migration-Guide-3.9 for more information.
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-kafka ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- quarkus:3.15.1:generate-code (default) @ silat-kafka ---
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ silat-kafka ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 20 source files with javac [debug release 21] to target/classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] --- jandex:3.1.2:jandex (make-index) @ silat-kafka ---
+[INFO] Saving Jandex index: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-kafka/target/classes/META-INF/jandex.idx
+[INFO] 
+[INFO] --- quarkus:3.15.1:generate-code-tests (default) @ silat-kafka ---
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-kafka ---
+[INFO] skip non existing resourceDirectory /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-kafka/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ silat-kafka ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] 
+[INFO] --- surefire:3.2.5:test (default-test) @ silat-kafka ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-kafka ---
+[INFO] Building jar: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-kafka/target/silat-kafka-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] -------------------< tech.kayys.silat:silat-engine >--------------------
+[INFO] Building silat-engine 1.0.0-SNAPSHOT                               [8/8]
+[INFO]   from silat-engine/pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ silat-engine ---
+[INFO] Copying 2 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- quarkus:3.15.1:generate-code (default) @ silat-engine ---
+[INFO] [io.quarkus.grpc.deployment.GrpcCodeGen] Successfully finished generating and post-processing sources from proto files
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ silat-engine ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 66 source files with javac [debug release 21] to target/classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] --- jandex:3.1.2:jandex (make-index) @ silat-engine ---
+[INFO] Saving Jandex index: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-engine/target/classes/META-INF/jandex.idx
+[INFO] 
+[INFO] --- quarkus:3.15.1:generate-code-tests (default) @ silat-engine ---
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ silat-engine ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ silat-engine ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 10 source files with javac [debug release 21] to target/test-classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ silat-engine ---
+[INFO] Tests are skipped.
+[INFO] 
+[INFO] --- jar:3.4.1:jar (default-jar) @ silat-engine ---
+[INFO] Building jar: /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/silat-engine/target/silat-engine-1.0.0-SNAPSHOT.jar
+[INFO] 
+[INFO] --- quarkus:3.15.1:build (default) @ silat-engine ---
+[WARNING] [io.quarkus.config] Unrecognized configuration key "quarkus.redis.pool.max-waiting" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+[WARNING] [io.quarkus.config] Unrecognized configuration key "quarkus.redis.pool.max-size" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+[WARNING] [io.quarkus.config] Unrecognized configuration key "quarkus.redis.pool.expiry" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+[WARNING] [io.quarkus.config] Unrecognized configuration key "quarkus.hibernate-orm.panache.enable-repository-pattern" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+[WARNING] [io.quarkus.config] Unrecognized configuration key "quarkus.redis.pool.min-size" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+[WARNING] [io.quarkus.config] Unrecognized configuration key "quarkus.flyway.migrate-at-start" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+[WARNING] [io.quarkus.arc.deployment.SplitPackageProcessor] Detected a split package usage which is considered a bad practice and should be avoided. Following packages were detected in multiple archives: 
+- "tech.kayys.silat.dto" found in [tech.kayys.silat:silat-api:1.0.0-SNAPSHOT, tech.kayys.silat:silat-engine:1.0.0-SNAPSHOT]
+- "tech.kayys.silat.saga" found in [tech.kayys.silat:silat-common:1.0.0-SNAPSHOT, tech.kayys.silat:silat-engine:1.0.0-SNAPSHOT]
+- "tech.kayys.silat.repository" found in [tech.kayys.silat:silat-common:1.0.0-SNAPSHOT, tech.kayys.silat:silat-engine:1.0.0-SNAPSHOT]
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Silat Workflow Engine 1.0.0-SNAPSHOT:
+[INFO] 
+[INFO] Silat Workflow Engine .............................. SUCCESS [  0.001 s]
+[INFO] Silat Plugin API ................................... SUCCESS [  0.317 s]
+[INFO] silat-common ....................................... SUCCESS [  0.126 s]
+[INFO] silat-api .......................................... SUCCESS [  0.157 s]
+[INFO] silat-registry ..................................... SUCCESS [  0.151 s]
+[INFO] silat-grpc ......................................... SUCCESS [  7.280 s]
+[INFO] silat-kafka ........................................ SUCCESS [  1.467 s]
+[INFO] silat-engine ....................................... FAILURE [  4.968 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  14.948 s
+[INFO] Finished at: 2026-01-14T00:04:43+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal io.quarkus.platform:quarkus-maven-plugin:3.15.1:build (default) on project silat-engine: Failed to build quarkus application: io.quarkus.builder.BuildException: Build failure: Build failed due to errors
+[ERROR] 	[error]: Build step io.quarkus.arc.deployment.ArcProcessor#validate threw an exception: jakarta.enterprise.inject.spi.DeploymentException: jakarta.enterprise.inject.AmbiguousResolutionException: Ambiguous dependencies for type tech.kayys.silat.api.event.EventPublisher and qualifiers [@Default]
+[ERROR] 	- injection target: tech.kayys.silat.scheduler.DefaultWorkflowScheduler#eventPublisher
+[ERROR] 	- declared on CLASS bean [types=[tech.kayys.silat.scheduler.DefaultWorkflowScheduler, tech.kayys.silat.scheduler.WorkflowScheduler, java.lang.Object], qualifiers=[@Default, @Any], target=tech.kayys.silat.scheduler.DefaultWorkflowScheduler]
+[ERROR] 	- available beans:
+[ERROR] 		- CLASS bean [types=[tech.kayys.silat.kafka.KafkaEventPublisher, tech.kayys.silat.api.event.EventPublisher, java.lang.Object], qualifiers=[@Default, @Any], target=tech.kayys.silat.kafka.KafkaEventPublisher]
+[ERROR] 		- CLASS bean [types=[tech.kayys.silat.registry.EventPublisher, tech.kayys.silat.api.event.EventPublisher, java.lang.Object], qualifiers=[@Default, @Any], target=tech.kayys.silat.registry.EventPublisher]
+[ERROR] 	at io.quarkus.arc.processor.BeanDeployment.processErrors(BeanDeployment.java:1551)
+[ERROR] 	at io.quarkus.arc.processor.BeanDeployment.init(BeanDeployment.java:338)
+[ERROR] 	at io.quarkus.arc.processor.BeanProcessor.initialize(BeanProcessor.java:167)
+[ERROR] 	at io.quarkus.arc.deployment.ArcProcessor.validate(ArcProcessor.java:490)
+[ERROR] 	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)
+[ERROR] 	at io.quarkus.deployment.ExtensionLoader$3.execute(ExtensionLoader.java:856)
+[ERROR] 	at io.quarkus.builder.BuildContext.run(BuildContext.java:256)
+[ERROR] 	at org.jboss.threads.ContextHandler$1.runWith(ContextHandler.java:18)
+[ERROR] 	at org.jboss.threads.EnhancedQueueExecutor$Task.doRunWith(EnhancedQueueExecutor.java:2516)
+[ERROR] 	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2495)
+[ERROR] 	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1521)
+[ERROR] 	at java.base/java.lang.Thread.run(Thread.java:1583)
+[ERROR] 	at org.jboss.threads.JBossThread.run(JBossThread.java:483)
+[ERROR] Caused by: jakarta.enterprise.inject.AmbiguousResolutionException: Ambiguous dependencies for type tech.kayys.silat.api.event.EventPublisher and qualifiers [@Default]
+[ERROR] 	- injection target: tech.kayys.silat.scheduler.DefaultWorkflowScheduler#eventPublisher
+[ERROR] 	- declared on CLASS bean [types=[tech.kayys.silat.scheduler.DefaultWorkflowScheduler, tech.kayys.silat.scheduler.WorkflowScheduler, java.lang.Object], qualifiers=[@Default, @Any], target=tech.kayys.silat.scheduler.DefaultWorkflowScheduler]
+[ERROR] 	- available beans:
+[ERROR] 		- CLASS bean [types=[tech.kayys.silat.kafka.KafkaEventPublisher, tech.kayys.silat.api.event.EventPublisher, java.lang.Object], qualifiers=[@Default, @Any], target=tech.kayys.silat.kafka.KafkaEventPublisher]
+[ERROR] 		- CLASS bean [types=[tech.kayys.silat.registry.EventPublisher, tech.kayys.silat.api.event.EventPublisher, java.lang.Object], qualifiers=[@Default, @Any], target=tech.kayys.silat.registry.EventPublisher]
+[ERROR] 	at io.quarkus.arc.processor.Beans.resolveInjectionPoint(Beans.java:554)
+[ERROR] 	at io.quarkus.arc.processor.BeanInfo.init(BeanInfo.java:667)
+[ERROR] 	at io.quarkus.arc.processor.BeanDeployment.init(BeanDeployment.java:323)
+[ERROR] 	... 11 more
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
+[ERROR] 
+[ERROR] After correcting the problems, you can resume the build with the command
+[ERROR]   mvn <args> -rf :silat-engine

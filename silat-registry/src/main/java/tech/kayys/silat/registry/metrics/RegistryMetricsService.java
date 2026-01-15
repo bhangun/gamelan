@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -29,30 +28,30 @@ public class RegistryMetricsService {
 
     public void initialize(Supplier<Integer> executorCountSupplier) {
         registrationCounter = Counter.builder("executor.registrations")
-            .description("Number of executor registrations")
-            .register(meterRegistry);
+                .description("Number of executor registrations")
+                .register(meterRegistry);
 
         unregistrationCounter = Counter.builder("executor.unregistrations")
-            .description("Number of executor unregistrations")
-            .register(meterRegistry);
+                .description("Number of executor unregistrations")
+                .register(meterRegistry);
 
         heartbeatCounter = Counter.builder("executor.heartbeats")
-            .description("Number of executor heartbeats received")
-            .register(meterRegistry);
+                .description("Number of executor heartbeats received")
+                .register(meterRegistry);
 
         selectionCounter = Counter.builder("executor.selections")
-            .description("Number of executor selections made")
-            .register(meterRegistry);
+                .description("Number of executor selections made")
+                .register(meterRegistry);
 
         selectionTimer = Timer.builder("executor.selection.duration")
-            .description("Time taken to select an executor")
-            .register(meterRegistry);
+                .description("Time taken to select an executor")
+                .register(meterRegistry);
 
         // Create gauge that samples the executor count dynamically
         executorCount = new AtomicInteger(0);
-        Gauge.builder("executor.count")
-            .description("Current number of registered executors")
-            .register(meterRegistry, executorCount, value -> executorCountSupplier.get());
+        Gauge.builder("executor.count", executorCount, Number::doubleValue)
+                .description("Current number of registered executors")
+                .register(meterRegistry);
     }
 
     public void incrementRegistration() {

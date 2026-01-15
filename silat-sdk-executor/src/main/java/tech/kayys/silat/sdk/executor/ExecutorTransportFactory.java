@@ -7,20 +7,20 @@ package tech.kayys.silat.sdk.executor;
 public class ExecutorTransportFactory {
 
     @jakarta.inject.Inject
-    GrpcExecutorTransport grpcTransport;
+    jakarta.enterprise.inject.Instance<ExecutorTransport> availableTransports;
 
-    @jakarta.inject.Inject
-    KafkaExecutorTransport kafkaTransport;
+    @org.eclipse.microprofile.config.inject.ConfigProperty(name = "silat.executor.transport", defaultValue = "GRPC")
+    String transportType;
 
     public ExecutorTransport createTransport() {
-        String transportType = System.getenv()
-                .getOrDefault("EXECUTOR_TRANSPORT", "GRPC");
+        for (ExecutorTransport transport : availableTransports) {
+            if (transport.getCommunicationType().name().equalsIgnoreCase(transportType)) {
+                return transport;
+            }
+        }
 
-        return switch (transportType.toUpperCase()) {
-            case "KAFKA" -> kafkaTransport;
-            case "GRPC" -> grpcTransport;
-            default -> throw new IllegalArgumentException(
-                    "Unknown transport: " + transportType);
-        };
+        throw new IllegalArgumentException(
+                "Unknown or unavailable transport: " + transportType + ". Available: " +
+                        availableTransports.stream().map(t -> t.getCommunicationType().name()).toList());
     }
 }

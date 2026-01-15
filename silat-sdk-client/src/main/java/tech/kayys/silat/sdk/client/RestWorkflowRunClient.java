@@ -16,26 +16,91 @@ public class RestWorkflowRunClient implements WorkflowRunClient {
     private final io.vertx.mutiny.core.Vertx vertx;
     private final io.vertx.mutiny.ext.web.client.WebClient webClient;
 
-    RestWorkflowRunClient(SilatClientConfig config) {
+    RestWorkflowRunClient(SilatClientConfig config, io.vertx.mutiny.core.Vertx vertx) {
         this.config = config;
-        this.vertx = io.vertx.mutiny.core.Vertx.vertx();
-        this.webClient = io.vertx.mutiny.ext.web.client.WebClient.create(vertx);
+        this.vertx = vertx;
+
+        System.out.println("RestWorkflowRunClient initialized with endpoint: '" + config.endpoint() + "'");
+        System.out.println("Host: " + getHostFromEndpoint(config.endpoint()));
+        System.out.println("Port: " + getPortFromEndpoint(config.endpoint()));
+
+        io.vertx.ext.web.client.WebClientOptions options = new io.vertx.ext.web.client.WebClientOptions()
+                .setDefaultHost(getHostFromEndpoint(config.endpoint()))
+                .setDefaultPort(getPortFromEndpoint(config.endpoint()))
+                .setSsl(config.endpoint().toLowerCase().startsWith("https"));
+
+        this.webClient = io.vertx.mutiny.ext.web.client.WebClient.create(vertx, options);
+    }
+
+    private String getHostFromEndpoint(String endpoint) {
+        if (endpoint.startsWith("http")) {
+            return java.net.URI.create(endpoint).getHost();
+        }
+        int colonIndex = endpoint.indexOf(':');
+        if (colonIndex != -1) {
+            return endpoint.substring(0, colonIndex);
+        }
+        return endpoint;
+    }
+
+    private int getPortFromEndpoint(String endpoint) {
+        if (endpoint.startsWith("http")) {
+            java.net.URI uri = java.net.URI.create(endpoint);
+            int port = uri.getPort();
+            if (port == -1) {
+                return uri.getScheme().equals("https") ? 443 : 80;
+            }
+            return port;
+        }
+        int colonIndex = endpoint.indexOf(':');
+        if (colonIndex != -1) {
+            return Integer.parseInt(endpoint.substring(colonIndex + 1));
+        }
+        return 80;
     }
 
     @Override
     public Uni<RunResponse> createRun(CreateRunRequest request) {
-        return webClient.post(config.endpoint() + "/api/v1/runs")
+        return webClient.post("/api/v1/workflow-runs")
                 .putHeader("X-Tenant-ID", config.tenantId())
-                .putHeader("Authorization", "Bearer " + config.apiKey())
+                // .putHeader("Authorization", "Bearer " + config.apiKey())
                 .sendJson(request)
-                .map(response -> response.bodyAsJson(RunResponse.class));
+                .map(response -> {
+                    System.out.println("RestWorkflowRunClient: createRun response status: " + response.statusCode());
+                    System.out.println("RestWorkflowRunClient: createRun response body: " + response.bodyAsString());
+
+                    io.vertx.core.json.JsonObject json = response.bodyAsJsonObject();
+                    if (json == null) {
+                        System.out.println("RestWorkflowRunClient: JSON is null!");
+                        return null;
+                    }
+
+                    Object idObj = json.getValue("id");
+                    String runId = (idObj instanceof io.vertx.core.json.JsonObject)
+                            ? ((io.vertx.core.json.JsonObject) idObj).getString("value")
+                            : (String) idObj;
+
+                    Object defIdObj = json.getValue("definitionId");
+                    String workflowId = (defIdObj instanceof io.vertx.core.json.JsonObject)
+                            ? ((io.vertx.core.json.JsonObject) defIdObj).getString("value")
+                            : (json.getString("workflowId") != null ? json.getString("workflowId") : (String) defIdObj);
+
+                    RunResponse runResponse = RunResponse.builder()
+                            .runId(runId)
+                            .status(json.getString("status"))
+                            .workflowId(workflowId)
+                            .build();
+
+                    System.out.println("RestWorkflowRunClient: Mapped RunResponse: id=" + runResponse.getRunId());
+                    return runResponse;
+                });
     }
 
     // Implement other methods similarly...
 
     @Override
     public Uni<RunResponse> getRun(String runId) {
-        return webClient.get(config.endpoint() + "/api/v1/runs/" + runId)
+        return webClient.get("/api/v1/workflow-runs/" + runId)
                 .putHeader("X-Tenant-ID", config.tenantId())
                 .putHeader("Authorization", "Bearer " + config.apiKey())
                 .send()
@@ -46,7 +111,11 @@ public class RestWorkflowRunClient implements WorkflowRunClient {
 
     @Override
     public Uni<RunResponse> startRun(String runId) {
-        return null;
+        return webClient.post("/api/v1/workflow-runs/" + runId + "/start")
+                .putHeader("X-Tenant-ID", config.tenantId())
+                .putHeader("Authorization", "Bearer " + config.apiKey())
+                .send()
+                .map(response -> response.bodyAsJson(RunResponse.class));
     }
 
     @Override
@@ -71,7 +140,11 @@ public class RestWorkflowRunClient implements WorkflowRunClient {
 
     @Override
     public Uni<ExecutionHistory> getExecutionHistory(String runId) {
-        return null;
+        return webClient.get("/api/v1/workflow-runs/" + runId + "/history")
+                .putHeader("X-Tenant-ID", config.tenantId())
+                .putHeader("Authorization", "Bearer " + config.apiKey())
+                .send()
+                .map(response -> response.bodyAsJson(ExecutionHistory.class));
     }
 
     @Override

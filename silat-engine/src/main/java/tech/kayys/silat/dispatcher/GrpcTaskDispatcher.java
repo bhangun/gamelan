@@ -11,14 +11,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.grpc.stub.StreamObserver;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tech.kayys.silat.execution.NodeExecutionTask;
+import tech.kayys.silat.model.CommunicationType;
 import tech.kayys.silat.model.ExecutorInfo;
 
 @ApplicationScoped
-public class GrpcTaskDispatcher {
+public class GrpcTaskDispatcher implements TaskDispatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcTaskDispatcher.class);
 
@@ -27,23 +31,56 @@ public class GrpcTaskDispatcher {
     @Inject
     GrpcClientFactory grpcClientFactory;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
+    private Counter successCounter;
+    private Counter failureCounter;
+    private Timer dispatchTimer;
+
+    @jakarta.annotation.PostConstruct
+    void initMetrics() {
+        this.successCounter = Counter.builder("silat.dispatcher.grpc.success")
+                .description("Number of successful gRPC dispatches")
+                .register(meterRegistry);
+        this.failureCounter = Counter.builder("silat.dispatcher.grpc.failure")
+                .description("Number of failed gRPC dispatches")
+                .register(meterRegistry);
+        this.dispatchTimer = Timer.builder("silat.dispatcher.grpc.duration")
+                .description("gRPC dispatch duration")
+                .register(meterRegistry);
+    }
+
+    @Override
     public Uni<Void> dispatch(NodeExecutionTask task, ExecutorInfo executor) {
 
         Objects.requireNonNull(task, "NodeExecutionTask cannot be null");
         Objects.requireNonNull(executor, "ExecutorInfo cannot be null");
 
         if (executor.endpoint() == null || executor.endpoint().isBlank()) {
+            failureCounter.increment();
             return Uni.createFrom().failure(
                     new IllegalArgumentException("Executor gRPC endpoint is missing"));
         }
 
         return Uni.createFrom().item(buildRequest(task, executor))
-                .flatMap(req -> send(req, executor))
-                .onFailure().invoke(t -> LOG.error("gRPC dispatch failed: run={}, node={}, executor={}",
-                        task.runId().value(),
-                        task.nodeId().value(),
-                        executor.executorId(),
-                        t))
+                .flatMap(req -> {
+                    Timer.Sample sample = Timer.start(meterRegistry);
+                    return send(req, executor)
+                            .invoke(() -> {
+                                sample.stop(dispatchTimer);
+                                successCounter.increment();
+                            })
+                            .onFailure().invoke(t -> {
+                                sample.stop(dispatchTimer);
+                                failureCounter.increment();
+                                LOG.error("gRPC dispatch failed: run={}, node={}, executor={}",
+                                        task.runId().value(),
+                                        task.nodeId().value(),
+                                        executor.executorId(),
+                                        t);
+                            });
+                })
                 .replaceWithVoid();
     }
 
@@ -122,5 +159,23 @@ public class GrpcTaskDispatcher {
         return executor.timeout() != null
                 ? executor.timeout()
                 : DEFAULT_TIMEOUT;
+    }
+
+    @Override
+    public boolean supports(ExecutorInfo executor) {
+        return executor != null && executor.communicationType() == CommunicationType.GRPC;
+    }
+
+    @Override
+    public Uni<Boolean> isHealthy() {
+        // For gRPC, we could implement a health check call, but for now just check if
+        // factory is available
+        return Uni.createFrom().item(grpcClientFactory != null);
+    }
+
+    @Override
+    public int getPriority() {
+        // gRPC is efficient for remote calls, high priority
+        return 8;
     }
 }

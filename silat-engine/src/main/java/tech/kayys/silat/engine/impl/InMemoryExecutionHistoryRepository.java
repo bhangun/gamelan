@@ -34,6 +34,13 @@ public class InMemoryExecutionHistoryRepository implements ExecutionHistoryRepos
     }
 
     @Override
+    public Uni<Void> appendEvents(WorkflowRunId runId, List<ExecutionEvent> runEvents) {
+        events.computeIfAbsent(runId, k -> new ArrayList<>())
+                .addAll(runEvents);
+        return Uni.createFrom().voidItem();
+    }
+
+    @Override
     public Uni<ExecutionHistory> load(WorkflowRunId runId) {
         List<ExecutionEvent> runEvents = events.getOrDefault(runId, List.of());
         return Uni.createFrom().item(

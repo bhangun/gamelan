@@ -8,6 +8,7 @@ import java.util.Map;
 
 import io.smallrye.mutiny.Uni;
 import tech.kayys.silat.model.WorkflowDefinition;
+import tech.kayys.silat.model.WorkflowDefinitionId;
 import tech.kayys.silat.model.TenantId;
 import tech.kayys.silat.model.WorkflowMetadata;
 import tech.kayys.silat.model.NodeDefinition;
@@ -91,7 +92,7 @@ public class WorkflowDefinitionBuilder {
                 "sdk-client");
 
         WorkflowDefinition request = new WorkflowDefinition(
-                null, // id
+                WorkflowDefinitionId.of(name),
                 TenantId.of(tenantId),
                 name,
                 version,

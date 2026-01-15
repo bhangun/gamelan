@@ -33,6 +33,11 @@ public class DefaultPluginService implements PluginService {
     }
 
     @Override
+    public Uni<Void> registerPlugin(Plugin plugin) {
+        return pluginManager.registerPlugin(plugin);
+    }
+
+    @Override
     public Uni<Void> startPlugin(String pluginId) {
         return pluginManager.startPlugin(pluginId);
     }

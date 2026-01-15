@@ -8,45 +8,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * ============================================================================
  * SILAT CLIENT SDK
  * ============================================================================
- *
- * Fluent, type-safe API for interacting with the Silat workflow engine.
- * Supports both REST and gRPC transports.
- *
- * Example Usage:
- * ```java
- * SilatClient client = SilatClient.builder()
- * .restEndpoint("http://localhost:8080")
- * .tenantId("acme-corp")
- * .apiKey("secret-key")
- * .build();
- *
- * WorkflowRun run = client.workflows()
- * .create("order-processing")
- * .input("orderId", "ORDER-123")
- * .input("customerId", "CUST-456")
- * .label("environment", "production")
- * .execute()
- * .await().indefinitely();
- *
- * client.runs()
- * .get(run.runId())
- * .await().indefinitely();
- * ```
  */
-public class SilatClient {
+public class SilatClient implements AutoCloseable {
 
     private final SilatClientConfig config;
+    private final io.vertx.mutiny.core.Vertx vertx;
     private final WorkflowRunClient runClient;
     private final WorkflowDefinitionClient definitionClient;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     private SilatClient(SilatClientConfig config) {
         this.config = config;
+        this.vertx = io.vertx.mutiny.core.Vertx.vertx();
 
         // Initialize transport-specific clients
         if (config.transport() == TransportType.REST) {
-            this.runClient = new RestWorkflowRunClient(config);
-            this.definitionClient = new RestWorkflowDefinitionClient(config);
+            this.runClient = new RestWorkflowRunClient(config, vertx);
+            this.definitionClient = new RestWorkflowDefinitionClient(config, vertx);
         } else if (config.transport() == TransportType.GRPC) {
             this.runClient = new GrpcWorkflowRunClient(config);
             this.definitionClient = new GrpcWorkflowDefinitionClient(config);
@@ -109,7 +87,6 @@ public class SilatClient {
         }
 
         public SilatClient build() {
-            // Use the SilatClientConfig builder to create the config with validation
             SilatClientConfig config = SilatClientConfig.builder()
                     .endpoint(endpoint)
                     .tenantId(tenantId)
@@ -150,24 +127,17 @@ public class SilatClient {
     /**
      * Close the client and release resources
      */
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                if (runClient != null) {
-                    runClient.close();
-                }
-            } catch (Exception e) {
-                // Log error but don't throw to avoid masking other potential issues
-                System.err.println("Error closing run client: " + e.getMessage());
+            if (runClient != null) {
+                runClient.close();
             }
-
-            try {
-                if (definitionClient != null) {
-                    definitionClient.close();
-                }
-            } catch (Exception e) {
-                // Log error but don't throw to avoid masking other potential issues
-                System.err.println("Error closing definition client: " + e.getMessage());
+            if (definitionClient != null) {
+                definitionClient.close();
+            }
+            if (vertx != null) {
+                vertx.close();
             }
         }
     }

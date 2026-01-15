@@ -2,16 +2,10 @@ package tech.kayys.silat.engine.impl;
 
 import java.util.List;
 import java.util.Map;
-import java.time.Clock;
-
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tech.kayys.silat.engine.ExecutionEventTypes;
-import tech.kayys.silat.engine.impl.DefaultCallbackService;
-import tech.kayys.silat.engine.impl.DefaultExecutionTokenService;
-import tech.kayys.silat.engine.impl.InMemoryExecutionHistoryRepository;
-import tech.kayys.silat.engine.impl.StateTransitionValidator;
 import tech.kayys.silat.execution.ExecutionHistory;
 import tech.kayys.silat.execution.ExternalSignal;
 import tech.kayys.silat.execution.NodeExecutionResult;
@@ -29,8 +23,6 @@ import tech.kayys.silat.model.WorkflowDefinitionId;
 import tech.kayys.silat.model.WorkflowRun;
 import tech.kayys.silat.model.WorkflowRunId;
 import tech.kayys.silat.model.WorkflowRunSnapshot;
-import tech.kayys.silat.repository.WorkflowRunRepository;
-import tech.kayys.silat.repository.PostgresWorkflowRunRepository;
 
 /**
  * DefaultWorkflowRunManager
@@ -42,6 +34,11 @@ import tech.kayys.silat.repository.PostgresWorkflowRunRepository;
  */
 @ApplicationScoped
 public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.WorkflowRunManager {
+
+    @Inject
+    io.vertx.mutiny.core.eventbus.EventBus eventBus;
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(DefaultWorkflowRunManager.class);
 
     @Inject
     tech.kayys.silat.api.repository.WorkflowRunRepository runRepository;
@@ -57,13 +54,30 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
     tech.kayys.silat.saga.impl.CompensationCoordinator compensationCoordinator;
     @Inject
     tech.kayys.silat.engine.SystemClock clock;
+    @Inject
+    tech.kayys.silat.workflow.WorkflowDefinitionRegistry definitionRegistry;
 
     // ==================== LIFECYCLE ====================
 
     @Override
     public Uni<WorkflowRun> createRun(CreateRunRequest request, TenantId tenantId) {
-        return Uni.createFrom()
-                .failure(new UnsupportedOperationException("Requires WorkflowDefinitionRegistry to create run"));
+        return definitionRegistry.getDefinition(new WorkflowDefinitionId(request.getWorkflowId()), tenantId)
+                .flatMap(definition -> {
+                    WorkflowRun run = WorkflowRun.create(tenantId, definition, request.getInputs());
+                    return runRepository.persist(run)
+                            .flatMap(persistedRun -> historyRepository.appendEvents(persistedRun.getId(),
+                                    persistedRun.getUncommittedEvents())
+                                    .replaceWith(persistedRun))
+                            .flatMap(persistedRun -> {
+                                if (request.isAutoStart()) {
+                                    return startRun(persistedRun.getId(), tenantId);
+                                } else {
+                                    eventBus.publish("silat.workflow.run.created",
+                                            io.vertx.core.json.JsonObject.mapFrom(persistedRun.createSnapshot()));
+                                    return Uni.createFrom().item(persistedRun);
+                                }
+                            });
+                });
     }
 
     @Override
@@ -71,11 +85,17 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
         return runRepository.withLock(runId, run -> {
             run.start();
             return runRepository.update(run)
-                    .invoke(() -> historyRepository.append(
+                    .call(() -> historyRepository.append(
                             runId,
                             ExecutionEventTypes.STATUS_CHANGED,
                             RunStatus.RUNNING.name(),
-                            Map.of()));
+                            Map.of()))
+                    .invoke(() -> {
+                        LOG.error("DefaultWorkflowRunManager SEVERE LOG: Publishing updated event for {}",
+                                runId.value());
+                        eventBus.publish("silat.runs.v1.updated", runId.value());
+                        LOG.error("DefaultWorkflowRunManager SEVERE LOG: Event published for {}", runId.value());
+                    });
         });
     }
 
@@ -88,7 +108,7 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
         return runRepository.withLock(runId, run -> {
             run.suspend(reason, waitingOnNodeId);
             return runRepository.update(run)
-                    .invoke(() -> historyRepository.append(
+                    .call(() -> historyRepository.append(
                             runId,
                             ExecutionEventTypes.STATUS_CHANGED,
                             RunStatus.SUSPENDED.name(),
@@ -104,7 +124,7 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
         return runRepository.withLock(runId, run -> {
             run.resume(resumeData);
             return runRepository.update(run)
-                    .invoke(() -> historyRepository.append(
+                    .call(() -> historyRepository.append(
                             runId,
                             ExecutionEventTypes.STATUS_CHANGED,
                             RunStatus.RUNNING.name(),
@@ -120,7 +140,7 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
         return runRepository.withLock(runId, run -> {
             run.cancel(reason);
             return runRepository.update(run)
-                    .invoke(() -> historyRepository.append(
+                    .call(() -> historyRepository.append(
                             runId,
                             ExecutionEventTypes.STATUS_CHANGED,
                             RunStatus.CANCELLED.name(),
@@ -136,7 +156,7 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
         return runRepository.withLock(runId, run -> {
             run.complete(outputs);
             return runRepository.update(run)
-                    .invoke(() -> historyRepository.append(
+                    .call(() -> historyRepository.append(
                             runId,
                             ExecutionEventTypes.RUN_COMPLETED,
                             "Run completed",
@@ -158,16 +178,15 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
 
             run.fail(error);
 
-            historyRepository.append(
+            return historyRepository.append(
                     runId,
                     ExecutionEventTypes.RUN_FAILED,
                     error.message(),
-                    Map.of("errorCode", error.code()));
-
-            return compensationCoordinator
-                    .compensate(run)
-                    .replaceWith(run)
-                    .flatMap(r -> runRepository.update(r));
+                    Map.of("errorCode", error.code()))
+                    .chain(() -> compensationCoordinator
+                            .compensate(run)
+                            .replaceWith(run)
+                            .flatMap(r -> runRepository.update(r)));
         });
     }
 
@@ -200,10 +219,14 @@ public class DefaultWorkflowRunManager implements tech.kayys.silat.api.engine.Wo
                                     if (result.status() == tech.kayys.silat.execution.NodeExecutionStatus.COMPLETED) {
                                         run.completeNode(result.nodeId(), result.attempt(),
                                                 result.output() != null ? result.output() : Map.of());
-                                        return runRepository.update(run).replaceWithVoid();
+                                        return runRepository.update(run)
+                                                .invoke(() -> eventBus.publish("silat.runs.v1.updated", runId.value()))
+                                                .replaceWithVoid();
                                     } else {
                                         run.failNode(result.nodeId(), result.attempt(), result.error());
-                                        return runRepository.update(run).replaceWithVoid();
+                                        return runRepository.update(run)
+                                                .invoke(() -> eventBus.publish("silat.runs.v1.updated", runId.value()))
+                                                .replaceWithVoid();
                                     }
                                 });
                     });

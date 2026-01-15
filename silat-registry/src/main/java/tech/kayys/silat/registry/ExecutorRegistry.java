@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -23,6 +22,8 @@ import tech.kayys.silat.model.ExecutorInfo;
 import tech.kayys.silat.model.NodeId;
 import tech.kayys.silat.registry.metrics.RegistryMetricsService;
 import tech.kayys.silat.registry.persistence.ExecutorRepository;
+import tech.kayys.silat.plugin.impl.PluginManager;
+import tech.kayys.silat.plugin.discovery.ServiceDiscoveryPlugin;
 
 /**
  * Executor Registry - Manages executor discovery and health monitoring
@@ -38,7 +39,8 @@ public class ExecutorRegistry implements ExecutorRegistryService {
     // In-memory registry (could be backed by Consul, K8s, etc.)
     private final Map<String, ExecutorInfo> executors = new ConcurrentHashMap<>();
     private final Map<String, ExecutorHealthInfo> healthInfo = new ConcurrentHashMap<>();
-    private final Map<NodeId, List<String>> nodeExecutorCache = new ConcurrentHashMap<>(); // Cache for node-executor mapping
+    private final Map<NodeId, List<String>> nodeExecutorCache = new ConcurrentHashMap<>(); // Cache for node-executor
+                                                                                           // mapping
 
     // Selection strategies
     private final RoundRobinSelectionStrategy roundRobinStrategy = new RoundRobinSelectionStrategy();
@@ -53,6 +55,16 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
     @Inject
     RegistryMetricsService metricsService;
+
+    @Inject
+    PluginManager pluginManager;
+
+    // Initialize metrics service after injection
+    @jakarta.annotation.PostConstruct
+    void initializeMetrics() {
+        // Initialize metrics service with a supplier that returns the current executor count
+        metricsService.initialize(() -> executors.size());
+    }
 
     @Override
     public Uni<Optional<ExecutorInfo>> getExecutorForNode(NodeId nodeId) {
@@ -77,11 +89,11 @@ public class ExecutorRegistry implements ExecutorRegistryService {
         Instant threshold = Instant.now().minus(HEALTH_THRESHOLD);
 
         List<ExecutorInfo> healthyExecutors = executors.values().stream()
-            .filter(executor -> {
-                ExecutorHealthInfo health = healthInfo.get(executor.executorId());
-                return health != null && health.lastHeartbeat.isAfter(threshold);
-            })
-            .collect(Collectors.toList());
+                .filter(executor -> {
+                    ExecutorHealthInfo health = healthInfo.get(executor.executorId());
+                    return health != null && health.lastHeartbeat.isAfter(threshold);
+                })
+                .collect(Collectors.toList());
 
         return Uni.createFrom().item(healthyExecutors);
     }
@@ -95,11 +107,11 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
         // Persist to storage
         return executorRepository.save(executor)
-            .invoke(() -> {
-                LOG.info("Registered executor: {} (type: {}, communication: {})",
-                        executor.executorId(), executor.executorType(), executor.communicationType());
-                metricsService.incrementRegistration();
-            });
+                .invoke(() -> {
+                    LOG.info("Registered executor: {} (type: {}, communication: {})",
+                            executor.executorId(), executor.executorType(), executor.communicationType());
+                    metricsService.incrementRegistration();
+                });
     }
 
     @Override
@@ -109,10 +121,10 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
         // Remove from persistent storage
         return executorRepository.delete(executorId)
-            .invoke(() -> {
-                LOG.info("Unregistered executor: {}", executorId);
-                metricsService.incrementUnregistration();
-            });
+                .invoke(() -> {
+                    LOG.info("Unregistered executor: {}", executorId);
+                    metricsService.incrementUnregistration();
+                });
     }
 
     @Override
@@ -147,29 +159,65 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
     @Override
     public Uni<Optional<ExecutorInfo>> getExecutorById(String executorId) {
-        ExecutorInfo cached = executors.get(executorId);
-        if (cached != null) {
-            return Uni.createFrom().item(Optional.of(cached));
-        }
+        return Uni.createFrom().item(() -> {
+            ExecutorInfo cached = executors.get(executorId);
+            if (cached != null) {
+                return applyServiceDiscovery(cached);
+            }
+            return null;
+        })
+                .flatMap(cached -> {
+                    if (cached != null) {
+                        return Uni.createFrom().item(Optional.of(cached));
+                    }
+                    // If not in cache, try to load from persistent storage
+                    return executorRepository.findById(executorId)
+                            .invoke(executorOpt -> executorOpt
+                                    .ifPresent(executor -> executors.put(executorId, executor)))
+                            .map(opt -> opt.map(this::applyServiceDiscovery));
+                });
+    }
 
-        // If not in cache, try to load from persistent storage
-        return executorRepository.findById(executorId)
-            .invoke(executorOpt -> executorOpt.ifPresent(executor -> executors.put(executorId, executor)));
+    private ExecutorInfo applyServiceDiscovery(ExecutorInfo executor) {
+        if (pluginManager == null)
+            return executor;
+
+        Optional<ServiceDiscoveryPlugin> discoveryPlugin = pluginManager.getAllPlugins().stream()
+                .filter(p -> p instanceof ServiceDiscoveryPlugin)
+                .map(p -> (ServiceDiscoveryPlugin) p)
+                .findFirst();
+
+        if (discoveryPlugin.isPresent()) {
+            Optional<String> discoveredEndpoint = discoveryPlugin.get().discoverEndpoint(executor.executorId());
+            if (discoveredEndpoint.isPresent()) {
+                LOG.debug("Service Discovery: Overriding endpoint for {} from {} to {}",
+                        executor.executorId(), executor.endpoint(), discoveredEndpoint.get());
+
+                return new ExecutorInfo(
+                        executor.executorId(),
+                        executor.executorType(),
+                        executor.communicationType(),
+                        discoveredEndpoint.get(),
+                        executor.timeout(),
+                        executor.metadata());
+            }
+        }
+        return executor;
     }
 
     @Override
     public Uni<List<ExecutorInfo>> getExecutorsByType(String executorType) {
         List<ExecutorInfo> filtered = executors.values().stream()
-            .filter(executor -> executor.executorType().equals(executorType))
-            .collect(Collectors.toList());
+                .filter(executor -> executor.executorType().equals(executorType))
+                .collect(Collectors.toList());
         return Uni.createFrom().item(filtered);
     }
 
     @Override
     public Uni<List<ExecutorInfo>> getExecutorsByCommunicationType(CommunicationType communicationType) {
         List<ExecutorInfo> filtered = executors.values().stream()
-            .filter(executor -> executor.communicationType() == communicationType)
-            .collect(Collectors.toList());
+                .filter(executor -> executor.communicationType() == communicationType)
+                .collect(Collectors.toList());
         return Uni.createFrom().item(filtered);
     }
 
@@ -179,18 +227,17 @@ public class ExecutorRegistry implements ExecutorRegistryService {
         if (executor != null) {
             // Create a new executor with updated metadata
             ExecutorInfo updatedExecutor = new ExecutorInfo(
-                executor.executorId(),
-                executor.executorType(),
-                executor.communicationType(),
-                executor.endpoint(),
-                executor.timeout(),
-                metadata
-            );
+                    executor.executorId(),
+                    executor.executorType(),
+                    executor.communicationType(),
+                    executor.endpoint(),
+                    executor.timeout(),
+                    metadata);
             executors.put(executorId, updatedExecutor);
 
             // Update in persistent storage
             return executorRepository.save(updatedExecutor)
-                .invoke(() -> LOG.debug("Updated metadata for executor: {}", executorId));
+                    .invoke(() -> LOG.debug("Updated metadata for executor: {}", executorId));
         }
         return Uni.createFrom().voidItem();
     }
@@ -227,13 +274,12 @@ public class ExecutorRegistry implements ExecutorRegistryService {
         int unhealthyCount = totalExecutors - healthyCount;
 
         ExecutorStatistics stats = new ExecutorStatistics(
-            totalExecutors,
-            healthyCount,
-            unhealthyCount,
-            executorsByType,
-            executorsByCommType,
-            System.currentTimeMillis()
-        );
+                totalExecutors,
+                healthyCount,
+                unhealthyCount,
+                executorsByType,
+                executorsByCommType,
+                System.currentTimeMillis());
 
         return Uni.createFrom().item(stats);
     }
@@ -243,8 +289,8 @@ public class ExecutorRegistry implements ExecutorRegistryService {
      */
     private Optional<ExecutorInfo> selectBestExecutorForNode(NodeId nodeId) {
         List<ExecutorInfo> availableExecutors = executors.values().stream()
-            .filter(this::isHealthyNow)
-            .collect(Collectors.toList());
+                .filter(this::isHealthyNow)
+                .collect(Collectors.toList());
 
         if (availableExecutors.isEmpty()) {
             LOG.warn("No healthy executors available for node: {}", nodeId.value());
@@ -256,7 +302,7 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
         if (selected.isPresent()) {
             LOG.debug("Selected executor {} for node {} using {} strategy",
-                     selected.get().executorId(), nodeId.value(), defaultStrategy.getName());
+                    selected.get().executorId(), nodeId.value(), defaultStrategy.getName());
         } else {
             LOG.warn("No executor could be selected for node: {}", nodeId.value());
         }
@@ -297,18 +343,16 @@ public class ExecutorRegistry implements ExecutorRegistryService {
      */
     public Uni<Void> loadFromPersistentStorage() {
         return executorRepository.findAll()
-            .invoke(persistentExecutors -> {
-                for (ExecutorInfo executor : persistentExecutors) {
-                    executors.put(executor.executorId(), executor);
-                    // Initialize health info for loaded executors
-                    if (!healthInfo.containsKey(executor.executorId())) {
-                        healthInfo.put(executor.executorId(), new ExecutorHealthInfo(executor.executorId()));
+                .invoke(persistentExecutors -> {
+                    for (ExecutorInfo executor : persistentExecutors) {
+                        executors.put(executor.executorId(), executor);
+                        // Initialize health info for loaded executors
+                        if (!healthInfo.containsKey(executor.executorId())) {
+                            healthInfo.put(executor.executorId(), new ExecutorHealthInfo(executor.executorId()));
+                        }
                     }
-                }
-                LOG.info("Loaded {} executors from persistent storage", persistentExecutors.size());
-
-                // Initialize metrics service with executor count supplier
-                metricsService.initialize(() -> executors.size());
-            });
+                    LOG.info("Loaded {} executors from persistent storage", persistentExecutors.size());
+                })
+                .replaceWithVoid();
     }
 }

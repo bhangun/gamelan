@@ -106,6 +106,51 @@ public class PluginManager {
     }
 
     /**
+     * Register a plugin instance directly (programmatic registration)
+     */
+    public Uni<Void> registerPlugin(Plugin plugin) {
+        return Uni.createFrom().item(() -> {
+            try {
+                PluginMetadata metadata = plugin.getMetadata();
+                LOG.info("Registering plugin: {} v{}", metadata.name(), metadata.version());
+
+                if (registry.isRegistered(metadata.id())) {
+                    throw new RuntimeException("Plugin already registered: " + metadata.id());
+                }
+
+                // Create plugin context
+                String pluginDataDir = dataDirectory + "/" + metadata.id();
+                createDirectoryIfNotExists(Paths.get(pluginDataDir));
+
+                PluginContext context = new DefaultPluginContext(
+                        metadata,
+                        LoggerFactory.getLogger("plugin." + metadata.id()),
+                        metadata.properties(),
+                        serviceRegistry,
+                        eventBus,
+                        pluginDataDir);
+
+                // Initialize plugin
+                plugin.initialize(context);
+
+                // Register plugin
+                tech.kayys.silat.plugin.impl.PluginRegistry.LoadedPlugin loadedPlugin = new tech.kayys.silat.plugin.impl.PluginRegistry.LoadedPlugin(
+                        plugin, metadata, null); // No dedicated classloader for programmatic plugins
+                loadedPlugin.setState(tech.kayys.silat.plugin.impl.PluginRegistry.PluginState.INITIALIZED);
+                registry.register(loadedPlugin);
+
+                return null;
+            } catch (PluginException e) {
+                LOG.error("Failed to initialize registered plugin", e);
+                throw new RuntimeException("Failed to initialize registered plugin: " + e.getMessage(), e);
+            } catch (Exception e) {
+                LOG.error("Failed to register plugin", e);
+                throw new RuntimeException("Failed to register plugin: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
      * Start a plugin
      */
     public Uni<Void> startPlugin(String pluginId) {
@@ -254,6 +299,14 @@ public class PluginManager {
      */
     public void setDataDirectory(String dataDirectory) {
         this.dataDirectory = dataDirectory;
+    }
+
+
+    /**
+     * Get the plugin registry (for internal use)
+     */
+    public PluginRegistry getRegistry() {
+        return registry;
     }
 
     private void createDirectoryIfNotExists(Path dir) {

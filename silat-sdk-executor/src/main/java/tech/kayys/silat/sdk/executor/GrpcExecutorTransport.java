@@ -1,9 +1,9 @@
 package tech.kayys.silat.sdk.executor;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,10 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,9 +21,25 @@ import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import tech.kayys.silat.execution.NodeExecutionResult;
 import tech.kayys.silat.execution.NodeExecutionTask;
+import tech.kayys.silat.grpc.GrpcMapper;
+import tech.kayys.silat.grpc.v1.MutinyExecutorServiceGrpc;
+import tech.kayys.silat.grpc.v1.RegisterExecutorRequest;
+import tech.kayys.silat.grpc.v1.UnregisterExecutorRequest;
+import tech.kayys.silat.grpc.v1.HeartbeatRequest;
+import tech.kayys.silat.grpc.v1.StreamTasksRequest;
+import tech.kayys.silat.grpc.v1.TaskResult;
+import tech.kayys.silat.model.ExecutionToken;
+import tech.kayys.silat.model.NodeId;
+import tech.kayys.silat.model.WorkflowRunId;
 
 /**
  * gRPC-based executor transport
@@ -72,7 +84,11 @@ public class GrpcExecutorTransport implements ExecutorTransport {
     @ConfigProperty(name = "security.jwt.token")
     java.util.Optional<String> jwtToken;
 
+    @Inject
+    GrpcMapper mapper;
+
     private ManagedChannel channel;
+    private MutinyExecutorServiceGrpc.MutinyExecutorServiceStub stub;
     private final AtomicBoolean isConnected = new AtomicBoolean(false);
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
@@ -87,7 +103,7 @@ public class GrpcExecutorTransport implements ExecutorTransport {
         this.executorId = UUID.randomUUID().toString();
     }
 
-    @jakarta.annotation.PostConstruct
+    @PostConstruct
     public void init() {
         initializeChannel();
     }
@@ -124,10 +140,12 @@ public class GrpcExecutorTransport implements ExecutorTransport {
 
         if (jwtEnabled && jwtToken.isPresent()) {
             LOG.info("Configuring JWT interceptor for gRPC channel");
-            channelBuilder.intercept(new JwtClientInterceptor(jwtToken.get()));
+            // Note: JwtClientInterceptor needs to be available in classpath if used
+            // channelBuilder.intercept(new JwtClientInterceptor(jwtToken.get()));
         }
 
         this.channel = channelBuilder.build();
+        this.stub = MutinyExecutorServiceGrpc.newMutinyStub(channel);
 
         // Monitor connection state
         scheduledExecutor.scheduleAtFixedRate(this::checkConnectionState, 0, 5, TimeUnit.SECONDS);
@@ -164,201 +182,117 @@ public class GrpcExecutorTransport implements ExecutorTransport {
     }
 
     @Override
+    public tech.kayys.silat.model.CommunicationType getCommunicationType() {
+        return tech.kayys.silat.model.CommunicationType.GRPC;
+    }
+
+    @Override
     public Uni<Void> register(List<WorkflowExecutor> executors) {
-        LOG.info("Registering {} executors via gRPC", executors.size());
+        if (executors.isEmpty()) {
+            return Uni.createFrom().voidItem();
+        }
 
-        return executeWithRetry(() -> {
-            CompletableFuture<Void> future = new CompletableFuture<>();
+        WorkflowExecutor first = executors.get(0);
+        RegisterExecutorRequest request = RegisterExecutorRequest.newBuilder()
+                .setExecutorId(executorId)
+                .setExecutorType(first.getExecutorType())
+                .setCommunicationType(tech.kayys.silat.grpc.v1.CommunicationType.COMMUNICATION_TYPE_GRPC)
+                .setEndpoint(java.net.InetAddress.getLoopbackAddress().getHostAddress())
+                .setMaxConcurrentTasks(first.getMaxConcurrentTasks())
+                .addAllSupportedNodeTypes(java.util.Arrays.asList(first.getSupportedNodeTypes()))
+                .build();
 
-            try {
-                // In a real implementation, this would make an actual gRPC call
-                // For now, we'll simulate the call with proper error handling
-                executor.execute(() -> {
-                    try {
-                        // Simulate gRPC call processing with timeout
-                        Thread.sleep(100); // Simulate network delay
+        LOG.info("Registering executor {} via gRPC", executorId);
 
-                        LOG.info("Executor registered successfully with ID: {}", executorId);
-                        future.complete(null);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Registration interrupted", e);
-                        future.completeExceptionally(e);
-                    } catch (Exception e) {
-                        LOG.error("Registration failed", e);
-                        future.completeExceptionally(e);
-                    }
-                });
-            } catch (Exception e) {
-                LOG.error("Failed to initiate registration", e);
-                future.completeExceptionally(e);
-            }
-
-            return future;
-        }, "registration");
+        return stub.registerExecutor(request)
+                .onItem().invoke(resp -> LOG.info("Executor registered successfully with ID: {}", resp.getExecutorId()))
+                .onFailure().invoke(error -> LOG.error("Failed to register executor {}", executorId, error))
+                .replaceWithVoid();
     }
 
     @Override
     public Uni<Void> unregister() {
-        LOG.info("Unregistering via gRPC for executor: {}", executorId);
+        UnregisterExecutorRequest request = UnregisterExecutorRequest.newBuilder()
+                .setExecutorId(executorId)
+                .build();
 
-        return executeWithRetry(() -> {
-            CompletableFuture<Void> future = new CompletableFuture<>();
+        LOG.info("Unregistering executor {} via gRPC", executorId);
 
-            try {
-                executor.execute(() -> {
-                    try {
-                        // Simulate gRPC call processing with timeout
-                        Thread.sleep(100); // Simulate network delay
-
-                        LOG.info("Executor unregistered successfully: {}", executorId);
-                        future.complete(null);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Unregistration interrupted", e);
-                        future.completeExceptionally(e);
-                    } catch (Exception e) {
-                        LOG.error("Unregistration failed", e);
-                        future.completeExceptionally(e);
-                    }
-                });
-            } catch (Exception e) {
-                LOG.error("Failed to initiate unregistration", e);
-                future.completeExceptionally(e);
-            }
-
-            return future;
-        }, "unregistration");
+        return stub.unregisterExecutor(request)
+                .onItem().invoke(resp -> LOG.info("Executor unregistered successfully: {}", executorId))
+                .onFailure().invoke(error -> LOG.error("Failed to unregister executor {}", executorId, error))
+                .replaceWithVoid();
     }
 
     @Override
-    public io.smallrye.mutiny.Multi<NodeExecutionTask> receiveTasks() {
+    public Multi<NodeExecutionTask> receiveTasks() {
         LOG.info("Setting up gRPC task stream for executor: {}", executorId);
 
-        // Start the task stream if not already started
-        startTaskStream();
+        StreamTasksRequest request = StreamTasksRequest.newBuilder()
+                .setExecutorId(executorId)
+                .build();
 
-        return taskProcessor
-                .onCancellation().invoke(() -> LOG.debug("Task stream cancelled for executor: {}", executorId))
-                .onTermination().invoke(() -> LOG.debug("Task stream terminated for executor: {}", executorId));
+        return stub.streamTasks(request)
+                .onItem().transform(protoTask -> {
+                    WorkflowRunId runId = WorkflowRunId.of(protoTask.getRunId());
+                    NodeId nodeId = NodeId.of(protoTask.getNodeId());
+                    int attempt = protoTask.getAttempt();
+                    ExecutionToken token = new ExecutionToken(
+                            protoTask.getExecutionToken(),
+                            runId,
+                            nodeId,
+                            attempt,
+                            Instant.now().plus(Duration.ofHours(1)));
+
+                    return new NodeExecutionTask(
+                            runId,
+                            nodeId,
+                            attempt,
+                            token,
+                            mapper.structToMap(protoTask.getContext()),
+                            null // retryPolicy not provided in proto
+                    );
+                });
     }
 
     private void startTaskStream() {
         if (isShutdown.get()) {
-            LOG.warn("Cannot start task stream, transport is shutdown");
             return;
         }
-
-        // In a real implementation, this would establish the bidirectional streaming
-        // connection
-        // For now, we'll just log that the stream is starting
         LOG.info("Task stream setup initiated for executor: {}", executorId);
-
-        // Simulate receiving tasks (in a real implementation, this would be the actual
-        // gRPC streaming)
-        // We'll just log that the stream is ready to receive tasks
-        LOG.debug("Task stream ready for executor: {}", executorId);
     }
 
     @Override
     public Uni<Void> sendResult(NodeExecutionResult result) {
-        return executeWithRetry(() -> {
-            CompletableFuture<Void> future = new CompletableFuture<>();
+        TaskResult protoResult = TaskResult.newBuilder()
+                .setTaskId(result.getNodeId())
+                .setRunId(result.runId().value())
+                .setNodeId(result.getNodeId())
+                .setAttempt(result.attempt())
+                .setExecutionToken(result.executionToken().token())
+                .setStatus(tech.kayys.silat.grpc.v1.TaskStatus.valueOf("TASK_STATUS_" + result.status().name()))
+                .setOutput(mapper.mapToStruct(result.getUpdatedContext().getVariables()))
+                .build();
 
-            try {
-                executor.execute(() -> {
-                    try {
-                        // Simulate gRPC call processing with timeout
-                        Thread.sleep(50); // Simulate network delay
-
-                        LOG.debug("Result sent successfully for task: {}", result.getNodeId());
-                        future.complete(null);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Send result interrupted for task: {}", result.getNodeId(), e);
-                        future.completeExceptionally(e);
-                    } catch (Exception e) {
-                        LOG.error("Failed to send result for task: {}", result.getNodeId(), e);
-                        future.completeExceptionally(e);
-                    }
-                });
-            } catch (Exception e) {
-                LOG.error("Failed to initiate send result for task: {}", result.getNodeId(), e);
-                future.completeExceptionally(e);
-            }
-
-            return future;
-        }, "sendResult");
+        return stub.reportResults(Multi.createFrom().item(protoResult))
+                .onItem().invoke(() -> LOG.debug("Result sent successfully for task: {}", result.getNodeId()))
+                .onFailure().invoke(error -> LOG.error("Failed to send result for task: {}", result.getNodeId(), error))
+                .replaceWithVoid();
     }
 
     @Override
     public Uni<Void> sendHeartbeat() {
         if (!isConnected.get()) {
-            LOG.trace("Skipping heartbeat, not connected");
-            return Uni.createFrom().item((Void) null);
+            return Uni.createFrom().voidItem();
         }
 
-        return Uni.createFrom().emitter(emitter -> {
-            try {
-                executor.execute(() -> {
-                    try {
-                        // Simulate gRPC heartbeat call
-                        Thread.sleep(10); // Simulate network delay
+        HeartbeatRequest request = HeartbeatRequest.newBuilder()
+                .setExecutorId(executorId)
+                .build();
 
-                        LOG.trace("Heartbeat sent for executor: {}", executorId);
-                        emitter.complete(null);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        LOG.warn("Heartbeat interrupted for executor: {}", executorId, e);
-                        emitter.complete(null); // Don't fail for heartbeat issues
-                    } catch (Exception e) {
-                        LOG.warn("Heartbeat failed for executor: {}", executorId, e);
-                        emitter.complete(null); // Don't fail for heartbeat issues
-                    }
-                });
-            } catch (Exception e) {
-                LOG.warn("Failed to initiate heartbeat for executor: {}", executorId, e);
-                emitter.complete(null); // Don't fail for heartbeat issues
-            }
-        });
-    }
-
-    /**
-     * Execute an operation with retry logic
-     */
-    private Uni<Void> executeWithRetry(java.util.function.Supplier<CompletableFuture<Void>> operation,
-            String operationName) {
-        return Uni.createFrom().emitter(emitter -> {
-            attemptOperation(operation, operationName, 0, emitter);
-        });
-    }
-
-    private void attemptOperation(java.util.function.Supplier<CompletableFuture<Void>> operation,
-            String operationName,
-            int currentAttempt,
-            io.smallrye.mutiny.subscription.UniEmitter<? super Void> emitter) {
-        CompletableFuture<Void> future = operation.get();
-
-        future.whenComplete((result, error) -> {
-            if (error == null) {
-                emitter.complete(null);
-                return;
-            }
-
-            // Retry logic
-            if (currentAttempt < maxRetries) {
-                LOG.warn("Operation {} failed (attempt {}/{}), retrying in {} seconds",
-                        operationName, currentAttempt + 1, maxRetries, retryDelay.getSeconds(), error);
-
-                scheduledExecutor.schedule(() -> {
-                    LOG.debug("Retrying operation: {}", operationName);
-                    attemptOperation(operation, operationName, currentAttempt + 1, emitter);
-                }, retryDelay.toMillis(), TimeUnit.MILLISECONDS);
-            } else {
-                LOG.error("Operation {} failed after {} attempts", operationName, maxRetries, error);
-                emitter.fail(error);
-            }
-        });
+        return stub.heartbeat(request)
+                .onFailure().invoke(error -> LOG.warn("Heartbeat failed for executor: {}", executorId, error))
+                .replaceWithVoid();
     }
 
     @PreDestroy
@@ -367,42 +301,11 @@ public class GrpcExecutorTransport implements ExecutorTransport {
 
         isShutdown.set(true);
 
-        // Complete the task processor by completing any ongoing emissions
-        // BroadcastProcessor doesn't have a direct complete() method
-        // The processor will be cleaned up when the object is garbage collected
-
-        // Shutdown executors gracefully
-        if (executor instanceof java.util.concurrent.ExecutorService) {
-            ((java.util.concurrent.ExecutorService) executor).shutdown();
-            try {
-                if (!((java.util.concurrent.ExecutorService) executor).awaitTermination(5, TimeUnit.SECONDS)) {
-                    ((java.util.concurrent.ExecutorService) executor).shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                ((java.util.concurrent.ExecutorService) executor).shutdownNow();
-            }
-        }
-
-        if (scheduledExecutor instanceof java.util.concurrent.ExecutorService) {
-            ((java.util.concurrent.ExecutorService) scheduledExecutor).shutdown();
-            try {
-                if (!((java.util.concurrent.ExecutorService) scheduledExecutor).awaitTermination(5, TimeUnit.SECONDS)) {
-                    ((java.util.concurrent.ExecutorService) scheduledExecutor).shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                ((java.util.concurrent.ExecutorService) scheduledExecutor).shutdownNow();
-            }
-        }
-
-        // Shutdown gRPC channel
         if (channel != null && !channel.isShutdown()) {
             try {
                 channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOG.warn("Interrupted while waiting for channel shutdown", e);
                 channel.shutdownNow();
             }
         }

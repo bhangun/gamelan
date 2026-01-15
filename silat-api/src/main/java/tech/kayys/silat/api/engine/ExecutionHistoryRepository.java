@@ -11,6 +11,8 @@ public interface ExecutionHistoryRepository {
 
     Uni<Void> append(WorkflowRunId runId, String type, String message, Map<String, Object> metadata);
 
+    Uni<Void> appendEvents(WorkflowRunId runId, java.util.List<tech.kayys.silat.model.event.ExecutionEvent> events);
+
     Uni<ExecutionHistory> load(WorkflowRunId runId);
 
     Uni<Boolean> isNodeResultProcessed(WorkflowRunId runId, NodeId nodeId, int attempt);

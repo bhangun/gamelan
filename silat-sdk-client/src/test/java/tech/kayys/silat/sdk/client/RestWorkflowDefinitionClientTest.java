@@ -45,7 +45,7 @@ public class RestWorkflowDefinitionClientTest {
                                 .tenantId("test-tenant")
                                 .apiKey("test-api-key")
                                 .build();
-                client = new RestWorkflowDefinitionClient(config);
+                client = new RestWorkflowDefinitionClient(config, io.vertx.mutiny.core.Vertx.vertx());
         }
 
         @AfterEach
@@ -62,7 +62,7 @@ public class RestWorkflowDefinitionClientTest {
                                 Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap(),
                                 null, null, null);
 
-                stubFor(post(urlEqualTo("/workflow-definitions"))
+                stubFor(post(urlEqualTo("/api/v1/workflow-definitions"))
                                 .withHeader("Tenant-ID", equalTo("test-tenant"))
                                 .withHeader("Authorization", equalTo("Bearer test-api-key"))
                                 .willReturn(aResponse()
@@ -87,7 +87,7 @@ public class RestWorkflowDefinitionClientTest {
                                 Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap(),
                                 null, null, null);
 
-                stubFor(get(urlEqualTo("/workflow-definitions/def-123"))
+                stubFor(get(urlEqualTo("/api/v1/workflow-definitions/def-123"))
                                 .withHeader("Tenant-ID", equalTo("test-tenant"))
                                 .willReturn(aResponse()
                                                 .withStatus(200)
@@ -105,7 +105,7 @@ public class RestWorkflowDefinitionClientTest {
 
         @Test
         void testDeleteDefinition() {
-                stubFor(delete(urlEqualTo("/workflow-definitions/def-123"))
+                stubFor(delete(urlEqualTo("/api/v1/workflow-definitions/def-123"))
                                 .withHeader("Tenant-ID", equalTo("test-tenant"))
                                 .willReturn(aResponse()
                                                 .withStatus(204)));

@@ -1,5 +1,8 @@
 package tech.kayys.silat.dispatcher;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
@@ -12,6 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.kayys.silat.execution.NodeExecutionTask;
+import tech.kayys.silat.model.CommunicationType;
 import tech.kayys.silat.model.ExecutorInfo;
 import tech.kayys.silat.scheduler.TaskMessage;
 
@@ -20,9 +24,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ApplicationScoped
-public class KafkaTaskDispatcher {
+public class KafkaTaskDispatcher implements TaskDispatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTaskDispatcher.class);
+
+    @Override
+    public boolean supports(ExecutorInfo executor) {
+        return executor != null && executor.communicationType() == CommunicationType.KAFKA;
+    }
+
+    @Override
+    public Uni<Boolean> isHealthy() {
+        // Check if the Kafka producer is available
+        return Uni.createFrom().item(kafkaProducer != null);
+    }
+
+    @Override
+    public int getPriority() {
+        // Kafka is typically used for distributed systems, medium priority
+        return 5;
+    }
 
     // Kafka configuration properties
     @Inject
@@ -83,7 +104,14 @@ public class KafkaTaskDispatcher {
     @Inject
     Vertx vertx;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
     private KafkaProducer<String, String> kafkaProducer;
+
+    private Counter successCounter;
+    private Counter failureCounter;
+    private Timer dispatchTimer;
 
     @PostConstruct
     public void initializeKafkaProducer() {
@@ -105,7 +133,21 @@ public class KafkaTaskDispatcher {
         this.kafkaProducer = KafkaProducer.create(vertx, props);
     }
 
+    @jakarta.annotation.PostConstruct
+    void initMetrics() {
+        this.successCounter = Counter.builder("silat.dispatcher.kafka.success")
+                .description("Number of successful Kafka dispatches")
+                .register(meterRegistry);
+        this.failureCounter = Counter.builder("silat.dispatcher.kafka.failure")
+                .description("Number of failed Kafka dispatches")
+                .register(meterRegistry);
+        this.dispatchTimer = Timer.builder("silat.dispatcher.kafka.duration")
+                .description("Kafka dispatch duration")
+                .register(meterRegistry);
+    }
+
     public Uni<Void> dispatch(NodeExecutionTask task, ExecutorInfo executor) {
+        Timer.Sample sample = Timer.start(meterRegistry);
         long startTime = System.currentTimeMillis();
         String runId = task != null && task.runId() != null ? task.runId().value() : "unknown";
         String nodeId = task != null && task.nodeId() != null ? task.nodeId().value() : "unknown";
@@ -115,12 +157,20 @@ public class KafkaTaskDispatcher {
 
         // Validate inputs using reactive approach
         Uni<NodeExecutionTask> validatedTaskUni = validateAndSanitizeTask(task)
-                .onFailure().invoke(throwable -> LOG.error("Task validation failed for run: {}", runId, throwable));
+                .onFailure().invoke(throwable -> {
+                    LOG.error("Task validation failed for run: {}", runId, throwable);
+                    failureCounter.increment();
+                    sample.stop(dispatchTimer);
+                });
 
         return validatedTaskUni
                 .<Void>flatMap(validTask -> validateAndSanitizeExecutor(executor)
                         .onFailure()
-                        .invoke(throwable -> LOG.error("Executor validation failed for run: {}", runId, throwable))
+                        .invoke(throwable -> {
+                            LOG.error("Executor validation failed for run: {}", runId, throwable);
+                            failureCounter.increment();
+                            sample.stop(dispatchTimer);
+                        })
                         .<Void>flatMap(validExecutor -> {
                             // Serialize task to Kafka message
                             TaskMessage message = new TaskMessage(
@@ -139,6 +189,8 @@ public class KafkaTaskDispatcher {
                             if (messageSize > maxRequestSize || messageSize > MAX_MESSAGE_SIZE_BYTES) {
                                 LOG.error("Message size exceeds maximum allowed size: {} bytes (max: {})",
                                         messageSize, Math.min(maxRequestSize, MAX_MESSAGE_SIZE_BYTES));
+                                failureCounter.increment();
+                                sample.stop(dispatchTimer);
                                 return Uni.createFrom()
                                         .<Void>failure(new IllegalArgumentException("Message too large"));
                             }
@@ -161,6 +213,8 @@ public class KafkaTaskDispatcher {
                                                 messageSize);
                                         LOG.debug("Message details - topic: {}, partition: {}, offset: {}",
                                                 metadata.getTopic(), metadata.getPartition(), metadata.getOffset());
+                                        successCounter.increment();
+                                        sample.stop(dispatchTimer);
                                     })
                                     .onFailure().invoke(throwable -> {
                                         long duration = System.currentTimeMillis() - startTime;
@@ -168,6 +222,8 @@ public class KafkaTaskDispatcher {
                                                 "Failed to dispatch task after all retries - run: {}, node: {}, duration: {}ms",
                                                 validTask.runId().value(), validTask.nodeId().value(), duration,
                                                 throwable);
+                                        failureCounter.increment();
+                                        sample.stop(dispatchTimer);
                                     })
                                     .replaceWithVoid();
                         }))
@@ -175,6 +231,8 @@ public class KafkaTaskDispatcher {
                     long duration = System.currentTimeMillis() - startTime;
                     LOG.error("Task dispatch failed due to validation - run: {}, duration: {}ms", runId, duration,
                             throwable);
+                    failureCounter.increment();
+                    sample.stop(dispatchTimer);
                 })
                 .onFailure().recoverWithUni(failure -> {
                     // Check if we already logged it (we did in previous invokes), but this is a

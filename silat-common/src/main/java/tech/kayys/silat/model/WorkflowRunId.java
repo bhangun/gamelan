@@ -1,5 +1,6 @@
 package tech.kayys.silat.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
 /**
  * Workflow Run Identifier - Primary aggregate identifier
  */
-public record WorkflowRunId(String value) {
+public record WorkflowRunId(@JsonValue String value) {
     public WorkflowRunId {
         Objects.requireNonNull(value, "WorkflowRunId cannot be null");
         if (value.isBlank()) {

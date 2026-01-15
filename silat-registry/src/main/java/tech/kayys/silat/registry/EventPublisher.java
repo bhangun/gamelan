@@ -6,15 +6,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
-import tech.kayys.silat.api.event.EventPublisher;
+import jakarta.enterprise.inject.Alternative;
+import static jakarta.interceptor.Interceptor.Priority.APPLICATION;
+
 import tech.kayys.silat.model.event.ExecutionEvent;
 
 /**
  * Default Event Publisher - Publishes domain events (stub implementation)
  */
+@Alternative
+@Priority(APPLICATION)
 @ApplicationScoped
-public class EventPublisher implements EventPublisher {
+public class EventPublisher implements tech.kayys.silat.api.event.EventPublisher {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventPublisher.class);
     private static final String EVENT_TOPIC = "workflow.events";
@@ -23,7 +28,8 @@ public class EventPublisher implements EventPublisher {
     public Uni<Void> publish(List<ExecutionEvent> events) {
         LOG.debug("Publishing {} events to topic: {}", events.size(), EVENT_TOPIC);
 
-        // This is a stub implementation - the actual Kafka publisher is in KafkaEventPublisher
+        // This is a stub implementation - the actual Kafka publisher is in
+        // KafkaEventPublisher
         return Uni.createFrom().voidItem();
     }
 

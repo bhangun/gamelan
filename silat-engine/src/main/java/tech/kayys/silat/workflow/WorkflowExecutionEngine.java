@@ -75,8 +75,9 @@ public class WorkflowExecutionEngine {
         NodeExecution existing = executions.get(node.id());
 
         if (existing != null) {
-            // Only retry if in RETRYING status
-            return existing.getStatus() == NodeExecutionStatus.RETRYING;
+            // Only retry if in RETRYING status, or if PENDING (waiting for dispatch)
+            return existing.getStatus() == NodeExecutionStatus.RETRYING ||
+                    existing.getStatus() == NodeExecutionStatus.PENDING;
         }
 
         // Check if all dependencies are completed

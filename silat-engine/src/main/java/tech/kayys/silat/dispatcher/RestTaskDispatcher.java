@@ -10,17 +10,21 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tech.kayys.silat.execution.NodeExecutionTask;
+import tech.kayys.silat.model.CommunicationType;
 import tech.kayys.silat.model.ExecutionToken;
 import tech.kayys.silat.model.ExecutorInfo;
 
 @ApplicationScoped
-public class RestTaskDispatcher {
+public class RestTaskDispatcher implements TaskDispatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestTaskDispatcher.class);
 
@@ -32,6 +36,27 @@ public class RestTaskDispatcher {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    MeterRegistry meterRegistry;
+
+    private Counter successCounter;
+    private Counter failureCounter;
+    private Timer dispatchTimer;
+
+    @jakarta.annotation.PostConstruct
+    void initMetrics() {
+        this.successCounter = Counter.builder("silat.dispatcher.rest.success")
+                .description("Number of successful REST dispatches")
+                .register(meterRegistry);
+        this.failureCounter = Counter.builder("silat.dispatcher.rest.failure")
+                .description("Number of failed REST dispatches")
+                .register(meterRegistry);
+        this.dispatchTimer = Timer.builder("silat.dispatcher.rest.duration")
+                .description("REST dispatch duration")
+                .register(meterRegistry);
+    }
+
+    @Override
     public Uni<Void> dispatch(NodeExecutionTask task, ExecutorInfo executor) {
 
         Objects.requireNonNull(task, "NodeExecutionTask cannot be null");
@@ -39,6 +64,7 @@ public class RestTaskDispatcher {
 
         String endpoint = executor.endpoint();
         if (endpoint == null || endpoint.isBlank()) {
+            failureCounter.increment();
             return Uni.createFrom().failure(
                     new IllegalArgumentException("Executor REST endpoint is missing"));
         }
@@ -46,12 +72,23 @@ public class RestTaskDispatcher {
         RestExecutionRequest payload = RestExecutionRequest.from(task, executor);
 
         return Uni.createFrom().item(payload)
-                .onItem().transformToUni(req -> sendRequest(req, executor))
-                .onFailure().invoke(t -> LOG.error("REST dispatch failed for run={}, node={}, executor={}",
-                        task.runId().value(),
-                        task.nodeId().value(),
-                        executor.executorId(),
-                        t))
+                .onItem().transformToUni(req -> {
+                    Timer.Sample sample = Timer.start(meterRegistry);
+                    return sendRequest(req, executor)
+                            .invoke(() -> {
+                                sample.stop(dispatchTimer);
+                                successCounter.increment();
+                            })
+                            .onFailure().invoke(t -> {
+                                sample.stop(dispatchTimer);
+                                failureCounter.increment();
+                                LOG.error("REST dispatch failed for run={}, node={}, executor={}",
+                                        task.runId().value(),
+                                        task.nodeId().value(),
+                                        executor.executorId(),
+                                        t);
+                            });
+                })
                 .replaceWithVoid();
     }
 
@@ -99,6 +136,22 @@ public class RestTaskDispatcher {
         return executor.timeout() != null
                 ? executor.timeout()
                 : DEFAULT_TIMEOUT;
+    }
+
+    @Override
+    public boolean supports(ExecutorInfo executor) {
+        return executor != null && executor.communicationType() == CommunicationType.REST;
+    }
+
+    @Override
+    public Uni<Boolean> isHealthy() {
+        return Uni.createFrom().item(webClient != null);
+    }
+
+    @Override
+    public int getPriority() {
+        // REST is widely compatible but potentially slower, medium-low priority
+        return 3;
     }
 
     /* ===================== INTERNAL DTO ===================== */

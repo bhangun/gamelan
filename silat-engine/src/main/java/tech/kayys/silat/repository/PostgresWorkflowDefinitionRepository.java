@@ -1,20 +1,16 @@
 package tech.kayys.silat.repository;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import tech.kayys.silat.model.TenantId;
-import tech.kayys.silat.model.WorkflowDefinition;
-import tech.kayys.silat.model.WorkflowDefinitionId;
+import tech.kayys.silat.model.*;
 import io.vertx.mutiny.sqlclient.Tuple;
+import java.time.ZoneOffset;
 
 /**
  * PostgreSQL implementation of definition repository
@@ -36,8 +32,7 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
             TenantId tenantId) {
 
         String sql = """
-                SELECT definition_id, name, version, description, definition_json,
-                       created_at, created_by, metadata
+                SELECT definition_json, created_at
                 FROM workflow_definitions
                 WHERE definition_id = $1 AND tenant_id = $2 AND is_active = true
                 """;
@@ -63,8 +58,8 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
         String sql = """
                 INSERT INTO workflow_definitions
                 (definition_id, tenant_id, name, version, description, definition_json,
-                 created_at, created_by, is_active, metadata)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                 created_at, created_by, is_active)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 ON CONFLICT (tenant_id, name, version) DO UPDATE SET
                     definition_json = EXCLUDED.definition_json,
                     updated_at = NOW(),
@@ -73,10 +68,7 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
                 """;
 
         try {
-            String definitionJson = objectMapper.writeValueAsString(
-                    serializeDefinition(definition));
-            String metadataJson = objectMapper.writeValueAsString(
-                    definition.metadata().labels());
+            String definitionJson = objectMapper.writeValueAsString(definition);
 
             return pgPool.preparedQuery(sql)
                     .execute(Tuple.tuple()
@@ -86,14 +78,14 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
                             .addValue(definition.version())
                             .addValue(definition.description())
                             .addValue(definitionJson)
-                            .addValue(definition.metadata().createdAt())
+                            .addValue(definition.metadata().createdAt().atOffset(ZoneOffset.UTC))
                             .addValue(definition.metadata().createdBy())
-                            .addValue(true)
-                            .addValue(metadataJson))
+                            .addValue(true))
                     .map(rows -> definition)
                     .onFailure().invoke(error -> LOG.error("Failed to save definition", error));
 
         } catch (Exception e) {
+            LOG.error("Failed to serialize definition", e);
             return Uni.createFrom().failure(e);
         }
     }
@@ -103,8 +95,9 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
             TenantId tenantId,
             boolean activeOnly) {
 
-        String sql = activeOnly ? "SELECT * FROM workflow_definitions WHERE tenant_id = $1 AND is_active = true"
-                : "SELECT * FROM workflow_definitions WHERE tenant_id = $1";
+        String sql = activeOnly
+                ? "SELECT definition_json, created_at FROM workflow_definitions WHERE tenant_id = $1 AND is_active = true"
+                : "SELECT definition_json, created_at FROM workflow_definitions WHERE tenant_id = $1";
 
         return pgPool.preparedQuery(sql)
                 .execute(io.vertx.mutiny.sqlclient.Tuple.of(tenantId.value()))
@@ -132,22 +125,21 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
 
     private WorkflowDefinition deserializeDefinition(io.vertx.mutiny.sqlclient.Row row) {
         try {
-            // Simplified deserialization - in real implementation,
-            // would fully reconstruct from JSON
-            return null; // Placeholder
+            // Read the full JSON from definition_json column
+            // Vert.x pg client returns JSONB as JsonObject or String depending on
+            // version/config
+            Object val = row.getValue("definition_json");
+            String json;
+            if (val instanceof String) {
+                json = (String) val;
+            } else {
+                json = val.toString();
+            }
+
+            return objectMapper.readValue(json, WorkflowDefinition.class);
         } catch (Exception e) {
+            LOG.error("Failed to deserialize definition JSON", e);
             throw new RuntimeException("Failed to deserialize definition", e);
         }
-    }
-
-    private Map<String, Object> serializeDefinition(WorkflowDefinition definition) {
-        // Serialize to map for JSON storage
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", definition.id().value());
-        map.put("name", definition.name());
-        map.put("version", definition.version());
-        map.put("nodes", definition.nodes());
-        // ... serialize all fields
-        return map;
     }
 }

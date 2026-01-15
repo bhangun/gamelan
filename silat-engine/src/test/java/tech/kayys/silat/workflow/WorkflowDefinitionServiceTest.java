@@ -36,6 +36,9 @@ class WorkflowDefinitionServiceTest {
     void create_whenCalled_returnsNullForNow() {
         // Arrange
         CreateWorkflowDefinitionRequest request = mock(CreateWorkflowDefinitionRequest.class);
+        when(request.name()).thenReturn("test-workflow");
+        when(request.version()).thenReturn("1.0.0");
+
         TenantId tenantId = new TenantId("tenant1");
 
         // Act

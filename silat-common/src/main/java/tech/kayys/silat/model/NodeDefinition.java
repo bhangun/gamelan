@@ -40,8 +40,8 @@ public record NodeDefinition(
         retryPolicy = retryPolicy != null ? retryPolicy : RetryPolicy.none();
         timeout = timeout != null ? timeout : Duration.ZERO;
 
-        validateTransitions();
-        validateConfiguration();
+        validateTransitions(transitions, id);
+        validateConfiguration(type, configuration, id);
     }
 
     // ==================== ROLE ====================
@@ -91,7 +91,7 @@ public record NodeDefinition(
 
     // ==================== VALIDATION ====================
 
-    private void validateTransitions() {
+    private void validateTransitions(List<Transition> transitions, NodeId id) {
         long defaultCount = transitions.stream()
                 .filter(Transition::isDefault)
                 .count();
@@ -102,7 +102,7 @@ public record NodeDefinition(
         }
     }
 
-    private void validateConfiguration() {
+    private void validateConfiguration(NodeType type, Map<String, Object> configuration, NodeId id) {
         if (type == NodeType.EXECUTOR && configuration.isEmpty()) {
             throw new IllegalArgumentException(
                     "Executor node must have configuration: " + id.value());

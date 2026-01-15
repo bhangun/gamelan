@@ -11,37 +11,34 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import tech.kayys.silat.saga.CompensationPolicy;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Workflow Definition - Blueprint for workflow execution
  * Immutable after creation
  */
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record WorkflowDefinition(
-        WorkflowDefinitionId id,
-        TenantId tenantId,
-        String name,
-        String version,
-        String description,
-        List<NodeDefinition> nodes,
-        Map<String, InputDefinition> inputs,
-        Map<String, OutputDefinition> outputs,
-        WorkflowMetadata metadata,
-        RetryPolicy defaultRetryPolicy,
-        CompensationPolicy compensationPolicy) {
+        @com.fasterxml.jackson.annotation.JsonProperty("id") WorkflowDefinitionId id,
+        @com.fasterxml.jackson.annotation.JsonProperty("tenantId") TenantId tenantId,
+        @com.fasterxml.jackson.annotation.JsonProperty("name") String name,
+        @com.fasterxml.jackson.annotation.JsonProperty("version") String version,
+        @com.fasterxml.jackson.annotation.JsonProperty("description") String description,
+        @com.fasterxml.jackson.annotation.JsonProperty("nodes") List<NodeDefinition> nodes,
+        @com.fasterxml.jackson.annotation.JsonProperty("inputs") Map<String, InputDefinition> inputs,
+        @com.fasterxml.jackson.annotation.JsonProperty("outputs") Map<String, OutputDefinition> outputs,
+        @com.fasterxml.jackson.annotation.JsonProperty("metadata") WorkflowMetadata metadata,
+        @com.fasterxml.jackson.annotation.JsonProperty("defaultRetryPolicy") RetryPolicy defaultRetryPolicy,
+        @com.fasterxml.jackson.annotation.JsonProperty("compensationPolicy") CompensationPolicy compensationPolicy) {
 
     public WorkflowDefinition {
         Objects.requireNonNull(id, "Workflow ID cannot be null");
         Objects.requireNonNull(tenantId, "Tenant ID cannot be null");
         Objects.requireNonNull(name, "Workflow name cannot be null");
-        Objects.requireNonNull(nodes, "Nodes cannot be null");
-
-        nodes = List.copyOf(nodes);
+        nodes = nodes != null ? List.copyOf(nodes) : List.of();
         inputs = inputs != null ? Map.copyOf(inputs) : Map.of();
         outputs = outputs != null ? Map.copyOf(outputs) : Map.of();
-
-        // defaults (do NOT remove user control)
         defaultRetryPolicy = defaultRetryPolicy != null ? defaultRetryPolicy : RetryPolicy.none();
-
         compensationPolicy = compensationPolicy != null ? compensationPolicy : CompensationPolicy.disabled();
     }
 
@@ -53,12 +50,14 @@ public record WorkflowDefinition(
                 .findFirst();
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public List<NodeDefinition> getStartNodes() {
         return nodes.stream()
                 .filter(NodeDefinition::isStartNode)
                 .toList();
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public List<NodeDefinition> getEndNodes() {
         return nodes.stream()
                 .filter(NodeDefinition::isEndNode)
@@ -67,6 +66,7 @@ public record WorkflowDefinition(
 
     // ==================== VALIDATION ====================
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isValid() {
         return hasAtLeastOneStartNode()
                 && hasNoCircularDependencies()
@@ -142,6 +142,7 @@ public record WorkflowDefinition(
 
     // ==================== COMPENSATION ====================
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isCompensationEnabled() {
         return compensationPolicy != null && compensationPolicy.enabled();
     }
