@@ -42,6 +42,11 @@
             <artifactId>gamelan-engine</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>tech.kayys.gamelan</groupId>
+            <artifactId>gamelan-executor-registry</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Quarkus Extensions -->
         <dependency>

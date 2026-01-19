@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-registry</artifactId>
+            <artifactId>gamelan-executor-registry</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

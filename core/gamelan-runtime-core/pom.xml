@@ -50,6 +50,10 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <version>3.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-arc</artifactId>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>

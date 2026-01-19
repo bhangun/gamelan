@@ -67,7 +67,7 @@
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-registry</artifactId>
+            <artifactId>gamelan-executor-registry</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -92,8 +92,9 @@
             <artifactId>quarkus-jdbc-postgresql</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-arc</artifactId>
+            <groupId>tech.kayys.gamelan</groupId>
+            <artifactId>gamelan-runtime-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
