@@ -11,8 +11,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import tech.kayys.gamelan.plugin.Plugin;
-import tech.kayys.gamelan.plugin.PluginService;
+import tech.kayys.gamelan.engine.plugin.GamelanPlugin;
+import tech.kayys.gamelan.engine.plugin.PluginService;
 
 @Path("/api/v1/plugins")
 @Produces(MediaType.APPLICATION_JSON)
@@ -23,13 +23,13 @@ public class PluginResource {
     PluginService pluginService;
 
     @GET
-    public Uni<List<Plugin>> getAllPlugins() {
+    public Uni<List<GamelanPlugin>> getAllPlugins() {
         return Uni.createFrom().item(pluginService.getAllPlugins());
     }
 
     @GET
     @Path("/{pluginId}")
-    public Uni<Plugin> getPlugin(@PathParam("pluginId") String pluginId) {
+    public Uni<GamelanPlugin> getPlugin(@PathParam("pluginId") String pluginId) {
         return Uni.createFrom().item(pluginService.getPlugin(pluginId).orElse(null));
     }
 
@@ -47,7 +47,7 @@ public class PluginResource {
 
     @GET
     @Path("/types/{pluginType}")
-    public Uni<List<Plugin>> getPluginsByType(@PathParam("pluginType") String pluginType) {
+    public Uni<List<GamelanPlugin>> getPluginsByType(@PathParam("pluginType") String pluginType) {
         // This would require reflection to determine plugin types
         // For now, we'll return all plugins
         return Uni.createFrom().item(pluginService.getAllPlugins());
@@ -56,7 +56,7 @@ public class PluginResource {
     @GET
     @Path("/status")
     public Uni<List<PluginStatusInfo>> getPluginStatuses() {
-        List<Plugin> plugins = pluginService.getAllPlugins();
+        List<GamelanPlugin> plugins = pluginService.getAllPlugins();
         List<PluginStatusInfo> statuses = plugins.stream()
                 .map(plugin -> new PluginStatusInfo(
                         plugin.getMetadata().id(),

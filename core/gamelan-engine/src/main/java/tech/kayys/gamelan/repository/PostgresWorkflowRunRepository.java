@@ -33,9 +33,11 @@ import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
+import tech.kayys.gamelan.engine.repository.WorkflowRunRepository;
 
 @ApplicationScoped
-public class PostgresWorkflowRunRepository implements tech.kayys.gamelan.engine.repository.WorkflowRunRepository,
+@io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
+public class PostgresWorkflowRunRepository implements WorkflowRunRepository,
                 PanacheRepositoryBase<WorkflowRunEntity, String> {
 
         private static final Logger LOG = LoggerFactory.getLogger(PostgresWorkflowRunRepository.class);

@@ -9,6 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>gamelan-engine</artifactId>
+    <name>Gamelan Engine</name>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -37,12 +38,12 @@
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-grpc</artifactId>
+            <artifactId>gamelan-protocol-grpc</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-kafka</artifactId>
+            <artifactId>gamelan-protocol-kafka</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

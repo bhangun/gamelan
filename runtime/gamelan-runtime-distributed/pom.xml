@@ -9,6 +9,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>gamelan-runtime-distributed</artifactId>
+    <name>Gamelan Runtime Distributed</name>
 
 
     <properties>
@@ -41,7 +42,7 @@
     <dependencies>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-api</artifactId>
+            <artifactId>gamelan-engine-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -56,12 +57,12 @@
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-grpc</artifactId>
+            <artifactId>gamelan-protocol-grpc</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-kafka</artifactId>
+            <artifactId>gamelan-protocol-kafka</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -113,6 +114,14 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-messaging-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

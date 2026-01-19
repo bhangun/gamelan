@@ -8,9 +8,9 @@ import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.kayys.gamelan.grpc.v1.*;
-import tech.kayys.gamelan.model.CommunicationType;
+import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.grpc.CommunicationTypeConverter;
-import tech.kayys.gamelan.model.ExecutorInfo;
+import tech.kayys.gamelan.engine.executor.ExecutorInfo;
 import tech.kayys.gamelan.registry.ExecutorRegistryService;
 
 import java.time.Duration;

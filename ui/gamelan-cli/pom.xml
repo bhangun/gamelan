@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-grpc</artifactId>
+            <artifactId>gamelan-protocol-grpc</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

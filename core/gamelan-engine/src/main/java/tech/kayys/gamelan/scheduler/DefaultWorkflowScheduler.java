@@ -16,7 +16,7 @@ import io.quarkus.scheduler.Scheduled;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import tech.kayys.gamelan.dispatcher.TaskDispatcher;
+
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 import tech.kayys.gamelan.engine.event.EventPublisher;
 import tech.kayys.gamelan.registry.ExecutorRegistry;

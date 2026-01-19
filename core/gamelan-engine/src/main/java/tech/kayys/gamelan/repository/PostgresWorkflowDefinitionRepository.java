@@ -19,6 +19,7 @@ import java.time.ZoneOffset;
  * PostgreSQL implementation of definition repository
  */
 @ApplicationScoped
+@io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
 public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(PostgresWorkflowDefinitionRepository.class);

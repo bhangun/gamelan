@@ -4,11 +4,11 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import tech.kayys.gamelan.dto.CreateWorkflowDefinitionRequest;
-import tech.kayys.gamelan.dto.UpdateWorkflowDefinitionRequest;
-import tech.kayys.gamelan.model.TenantId;
-import tech.kayys.gamelan.model.WorkflowDefinition;
-import tech.kayys.gamelan.model.WorkflowDefinitionId;
+import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
+import tech.kayys.gamelan.engine.workflow.dto.UpdateWorkflowDefinitionRequest;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import java.util.List;
 
 /**
@@ -18,7 +18,7 @@ import java.util.List;
 public class RuntimeWorkflowDefinitionService {
 
     @Inject
-    tech.kayys.gamelan.api.workflow.WorkflowDefinitionService engineService;
+    tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService engineService;
 
     public Uni<WorkflowDefinition> create(
             CreateWorkflowDefinitionRequest request,

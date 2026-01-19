@@ -29,8 +29,6 @@ class GrpcWorkflowRunClient implements WorkflowRunClient {
         return config;
     }
 
-    // Implement using gRPC stubs...
-
     @Override
     public Uni<RunResponse> createRun(CreateRunRequest request) {
         checkClosed();

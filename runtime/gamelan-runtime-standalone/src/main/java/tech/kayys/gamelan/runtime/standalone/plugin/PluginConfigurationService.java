@@ -17,7 +17,8 @@ import java.util.Properties;
 public class PluginConfigurationService {
 
     @Inject
-    PluginManager pluginManager;
+    @org.eclipse.microprofile.config.inject.ConfigProperty(name = "gamelan.plugins.directory", defaultValue = "./plugins")
+    String pluginsDirectory;
 
     private static final String PLUGIN_CONFIG_FILE = "plugin-config.properties";
 
@@ -25,8 +26,7 @@ public class PluginConfigurationService {
      * Gets the configuration file path for a specific plugin
      */
     public Path getPluginConfigPath(String pluginName) {
-        String pluginsDir = pluginManager.getPluginsDirectory();
-        return Paths.get(pluginsDir, pluginName, PLUGIN_CONFIG_FILE);
+        return Paths.get(pluginsDirectory, pluginName, PLUGIN_CONFIG_FILE);
     }
 
     /**

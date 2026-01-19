@@ -1,4 +1,4 @@
-package tech.kayys.gamelan.engine.saga.impl;
+package tech.kayys.gamelan.saga.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

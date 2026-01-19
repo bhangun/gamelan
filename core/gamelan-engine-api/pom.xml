@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>gamelan-engine-api</artifactId>
-
+    <name>Gamelan Engine API</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -33,14 +33,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-rest-jackson</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>

@@ -1,7 +1,5 @@
 package tech.kayys.gamelan.plugin.defaultplugins;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 
 import io.smallrye.mutiny.Uni;
@@ -15,13 +13,11 @@ import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
  */
 public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
 
-    private PluginContext context;
     private Logger logger;
     private volatile boolean started = false;
 
     @Override
     public void initialize(PluginContext context) throws PluginException {
-        this.context = context;
         this.logger = context.getLogger();
         logger.info("Logging Interceptor Plugin initialized");
     }
@@ -48,28 +44,29 @@ public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
     }
 
     @Override
-    public Uni<Void> beforeExecution(TaskContext task) {
+    public Uni<Void> beforeExecution(ExecutionInterceptorPlugin.TaskContext task) {
         if (started) {
             logger.info("Starting execution of node '{}' in workflow '{}'",
-                task.nodeId(), task.runId());
+                    task.nodeId(), task.runId());
         }
         return Uni.createFrom().voidItem();
     }
 
     @Override
-    public Uni<Void> afterExecution(TaskContext task, ExecutionResult result) {
+    public Uni<Void> afterExecution(ExecutionInterceptorPlugin.TaskContext task,
+            ExecutionInterceptorPlugin.ExecutionResult result) {
         if (started) {
             logger.info("Completed execution of node '{}' in workflow '{}', success: {}",
-                task.nodeId(), task.runId(), result.isSuccess());
+                    task.nodeId(), task.runId(), result.isSuccess());
         }
         return Uni.createFrom().voidItem();
     }
 
     @Override
-    public Uni<Void> onError(TaskContext task, Throwable error) {
+    public Uni<Void> onError(ExecutionInterceptorPlugin.TaskContext task, Throwable error) {
         if (started) {
             logger.error("Execution of node '{}' in workflow '{}' encountered error: {}",
-                task.nodeId(), task.runId(), error.getMessage(), error);
+                    task.nodeId(), task.runId(), error.getMessage(), error);
         }
         return Uni.createFrom().voidItem();
     }

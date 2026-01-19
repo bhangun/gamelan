@@ -17,7 +17,6 @@ import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
  */
 public class MetricsCollectorPlugin implements ExecutionInterceptorPlugin {
 
-    private PluginContext context;
     private Logger logger;
     private volatile boolean started = false;
 
@@ -27,7 +26,6 @@ public class MetricsCollectorPlugin implements ExecutionInterceptorPlugin {
 
     @Override
     public void initialize(PluginContext context) throws PluginException {
-        this.context = context;
         this.logger = context.getLogger();
         logger.info("Metrics Collector Plugin initialized");
     }
@@ -54,7 +52,7 @@ public class MetricsCollectorPlugin implements ExecutionInterceptorPlugin {
     }
 
     @Override
-    public Uni<Void> beforeExecution(TaskContext task) {
+    public Uni<Void> beforeExecution(ExecutionInterceptorPlugin.TaskContext task) {
         if (started) {
             String metricKey = "node_execution_time_" + task.nodeId();
             timers.put(metricKey + "_start_" + System.nanoTime(), System.currentTimeMillis());
@@ -64,7 +62,8 @@ public class MetricsCollectorPlugin implements ExecutionInterceptorPlugin {
     }
 
     @Override
-    public Uni<Void> afterExecution(TaskContext task, ExecutionResult result) {
+    public Uni<Void> afterExecution(ExecutionInterceptorPlugin.TaskContext task,
+            ExecutionInterceptorPlugin.ExecutionResult result) {
         if (started) {
             String metricKey = "node_execution_time_" + task.nodeId();
             // Find the start time for this execution
@@ -83,7 +82,7 @@ public class MetricsCollectorPlugin implements ExecutionInterceptorPlugin {
     }
 
     @Override
-    public Uni<Void> onError(TaskContext task, Throwable error) {
+    public Uni<Void> onError(ExecutionInterceptorPlugin.TaskContext task, Throwable error) {
         if (started) {
             incrementCounter("node_execution_errors");
         }

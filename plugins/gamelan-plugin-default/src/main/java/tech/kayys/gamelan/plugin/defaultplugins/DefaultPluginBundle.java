@@ -17,26 +17,22 @@ import tech.kayys.gamelan.engine.plugin.PluginMetadataBuilder;
  * A bundle that contains multiple default plugins
  * This allows loading multiple plugins as a single unit
  */
-public class DefaultPluginBundle implements Plugin {
+public class DefaultPluginBundle implements GamelanPlugin {
 
-    private PluginContext context;
     private Logger logger;
-    private volatile boolean started = false;
 
-    private final List<Plugin> bundledPlugins = Arrays.asList(
-        new LoggingInterceptorPlugin(),
-        new MetricsCollectorPlugin(),
-        new SimpleValidatorPlugin()
-    );
+    private final List<GamelanPlugin> bundledPlugins = Arrays.asList(
+            new LoggingInterceptorPlugin(),
+            new MetricsCollectorPlugin(),
+            new SimpleValidatorPlugin());
 
     @Override
     public void initialize(PluginContext context) throws PluginException {
-        this.context = context;
         this.logger = context.getLogger();
 
         logger.info("Initializing Default Plugin Bundle with {} plugins", bundledPlugins.size());
 
-        for (Plugin plugin : bundledPlugins) {
+        for (GamelanPlugin plugin : bundledPlugins) {
             try {
                 plugin.initialize(context);
                 logger.debug("Initialized plugin: {}", plugin.getMetadata().name());
@@ -52,7 +48,7 @@ public class DefaultPluginBundle implements Plugin {
     public void start() throws PluginException {
         logger.info("Starting Default Plugin Bundle...");
 
-        for (Plugin plugin : bundledPlugins) {
+        for (GamelanPlugin plugin : bundledPlugins) {
             try {
                 plugin.start();
                 logger.debug("Started plugin: {}", plugin.getMetadata().name());
@@ -61,7 +57,6 @@ public class DefaultPluginBundle implements Plugin {
             }
         }
 
-        started = true;
         logger.info("Default Plugin Bundle started successfully");
     }
 
@@ -69,7 +64,7 @@ public class DefaultPluginBundle implements Plugin {
     public void stop() throws PluginException {
         logger.info("Stopping Default Plugin Bundle...");
 
-        for (Plugin plugin : bundledPlugins) {
+        for (GamelanPlugin plugin : bundledPlugins) {
             try {
                 plugin.stop();
                 logger.debug("Stopped plugin: {}", plugin.getMetadata().name());
@@ -78,7 +73,6 @@ public class DefaultPluginBundle implements Plugin {
             }
         }
 
-        started = false;
         logger.info("Default Plugin Bundle stopped successfully");
     }
 
@@ -96,7 +90,7 @@ public class DefaultPluginBundle implements Plugin {
     /**
      * Get the plugins contained in this bundle
      */
-    public Collection<Plugin> getBundledPlugins() {
+    public Collection<GamelanPlugin> getBundledPlugins() {
         return Collections.unmodifiableList(bundledPlugins);
     }
 
@@ -104,7 +98,7 @@ public class DefaultPluginBundle implements Plugin {
      * Get a specific plugin by type from the bundle
      */
     @SuppressWarnings("unchecked")
-    public <T extends Plugin> T getPluginByType(Class<T> pluginType) {
+    public <T extends GamelanPlugin> T getPluginByType(Class<T> pluginType) {
         return (T) bundledPlugins.stream()
                 .filter(pluginType::isInstance)
                 .findFirst()

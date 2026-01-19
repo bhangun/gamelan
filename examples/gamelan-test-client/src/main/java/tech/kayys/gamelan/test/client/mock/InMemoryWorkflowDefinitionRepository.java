@@ -29,7 +29,7 @@ public class InMemoryWorkflowDefinitionRepository implements WorkflowDefinitionR
 
     @Override
     public Uni<WorkflowDefinition> save(WorkflowDefinition definition, TenantId tenantId) {
-        definitions.put(definition.getId(), definition);
+        definitions.put(definition.id(), definition);
         return Uni.createFrom().item(definition);
     }
 

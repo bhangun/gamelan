@@ -14,11 +14,11 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import tech.kayys.gamelan.dto.CreateWorkflowDefinitionRequest;
-import tech.kayys.gamelan.dto.UpdateWorkflowDefinitionRequest;
-import tech.kayys.gamelan.model.TenantId;
-import tech.kayys.gamelan.model.WorkflowDefinition;
-import tech.kayys.gamelan.model.WorkflowDefinitionId;
+import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
+import tech.kayys.gamelan.engine.workflow.dto.UpdateWorkflowDefinitionRequest;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.runtime.workflow.RuntimeWorkflowDefinitionService;
 import tech.kayys.gamelan.security.TenantSecurityContext;
 

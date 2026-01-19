@@ -45,7 +45,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>tech.kayys.gamelan</groupId>
-                    <artifactId>gamelan-kafka</artifactId>
+                    <artifactId>gamelan-protocol-kafka</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>io.quarkus</groupId>

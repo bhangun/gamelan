@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
  * Useful when not using Flyway or Liquibase for non-entity tables.
  */
 @ApplicationScoped
+@io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
 public class DbInitializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(DbInitializer.class);
 

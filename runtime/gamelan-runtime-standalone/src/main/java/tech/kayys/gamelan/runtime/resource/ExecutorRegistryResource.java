@@ -14,9 +14,10 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import tech.kayys.gamelan.model.ExecutorHealthInfo;
-import tech.kayys.gamelan.model.ExecutorInfo;
-import tech.kayys.gamelan.model.NodeId;
+import tech.kayys.gamelan.engine.executor.ExecutorHealthInfo;
+import tech.kayys.gamelan.engine.executor.ExecutorInfo;
+import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.registry.ExecutorRegistryService;
 import tech.kayys.gamelan.registry.ExecutorStatistics;
 
@@ -111,7 +112,7 @@ public class ExecutorRegistryResource {
     public Uni<List<ExecutorInfo>> getExecutorsByCommunicationType(
             @PathParam("communicationType") String communicationType) {
         return executorRegistryService.getExecutorsByCommunicationType(
-                tech.kayys.gamelan.model.CommunicationType.valueOf(communicationType.toUpperCase()));
+                CommunicationType.valueOf(communicationType.toUpperCase()));
     }
 
     @GET

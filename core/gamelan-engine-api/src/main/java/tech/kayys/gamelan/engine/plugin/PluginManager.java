@@ -38,10 +38,10 @@ public class PluginManager {
     ServiceRegistry serviceRegistry;
 
     @Inject
-    EventBus eventBus;
+    jakarta.enterprise.inject.Instance<EventBus> eventBusInstance;
 
     @Inject
-    EventPublisher eventPublisher;
+    jakarta.enterprise.inject.Instance<EventPublisher> eventPublisherInstance;
 
     @Inject
     ExtensionRegistry extensionRegistry;
@@ -85,8 +85,8 @@ public class PluginManager {
                         LoggerFactory.getLogger("plugin." + metadata.id()),
                         metadata.properties(),
                         serviceRegistry,
-                        eventBus,
-                        eventPublisher,
+                        eventBusInstance.isResolvable() ? eventBusInstance.get() : null,
+                        eventPublisherInstance.isResolvable() ? eventPublisherInstance.get() : null,
                         extensionRegistry,
                         pluginDataDir);
 
@@ -135,8 +135,8 @@ public class PluginManager {
                         LoggerFactory.getLogger("plugin." + metadata.id()),
                         metadata.properties(),
                         serviceRegistry,
-                        eventBus,
-                        eventPublisher,
+                        eventBusInstance.isResolvable() ? eventBusInstance.get() : null,
+                        eventPublisherInstance.isResolvable() ? eventPublisherInstance.get() : null,
                         extensionRegistry,
                         pluginDataDir);
 

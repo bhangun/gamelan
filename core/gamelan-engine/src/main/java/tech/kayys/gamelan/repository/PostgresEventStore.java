@@ -31,6 +31,7 @@ import tech.kayys.gamelan.engine.event.WorkflowStartedEvent;
 import tech.kayys.gamelan.engine.event.WorkflowSuspendedEvent;
 
 @ApplicationScoped
+@io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
 public class PostgresEventStore implements EventStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(PostgresEventStore.class);

@@ -10,6 +10,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import tech.kayys.gamelan.engine.node.InputDefinition;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
 import tech.kayys.gamelan.engine.node.NodeId;
@@ -22,19 +26,19 @@ import tech.kayys.gamelan.engine.tenant.TenantId;
  * Workflow Definition - Blueprint for workflow execution
  * Immutable after creation
  */
-@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record WorkflowDefinition(
-        @com.fasterxml.jackson.annotation.JsonProperty("id") WorkflowDefinitionId id,
-        @com.fasterxml.jackson.annotation.JsonProperty("tenantId") TenantId tenantId,
-        @com.fasterxml.jackson.annotation.JsonProperty("name") String name,
-        @com.fasterxml.jackson.annotation.JsonProperty("version") String version,
-        @com.fasterxml.jackson.annotation.JsonProperty("description") String description,
-        @com.fasterxml.jackson.annotation.JsonProperty("nodes") List<NodeDefinition> nodes,
-        @com.fasterxml.jackson.annotation.JsonProperty("inputs") Map<String, InputDefinition> inputs,
-        @com.fasterxml.jackson.annotation.JsonProperty("outputs") Map<String, OutputDefinition> outputs,
-        @com.fasterxml.jackson.annotation.JsonProperty("metadata") WorkflowMetadata metadata,
-        @com.fasterxml.jackson.annotation.JsonProperty("defaultRetryPolicy") RetryPolicy defaultRetryPolicy,
-        @com.fasterxml.jackson.annotation.JsonProperty("compensationPolicy") CompensationPolicy compensationPolicy) {
+        @JsonProperty("id") WorkflowDefinitionId id,
+        @JsonProperty("tenantId") TenantId tenantId,
+        @JsonProperty("name") String name,
+        @JsonProperty("version") String version,
+        @JsonProperty("description") String description,
+        @JsonProperty("nodes") List<NodeDefinition> nodes,
+        @JsonProperty("inputs") Map<String, InputDefinition> inputs,
+        @JsonProperty("outputs") Map<String, OutputDefinition> outputs,
+        @JsonProperty("metadata") WorkflowMetadata metadata,
+        @JsonProperty("defaultRetryPolicy") RetryPolicy defaultRetryPolicy,
+        @JsonProperty("compensationPolicy") CompensationPolicy compensationPolicy) {
 
     public WorkflowDefinition {
         Objects.requireNonNull(id, "Workflow ID cannot be null");
@@ -55,14 +59,14 @@ public record WorkflowDefinition(
                 .findFirst();
     }
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     public List<NodeDefinition> getStartNodes() {
         return nodes.stream()
                 .filter(NodeDefinition::isStartNode)
                 .toList();
     }
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     public List<NodeDefinition> getEndNodes() {
         return nodes.stream()
                 .filter(NodeDefinition::isEndNode)
@@ -71,7 +75,7 @@ public record WorkflowDefinition(
 
     // ==================== VALIDATION ====================
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     public boolean isValid() {
         return hasAtLeastOneStartNode()
                 && hasNoCircularDependencies()
@@ -147,7 +151,7 @@ public record WorkflowDefinition(
 
     // ==================== COMPENSATION ====================
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     public boolean isCompensationEnabled() {
         return compensationPolicy != null && compensationPolicy.enabled();
     }

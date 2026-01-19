@@ -32,13 +32,14 @@
         <module>core/gamelan-engine-core</module>
         <module>core/gamelan-engine-api</module>
         <module>core/gamelan-plugin-api</module>
-        <module>core/gamelan-registry</module>
+        <module>core/gamelan-executor-registry</module>
         <module>core/gamelan-runtime-core</module>
-        <module>ui/gamelan-cli</module>
+        <module>core/gamelan-sdk-executor-core</module>
         <module>sdk/gamelan-sdk-client</module>
-        <module>sdk/gamelan-sdk-executor</module>
-        <module>protocol/gamelan-grpc</module>
-        <module>protocol/gamelan-kafka</module>
+        <module>sdk/gamelan-sdk-executor-local</module>
+        <module>sdk/gamelan-sdk-executor-remote</module>
+        <module>protocol/gamelan-protocol-grpc</module>
+        <module>protocol/gamelan-protocol-kafka</module>
         <module>runtime/gamelan-runtime-distributed</module>
         <module>runtime/gamelan-runtime-standalone</module>
         <module>plugins</module>

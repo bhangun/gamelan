@@ -17,7 +17,7 @@ public interface WorkflowValidatorPlugin extends GamelanPlugin {
      * @param definition the workflow definition to validate
      * @return list of validation errors (empty if valid)
      */
-    List<ValidationError> validate(WorkflowDefinition definition);
+    List<ValidationError> validate(WorkflowDefinitionInfo definition);
 
     /**
      * Get the validation rules provided by this plugin
@@ -29,22 +29,22 @@ public interface WorkflowValidatorPlugin extends GamelanPlugin {
     /**
      * Workflow definition information
      */
-    interface WorkflowDefinition {
+    interface WorkflowDefinitionInfo {
         String definitionId();
 
         String name();
 
         String version();
 
-        List<NodeDefinition> nodes();
+        List<NodeDefinitionInfo> nodes();
 
-        List<Transition> transitions();
+        List<TransitionInfo> transitions();
     }
 
     /**
      * Node definition information
      */
-    interface NodeDefinition {
+    interface NodeDefinitionInfo {
         String nodeId();
 
         String nodeType();
@@ -55,7 +55,7 @@ public interface WorkflowValidatorPlugin extends GamelanPlugin {
     /**
      * Transition information
      */
-    interface Transition {
+    interface TransitionInfo {
         String fromNodeId();
 
         String toNodeId();

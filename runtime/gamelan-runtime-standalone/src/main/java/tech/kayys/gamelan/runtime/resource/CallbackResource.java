@@ -9,9 +9,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import tech.kayys.gamelan.api.engine.WorkflowRunManager;
-import tech.kayys.gamelan.execution.ExternalSignal;
-import tech.kayys.gamelan.model.WorkflowRunId;
+import tech.kayys.gamelan.engine.signal.ExternalSignal;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 
 @Path("/api/v1/callbacks")
 @Produces(MediaType.APPLICATION_JSON)
