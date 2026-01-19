@@ -1,4 +1,4 @@
-package tech.kayys.gamelan.runtime.standalone.plugin;
+package tech.kayys.gamelan.runtime.resource;
 
 import io.quarkus.logging.Log;
 import io.smallrye.mutiny.Uni;
@@ -8,20 +8,18 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 import tech.kayys.gamelan.engine.plugin.GamelanPlugin;
 import tech.kayys.gamelan.engine.plugin.PluginManager;
 import tech.kayys.gamelan.engine.plugin.PluginMetadata;
 import tech.kayys.gamelan.engine.plugin.PluginRegistry;
 
-import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
+
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -39,7 +37,7 @@ public class PluginResource {
     PluginManager pluginManager;
 
     @Inject
-    PluginConfigurationService pluginConfigService;
+    tech.kayys.gamelan.runtime.service.PluginConfigurationService pluginConfigService;
 
     @Inject
     @ConfigProperty(name = "gamelan.plugins.directory", defaultValue = "./plugins")
@@ -48,45 +46,22 @@ public class PluginResource {
     @POST
     @jakarta.ws.rs.Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Uni<Response> uploadPlugin(MultipartFormDataInput input) {
-        // ... (file upload logic similar to before, but wrapped in Uni or done
-        // synchronously then delegated)
-        // Since input processing is blocking/IO heavy, we should blocking execution or
-        // use blocking primitives if possible,
-        // but loadPlugin is reactive.
-
+    public Uni<Response> uploadPlugin(@RestForm("uploadedInputStream") FileUpload file, @RestForm String filename) {
         return Uni.createFrom().item(() -> {
             try {
-                // Extract uploaded file and filename from multipart input
-                Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-
-                List<InputPart> fileParts = uploadForm.get("uploadedInputStream");
-                if (fileParts == null || fileParts.isEmpty()) {
+                if (file == null) {
                     throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\": \"No file uploaded\"}")
                             .build());
                 }
 
-                InputPart filePart = fileParts.get(0);
-                InputStream uploadedInputStream = filePart.getBody(InputStream.class, null);
-
-                List<InputPart> filenameParts = uploadForm.get("filename");
-                String filename = null;
-                if (filenameParts != null && !filenameParts.isEmpty()) {
-                    filename = filenameParts.get(0).getBody(String.class, null);
-                }
-
-                if (filename == null) {
-                    // Try to get filename from content disposition header
-                    String contentDisposition = filePart.getHeaders().getFirst("Content-Disposition");
-                    if (contentDisposition != null && contentDisposition.contains("filename=")) {
-                        filename = contentDisposition.substring(contentDisposition.indexOf("filename=") + 10,
-                                contentDisposition.length() - 1);
-                    }
+                String finalFilename = filename;
+                if (finalFilename == null || finalFilename.isBlank()) {
+                    finalFilename = file.fileName();
                 }
 
                 // Validate file extension
-                if (filename == null || !filename.toLowerCase().endsWith(".jar")) {
+                if (finalFilename == null || !finalFilename.toLowerCase().endsWith(".jar")) {
                     throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
                             .entity("{\"error\": \"Only JAR files are allowed\"}")
                             .build());
@@ -99,19 +74,22 @@ public class PluginResource {
                 }
 
                 // Save the uploaded file
-                java.nio.file.Path targetPath = pluginsDir.resolve(filename);
+                java.nio.file.Path targetPath = pluginsDir.resolve(finalFilename);
                 if (Files.exists(targetPath)) {
                     throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
                             .entity("{\"error\": \"Plugin file already exists\"}")
                             .build());
                 }
 
-                try (FileOutputStream outputStream = new FileOutputStream(targetPath.toFile())) {
-                    byte[] buffer = new byte[8192];
-                    int bytesRead;
-                    while ((bytesRead = uploadedInputStream.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, bytesRead);
-                    }
+                // Move/Copy the file
+                // FileUpload puts it in a temp location usually
+                if (file.filePath() != null) {
+                    Files.move(file.filePath(), targetPath);
+                } else {
+                    // Fallback if no path (in-memory?)
+                    // but FileUpload usually relies on disk for large files
+                    // Assuming we can read bytes if needed, but move is better
+                    throw new RuntimeException("File upload path not available");
                 }
 
                 return targetPath;

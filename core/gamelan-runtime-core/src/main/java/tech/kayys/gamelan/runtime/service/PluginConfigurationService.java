@@ -1,4 +1,4 @@
-package tech.kayys.gamelan.runtime.standalone.plugin;
+package tech.kayys.gamelan.runtime.service;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
