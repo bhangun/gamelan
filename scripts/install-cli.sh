@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Silat CLI Installation Script
-# This script downloads and installs the Silat CLI tool
+# Gamelan CLI Installation Script
+# This script downloads and installs the Gamelan CLI tool
 
 set -e
 
@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-print_info "Silat CLI Installation Script"
+print_info "Gamelan CLI Installation Script"
 print_info "Version: $VERSION"
 print_info "Installation directory: $INSTALL_DIR"
 
@@ -108,51 +108,51 @@ fi
 
 # Determine the artifact name based on version
 if [ "$VERSION" = "latest" ]; then
-    ARTIFACT_NAME="silat-cli-*.jar"
+    ARTIFACT_NAME="gamelan-cli-*.jar"
 else
-    ARTIFACT_NAME="silat-cli-$VERSION.jar"
+    ARTIFACT_NAME="gamelan-cli-$VERSION.jar"
 fi
 
-print_info "Downloading Silat CLI..."
+print_info "Downloading Gamelan CLI..."
 
 # In a real scenario, this would download from an actual repository
 # For now, we'll simulate the download process
 # This is a placeholder - in a real scenario, you would have a URL like:
-# https://repo.example.com/silat/silat-cli-$VERSION.jar
+# https://repo.example.com/gamelan/gamelan-cli-$VERSION.jar
 
 # Since we don't have a real repository, let's create a placeholder
 # In a real scenario, you would use:
-# curl -L -o "$TEMP_DIR/silat-cli.jar" "https://repo.example.com/silat/silat-cli-$VERSION.jar"
+# curl -L -o "$TEMP_DIR/gamelan-cli.jar" "https://repo.example.com/gamelan/gamelan-cli-$VERSION.jar"
 
 print_warning "This script is a template. In a real deployment, it would download from a repository."
 print_info "Building from source instead..."
 
 # Build the CLI from source
-if [ -d "silat-cli" ]; then
-    cd silat-cli
+if [ -d "gamelan-cli" ]; then
+    cd gamelan-cli
     mvn clean package -DskipTests
     cd ..
     
     # Copy the built jar to temp directory
-    cp silat-cli/target/silat-cli-*.jar "$TEMP_DIR/silat-cli.jar"
+    cp gamelan-cli/target/gamelan-cli-*.jar "$TEMP_DIR/gamelan-cli.jar"
 else
-    print_error "silat-cli module not found in current directory. Please run this script from the project root."
+    print_error "gamelan-cli module not found in current directory. Please run this script from the project root."
     exit 1
 fi
 
 print_info "Download complete."
 
 # Create the executable script
-cat > "$TEMP_DIR/silat" << 'EOF'
+cat > "$TEMP_DIR/gamelan" << 'EOF'
 #!/bin/bash
 
-# Silat CLI wrapper script
-# This script provides a convenient way to run the Silat CLI
+# Gamelan CLI wrapper script
+# This script provides a convenient way to run the Gamelan CLI
 
-CLI_JAR="$(dirname "$0")/silat-cli.jar"
+CLI_JAR="$(dirname "$0")/gamelan-cli.jar"
 
 if [ ! -f "$CLI_JAR" ]; then
-    echo "Error: silat-cli.jar not found in $(dirname "$0")"
+    echo "Error: gamelan-cli.jar not found in $(dirname "$0")"
     exit 1
 fi
 
@@ -160,23 +160,23 @@ exec java -jar "$CLI_JAR" "$@"
 EOF
 
 # Make the script executable
-chmod +x "$TEMP_DIR/silat"
+chmod +x "$TEMP_DIR/gamelan"
 
 # Install the files
 if [ "$USE_SUDO" = "true" ]; then
-    sudo cp "$TEMP_DIR/silat-cli.jar" "$INSTALL_DIR/"
-    sudo cp "$TEMP_DIR/silat" "$INSTALL_DIR/"
+    sudo cp "$TEMP_DIR/gamelan-cli.jar" "$INSTALL_DIR/"
+    sudo cp "$TEMP_DIR/gamelan" "$INSTALL_DIR/"
 else
-    cp "$TEMP_DIR/silat-cli.jar" "$INSTALL_DIR/"
-    cp "$TEMP_DIR/silat" "$INSTALL_DIR/"
+    cp "$TEMP_DIR/gamelan-cli.jar" "$INSTALL_DIR/"
+    cp "$TEMP_DIR/gamelan" "$INSTALL_DIR/"
 fi
 
 # Clean up
 rm -rf "$TEMP_DIR"
 
-print_info "Silat CLI installed successfully!"
-print_info "You can now run 'silat --help' to get started."
-print_info "Installation location: $INSTALL_DIR/silat"
+print_info "Gamelan CLI installed successfully!"
+print_info "You can now run 'gamelan --help' to get started."
+print_info "Installation location: $INSTALL_DIR/gamelan"
 
 # Check if INSTALL_DIR is in PATH
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then

@@ -15,7 +15,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Validates workflow structure and dependencies
   - Creates execution graphs from workflow definitions
   - Resolves variable references and expressions
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Workflow Scheduler
 - **Purpose**: Schedules workflow execution based on triggers and dependencies
@@ -24,7 +24,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Handles workflow prioritization and resource allocation
   - Implements scheduling algorithms (FIFO, priority-based, etc.)
   - Coordinates with runtime for task execution
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Workflow Coordinator
 - **Purpose**: Coordinates the execution of complex multi-step workflows
@@ -33,7 +33,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Handles workflow branching and merging
   - Coordinates parallel task execution
   - Implements compensation logic for failed workflows
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 ### 2. Task Management
 
@@ -44,7 +44,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Allocates resources to scheduled tasks
   - Manages task priorities and deadlines
   - Handles task rescheduling on failures
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Task Monitor
 - **Purpose**: Monitors the execution status of workflow tasks
@@ -53,7 +53,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Detects task timeouts and failures
   - Reports task status to workflow coordinator
   - Implements task restart and recovery mechanisms
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Dependency Resolver
 - **Purpose**: Manages dependencies between workflow tasks
@@ -62,7 +62,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Determines task execution readiness
   - Handles conditional task execution
   - Manages data flow between dependent tasks
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 ### 3. Communication and Integration
 
@@ -73,7 +73,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Handles API authentication and authorization
   - Manages API rate limiting and retries
   - Processes API responses and errors
-- **Location**: `wayang-workflow-engine/silat-api/`
+- **Location**: `wayang-workflow-engine/gamelan-api/`
 
 #### Message Queue
 - **Purpose**: Integrates with message queuing systems
@@ -82,7 +82,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Consumes messages from queues
   - Handles message serialization and deserialization
   - Implements message acknowledgment protocols
-- **Location**: `wayang-workflow-engine/silat-kafka/`
+- **Location**: `wayang-workflow-engine/gamelan-kafka/`
 
 #### Registry
 - **Purpose**: Manages service discovery and registration
@@ -91,7 +91,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Discovers available services
   - Maintains service health status
   - Implements load balancing strategies
-- **Location**: `wayang-workflow-engine/silat-registry/`
+- **Location**: `wayang-workflow-engine/gamelan-registry/`
 
 #### CLI Agent
 - **Purpose**: Provides command-line interface for workflow management
@@ -102,7 +102,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Enables workflow run lifecycle management
   - Supports executor registration and monitoring
   - Formats and displays responses in user-friendly format
-- **Location**: `wayang-workflow-engine/silat-cli/`
+- **Location**: `wayang-workflow-engine/gamelan-cli/`
 
 ### 4. Event and Trigger
 
@@ -113,7 +113,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Filters and validates incoming events
   - Initiates workflow executions based on events
   - Implements event correlation and deduplication
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Timer
 - **Purpose**: Manages time-based triggers and scheduling
@@ -122,7 +122,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Manages delayed workflow executions
   - Implements timeout mechanisms for tasks
   - Coordinates with system clocks for accuracy
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Condition Evaluator
 - **Purpose**: Evaluates conditions that determine workflow flow
@@ -131,7 +131,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Evaluates boolean expressions and predicates
   - Makes branching decisions based on data
   - Implements complex decision trees
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 ### 5. Monitoring and Analytics
 
@@ -142,7 +142,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Monitors resource utilization
   - Collects error rates and success metrics
   - Exports metrics to monitoring systems
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 #### Workflow Analyzer
 - **Purpose**: Analyzes workflow execution patterns and performance
@@ -151,7 +151,7 @@ The Wayang Workflow Engine is responsible for parsing, scheduling, and executing
   - Recommends optimization strategies
   - Analyzes historical execution data
   - Generates performance reports
-- **Location**: `wayang-workflow-engine/silat-engine/`
+- **Location**: `wayang-workflow-engine/gamelan-engine/`
 
 ## Configuration
 

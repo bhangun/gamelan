@@ -34,24 +34,24 @@ jobs:
       run: mvn -B test
 
     - name: Run CLI module tests specifically
-      run: mvn -B test -pl silat-cli
+      run: mvn -B test -pl gamelan-cli
 
     - name: Verify CLI module builds
       run: |
-        cd silat-cli
+        cd gamelan-cli
         mvn -B compile
         mvn -B test
         cd ..
 
     - name: Package CLI module
       run: |
-        cd silat-cli
+        cd gamelan-cli
         mvn -B package -DskipTests
         cd ..
 
     - name: Upload CLI artifact
       uses: actions/upload-artifact@v4
       with:
-        name: silat-cli-jar
-        path: silat-cli/target/silat-cli-*.jar
+        name: gamelan-cli-jar
+        path: gamelan-cli/target/gamelan-cli-*.jar
         if-no-files-found: warn

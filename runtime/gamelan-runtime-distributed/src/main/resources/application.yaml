@@ -1,0 +1,453 @@
+
+# ============================================================================
+# GAMELAN WORKFLOW ENGINE - APPLICATION CONFIGURATION
+# ============================================================================
+# Quarkus configuration for the workflow engine service
+# Environment: Development, Staging, Production
+
+# SECURITY NOTE: TLS/SSL is disabled by default for internal services
+# Reasoning:
+# - IKET already enforces: mTLS, JWT/OIDC, Rate limits, AuthZ/policy
+# - Internal services: Not internet-facing, communicate only in trusted network
+# - Use execution tokens, not user JWTs for internal communication
+# This avoids: Double TLS termination, Certificate sprawl, Latency/CPU overhead, Operational complexity
+quarkus:
+  # ==================== CORE CONFIGURATION ====================
+  index-dependency:
+    gamelan-common:
+      group-id: tech.kayys.gamelan
+      artifact-id: gamelan-common
+    gamelan-registry:
+      group-id: tech.kayys.gamelan
+      artifact-id: gamelan-registry
+    gamelan-grpc:
+      group-id: tech.kayys.gamelan
+      artifact-id: gamelan-grpc
+    gamelan-engine:
+      group-id: tech.kayys.gamelan
+      artifact-id: gamelan-engine
+    gamelan-kafka:
+      group-id: tech.kayys.gamelan
+      artifact-id: gamelan-kafka
+  application:
+    name: gamelan-workflow-engine
+    version: 1.0.0
+
+  # ==================== HTTP CONFIGURATION ====================
+  http:
+    port: 3100
+    host: 0.0.0.0
+    cors:
+      ~: true
+      origins: "*"
+      methods: "GET,POST,PUT,DELETE,PATCH"
+      headers: "*"
+    limits:
+      max-body-size: 10M
+      max-form-attribute-size: 2048
+    # SSL/TLS is disabled by default for internal services
+    # to avoid double encryption when IKET already handles mTLS, JWT/OIDC, etc.
+    ssl:
+      # certificate:
+      #   files: ${SSL_CERT:src/main/resources/certs/server.crt}
+      #   key-files: ${SSL_KEY:src/main/resources/certs/server.key}
+      # trust-store:
+      #   files: ${SSL_TRUST_STORE:src/main/resources/certs/ca.crt}
+      # client-auth: ${SSL_CLIENT_AUTH:required}
+      enabled: false
+
+  # HTTP/2 is only available with SSL, so we disable it for internal use
+  # http2: true
+  
+  # ==================== DATABASE CONFIGURATION ====================
+  datasource:
+    db-kind: postgresql
+    username: ${GAMELAN_DB_USER:gamelan}
+    password: ${GAMELAN_DB_PASSWORD:gamelan123}
+    
+    # Reactive datasource
+    reactive:
+      url: postgresql://${GAMELAN_DB_HOST:localhost}:${GAMELAN_DB_PORT:5432}/${GAMELAN_DB_NAME:gamelan_workflow}
+      max-size: 20
+      idle-timeout: PT10M
+      
+    # JDBC datasource (for migrations)
+    jdbc:
+      url: jdbc:postgresql://${GAMELAN_DB_HOST:localhost}:${GAMELAN_DB_PORT:5432}/${GAMELAN_DB_NAME:gamelan_workflow}
+      max-size: 16
+      min-size: 2
+      
+  # Hibernate Configuration
+  hibernate-orm:
+    database:
+      generation: none  # Use Flyway for migrations
+    log:
+      sql: ${HIBERNATE_LOG_SQL:false}
+      format-sql: true
+    dialect: org.hibernate.dialect.PostgreSQLDialect
+    
+  # Flyway Database Migrations
+  flyway:
+    migrate-at-start: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    
+  # ==================== REDIS CONFIGURATION ====================
+  redis:
+    hosts: redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    client-type: standalone
+    timeout: 10s
+    max-pool-size: 20
+    max-waiting-requests: 100
+    
+  # ==================== KAFKA CONFIGURATION ====================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    
+    # Dev Services configuration
+    devservices:
+      image-name: docker.redpanda.com/redpandadata/redpanda:v24.1.2
+    
+    # Producer configuration
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.quarkus.kafka.client.serialization.JsonbSerializer
+      acks: all
+      retries: 3
+      max-in-flight-requests-per-connection: 5
+      compression-type: snappy
+      batch-size: 16384
+      linger-ms: 10
+      enable-idempotence: true
+      
+    # Consumer configuration  
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.quarkus.kafka.client.serialization.JsonbDeserializer
+      group-id: gamelan-workflow-engine
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 500
+      session-timeout-ms: 30000
+      
+  # ==================== GRPC CONFIGURATION ====================
+  grpc:
+    server:
+      port: 3101
+      host: 0.0.0.0
+      enable-reflection-service: true
+      max-inbound-message-size: 4194304  # 4MB
+      handshake-timeout: 30s
+    # SSL/TLS is disabled by default for internal services
+    # to avoid double encryption when IKET already handles mTLS, JWT/OIDC, etc.
+    ssl:
+      # certificate: ${GRPC_SSL_CERT:src/main/resources/certs/server.crt}
+      # key: ${GRPC_SSL_KEY:src/main/resources/certs/server.key}
+      # trust-store: ${GRPC_SSL_TRUST_STORE:src/main/resources/certs/ca.crt}
+      # client-auth: ${GRPC_SSL_CLIENT_AUTH:required}
+      enabled: false
+
+    # gRPC Clients (for executor communication)
+    clients:
+      executor:
+        host: ${EXECUTOR_GRPC_HOST:localhost}
+        port: ${EXECUTOR_GRPC_PORT:9091}
+        # Disable SSL for internal communication
+        ssl:
+          enabled: false
+
+
+
+  # ==================== OBSERVABILITY ====================
+
+  # Logging
+  log:
+    level: INFO
+    console:
+      enable: true
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n"
+      
+    category:
+      "tech.kayys.gamelan": ${GAMELAN_LOG_LEVEL:DEBUG}
+      "io.quarkus": INFO
+      "org.hibernate": INFO
+      "io.netty": WARN  # Suppress Epoll warnings and other netty debug messages
+      "io.grpc.netty.Utils": INFO  # Specifically target the gRPC netty utils that logs Epoll warnings
+      
+    # Log to file
+    file:
+      enable: ${LOG_FILE_ENABLE:true}
+      path: ${LOG_FILE_PATH:logs/gamelan-workflow-engine.log}
+      format: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n"
+      rotation:
+        max-file-size: 100M
+        max-backup-index: 10
+        
+  # OpenTelemetry (Distributed Tracing)
+  otel:
+    enabled: ${OTEL_ENABLED:true}
+    exporter:
+      otlp:
+        endpoint: ${OTEL_ENDPOINT:http://localhost:4317}
+    service-name: gamelan-workflow-engine
+    traces:
+      sampler: always_on
+
+  opentelemetry:
+    # Enable or disable OpenTelemetry tracing globally
+    enabled: ${QUARKUS_OTEL_ENABLED:true}
+    # Trace gRPC calls
+    tracing:
+      enabled: ${QUARKUS_OTEL_TRACING_ENABLED:true}
+      
+  # Metrics
+  micrometer:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+        path: /metrics
+        
+  # Health Checks
+  health:
+    enabled: true
+    
+  smallrye-health:
+    root-path: /health
+    liveness-path: /health/live
+    readiness-path: /health/ready
+    
+  # ==================== SECURITY ====================
+  
+  # Multi-tenancy
+  multitenancy:
+    enabled: true
+    tenant-resolver: header  # or subdomain, path
+    
+  # JWT Authentication
+  jwt:
+    auth:
+      public-key:
+        location: ${JWT_PUBLIC_KEY_LOCATION:src/main/resources/jwt/public-key.pem}
+  
+  smallrye-jwt:
+    enabled: ${JWT_ENABLED:true}
+    auth-mechanism: MP-JWT
+    token-schemes: bearer
+    
+  oidc:
+    enabled: ${OIDC_ENABLED:false}
+    auth-server-url: ${OIDC_AUTH_SERVER_URL:}
+    client-id: ${OIDC_CLIENT_ID:gamelan-workflow-engine}
+    
+  # CORS
+  http.cors:
+    ~: true
+    origins: ${CORS_ORIGINS:*}
+    methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+    
+  # ==================== SCHEDULER ====================
+  scheduler:
+    enabled: true
+    
+  # Quartz Scheduler (for distributed scheduling)
+  quartz:
+    clustered: true
+    store-type: jdbc-cmt
+    
+  # ==================== CONTAINER & KUBERNETES ====================
+  
+  # Docker/Podman
+  container-image:
+    group: kayys
+    name: gamelan-workflow-engine
+    tag: ${APP_VERSION:latest}
+    registry: ${CONTAINER_REGISTRY:docker.io}
+    build: true
+    
+  # Kubernetes
+  kubernetes:
+    enabled: ${KUBERNETES_ENABLED:false}
+    replicas: 3
+    service-type: ClusterIP
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "2000m"
+        
+    # Health probes
+    liveness-probe:
+      http-action-path: /health/live
+      initial-delay: 30
+      period: 10
+      
+    readiness-probe:
+      http-action-path: /health/ready
+      initial-delay: 10
+      period: 5
+      
+    # Environment variables
+    env:
+      vars:
+        - name: DB_HOST
+          value: postgres-service
+        - name: REDIS_HOST
+          value: redis-service
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: kafka-service:9092
+          
+  # ==================== NATIVE IMAGE ====================
+  native:
+    additional-build-args:
+      - "--initialize-at-run-time=io.netty.handler.codec.http2.Http2CodecUtil"
+      - "--initialize-at-build-time=org.postgresql.Driver"
+      - "-H:+ReportExceptionStackTraces"
+      - "-H:+PrintClassInitialization"
+      
+# ==================== GAMELAN-SPECIFIC CONFIGURATION ====================
+
+gamelan:
+  # Workflow Engine Configuration
+  engine:
+    # Maximum concurrent workflow executions
+    max-concurrent-executions: 1000
+    
+    # Default timeout for workflow execution
+    default-workflow-timeout: PT1H
+    
+    # Default timeout for node execution
+    default-node-timeout: PT10M
+    
+    # Enable event sourcing
+    event-sourcing:
+      enabled: true
+      snapshot-frequency: 100  # Create snapshot every N events
+      
+    # Retry configuration
+    retry:
+      default-max-attempts: 3
+      default-backoff-multiplier: 2.0
+      default-initial-delay: PT1S
+      default-max-delay: PT5M
+      
+    # Compensation configuration
+    compensation:
+      enabled: true
+      timeout: PT10M
+      
+  # Scheduler Configuration
+  scheduler:
+    # Task queue size
+    task-queue-size: 10000
+    
+    # Worker threads
+    worker-threads: 10
+    
+    # Enable task prioritization
+    enable-priority: true
+    
+  # Executor Configuration
+  executor:
+    # Communication strategy (GRPC, KAFKA, REST, AUTO)
+    communication-strategy: ${EXECUTOR_COMMUNICATION_STRATEGY:AUTO}
+    
+    # Timeout for executor responses
+    executor-timeout: PT30S
+    
+    # Circuit breaker configuration
+    circuit-breaker:
+      enabled: true
+      failure-threshold: 5
+      timeout: PT1M
+      
+  # Service Registry Configuration
+  registry:
+    type: ${REGISTRY_TYPE:static}  # static, consul, kubernetes
+    
+    # Consul configuration (if type=consul)
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      
+    # Kubernetes configuration (if type=kubernetes)
+    kubernetes:
+      namespace: ${K8S_NAMESPACE:default}
+      
+  # Multi-tenancy Configuration
+  tenancy:
+    # Tenant isolation level (DATABASE, SCHEMA, DISCRIMINATOR)
+    isolation-level: ${TENANT_ISOLATION:DISCRIMINATOR}
+
+    # Default tenant (deprecated - use new config below)
+    # default-tenant: system
+
+    # Tenant resolution strategy (HEADER, SUBDOMAIN, PATH)
+    resolution-strategy: HEADER
+
+    # Tenant header name
+    tenant-header: X-Tenant-ID
+
+  # Tenant Configuration (NEW - follows safe patterns)
+  tenant:
+    # Allow default tenant (dev only - must be explicitly false in prod)
+    allow-default: ${TENANT_ALLOW_DEFAULT:false}
+
+    # Default tenant ID (only used when allow-default=true)
+    default-id: ${TENANT_DEFAULT_ID:dev-tenant}
+    
+  # Monitoring Configuration
+  monitoring:
+    # Enable detailed metrics
+    detailed-metrics: true
+    
+    # Metrics retention period
+    metrics-retention: P7D
+    
+# ==================== PROFILES ====================
+
+# Development profile
+"%dev":
+  quarkus:
+    log.level: DEBUG
+    hibernate-orm.log.sql: true
+    live-reload.instrumentation: true
+    
+  gamelan:
+    engine:
+      max-concurrent-executions: 10
+      
+# Test profile  
+"%test":
+  quarkus:
+    kafka:
+      devservices:
+        enabled: false
+    datasource:
+      db-kind: postgresql
+      devservices:
+        enabled: true
+    hibernate-orm:
+      database.generation: drop-and-create
+      
+# Production profile
+"%prod":
+  quarkus:
+    log:
+      level: INFO
+      console.json: true
+      
+    # Production security
+    http:
+      limits:
+        max-connections: 1000
+        
+  gamelan:
+    engine:
+      max-concurrent-executions: 5000

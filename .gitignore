@@ -134,7 +134,7 @@ apidocs/
 **/application-test.properties
 **/application-prod.properties
 
-# Silat specific (if any config/cache files)
-**/silat-config/
-**/silat-cache/
+# Gamelan specific (if any config/cache files)
+**/gamelan-config/
+**/gamelan-cache/
 **/certs/    

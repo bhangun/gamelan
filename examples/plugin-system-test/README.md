@@ -1,18 +1,18 @@
 # Plugin System Test Harness
 
-This is a standalone test that demonstrates the Silat Plugin System functionality.
+This is a standalone test that demonstrates the Gamelan Plugin System functionality.
 
 ## Prerequisites
 
 1. Build the plugin API:
 ```bash
 cd /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow
-mvn clean install -pl silat-plugin-api -DskipTests
+mvn clean install -pl gamelan-plugin-api -DskipTests
 ```
 
 2. Build the example plugin:
 ```bash
-mvn clean package -f examples/silat-plugin-example/pom.xml
+mvn clean package -f examples/gamelan-plugin-example/pom.xml
 ```
 
 ## Running the Test
@@ -39,7 +39,7 @@ You should see output similar to:
 
 ```
 ================================================================================
-Silat Plugin System Test
+Gamelan Plugin System Test
 ================================================================================
 
 ✓ Plugin Manager initialized
@@ -51,7 +51,7 @@ Test 1: Loading Example Plugin
 ✓ Plugin loaded: Logging Interceptor Plugin
   - ID: logging-interceptor
   - Version: 1.0.0
-  - Author: Silat Team
+  - Author: Gamelan Team
   - Description: Logs all task executions for debugging and monitoring
 
 Test 2: Starting Plugin
@@ -85,12 +85,12 @@ Plugin System Features Demonstrated:
   ✓ Hot-reload functionality
   ✓ Plugin unloading and cleanup
 
-The Silat Plugin System is working correctly!
+The Gamelan Plugin System is working correctly!
 ```
 
 ## Troubleshooting
 
 If the test fails with "Plugin JAR not found", make sure you've built the example plugin:
 ```bash
-mvn clean package -f ../examples/silat-plugin-example/pom.xml
+mvn clean package -f ../examples/gamelan-plugin-example/pom.xml
 ```

@@ -1,0 +1,18 @@
+# Development-specific configuration
+# Enables default tenant for development only
+
+gamelan:
+  tenant:
+    # Allow default tenant in dev environment only
+    allow-default: true
+    # Default tenant ID for development
+    default-id: dev-tenant
+
+# Development logging
+quarkus:
+  log:
+    level: DEBUG
+    category:
+      "tech.kayys.gamelan": DEBUG
+  hibernate-orm:
+    log.sql: true

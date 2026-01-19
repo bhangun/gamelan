@@ -1,0 +1,91 @@
+package tech.kayys.gamelan.scheduler;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.InjectMock;
+import io.quarkus.redis.datasource.ReactiveRedisDataSource;
+import io.quarkus.redis.datasource.list.ReactiveListCommands;
+import io.quarkus.redis.datasource.sortedset.ReactiveSortedSetCommands;
+import io.smallrye.mutiny.Uni;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import jakarta.inject.Inject;
+import tech.kayys.gamelan.engine.node.NodeExecutionTask;
+import tech.kayys.gamelan.registry.EventPublisher;
+import tech.kayys.gamelan.registry.ExecutorRegistry;
+import tech.kayys.gamelan.dispatcher.TaskDispatcher;
+import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.model.ExecutorInfo;
+import tech.kayys.gamelan.model.ExecutionToken;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+@QuarkusTest
+public class DefaultWorkflowSchedulerTest {
+
+    @Inject
+    DefaultWorkflowScheduler scheduler;
+
+    @InjectMock
+    ReactiveRedisDataSource redis;
+
+    @InjectMock
+    EventPublisher eventPublisher;
+
+    @InjectMock
+    ExecutorRegistry executorRegistry;
+
+    @InjectMock
+    TaskDispatcher taskDispatcher;
+
+    private ReactiveSortedSetCommands<String, String> zsetCalls;
+    private ReactiveListCommands<String, String> listCalls;
+
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void setUp() {
+        zsetCalls = mock(ReactiveSortedSetCommands.class);
+        listCalls = mock(ReactiveListCommands.class);
+
+        when(redis.sortedSet(String.class, String.class)).thenReturn(zsetCalls);
+        when(redis.sortedSet(String.class)).thenReturn((ReactiveSortedSetCommands) zsetCalls);
+        when(redis.list(String.class, String.class)).thenReturn(listCalls);
+    }
+
+    @Test
+    void testScheduleTask() {
+        WorkflowRunId runId = WorkflowRunId.of(UUID.randomUUID().toString());
+        NodeId nodeId = NodeId.of("node-1");
+        ExecutionToken token = new ExecutionToken("token", runId, nodeId, 1, Instant.now().plus(Duration.ofHours(1)));
+        NodeExecutionTask task = new NodeExecutionTask(runId, nodeId, 1, token, Map.of(), null);
+        ExecutorInfo executor = mock(ExecutorInfo.class);
+
+        when(executorRegistry.getExecutorForNode(any())).thenReturn(Uni.createFrom().item(executor));
+        when(taskDispatcher.dispatch(any(), any())).thenReturn(Uni.createFrom().voidItem());
+
+        scheduler.scheduleTask(task).await().indefinitely();
+
+        verify(executorRegistry).getExecutorForNode(eq(nodeId));
+        verify(taskDispatcher).dispatch(eq(task), eq(executor));
+    }
+
+    @Test
+    void testScheduleRetry() {
+        WorkflowRunId runId = WorkflowRunId.of(UUID.randomUUID().toString());
+        NodeId nodeId = NodeId.of("node-1");
+        Duration delay = Duration.ofSeconds(10);
+
+        when(zsetCalls.zadd(anyString(), anyDouble(), anyString())).thenReturn(Uni.createFrom().item(true));
+
+        scheduler.scheduleRetry(runId, nodeId, delay).await().indefinitely();
+
+        verify(zsetCalls).zadd(eq("workflow:tasks:retry:zset"), anyDouble(), contains(runId.value()));
+    }
+}

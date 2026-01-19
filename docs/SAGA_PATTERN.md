@@ -1,19 +1,19 @@
-# Silat Saga Pattern - Complete Implementation
+# Gamelan Saga Pattern - Complete Implementation
 
 ## 🎉 Implementation Complete!
 
-The Saga pattern is now fully implemented and tested in the Silat workflow engine.
+The Saga pattern is now fully implemented and tested in the Gamelan workflow engine.
 
 ## 📦 Components Created
 
 ### Core Saga Types
 
-1. **CompensationStrategy** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationStrategy.java`)
+1. **CompensationStrategy** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationStrategy.java`)
    - `SEQUENTIAL` - Compensate nodes in reverse execution order
    - `PARALLEL` - Compensate all nodes simultaneously
    - `CUSTOM` - Plugin-based custom compensation logic
 
-2. **CompensationPolicy** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationPolicy.java`)
+2. **CompensationPolicy** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationPolicy.java`)
    ```java
    public record CompensationPolicy(
        CompensationStrategy strategy,
@@ -23,7 +23,7 @@ The Saga pattern is now fully implemented and tested in the Silat workflow engin
    )
    ```
 
-3. **CompensationResult** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationResult.java`)
+3. **CompensationResult** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationResult.java`)
    ```java
    public record CompensationResult(
        boolean success,
@@ -31,16 +31,16 @@ The Saga pattern is now fully implemented and tested in the Silat workflow engin
    )
    ```
 
-4. **CompensationService** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationService.java`)
+4. **CompensationService** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationService.java`)
    - Interface for saga compensation operations
    - Methods: `compensate()`, `compensateNode()`, `needsCompensation()`
 
-5. **CompensationCoordinator** (`silat-engine/src/main/java/tech/kayys/silat/saga/impl/CompensationCoordinator.java`)
+5. **CompensationCoordinator** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/impl/CompensationCoordinator.java`)
    - CDI bean implementing CompensationService
    - Handles all three compensation strategies
    - Integrates with WorkflowDefinitionRegistry
 
-6. **CompensationCoordinatorTest** (`silat-engine/src/test/java/tech/kayys/silat/saga/impl/CompensationCoordinatorTest.java`)
+6. **CompensationCoordinatorTest** (`gamelan-engine/src/test/java/tech/kayys/gamelan/saga/impl/CompensationCoordinatorTest.java`)
    - 9 comprehensive test cases
    - Tests all compensation strategies
    - Tests edge cases and error handling
@@ -216,7 +216,7 @@ WorkflowRun run = workflowEngine.execute(orderWorkflow, inputs);
 
 ## 🏆 Summary
 
-The Silat Saga Pattern implementation provides:
+The Gamelan Saga Pattern implementation provides:
 - ✅ **3 compensation strategies** (sequential, parallel, custom)
 - ✅ **Configurable policies** (timeout, retries, fail-on-error)
 - ✅ **Node-level handlers** for fine-grained control

@@ -2,7 +2,7 @@
 version: '3.8'
 
 networks:
-  silat-network:
+  gamelan-network:
     driver: bridge
 
 volumes:
@@ -19,11 +19,11 @@ services:
   
   postgres:
     image: postgres:16-alpine
-    container_name: silat-postgres
+    container_name: gamelan-postgres
     environment:
-      POSTGRES_DB: silat_db
-      POSTGRES_USER: silat
-      POSTGRES_PASSWORD: silat_password
+      POSTGRES_DB: gamelan_db
+      POSTGRES_USER: gamelan
+      POSTGRES_PASSWORD: gamelan_password
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     ports:
       - "5434:5432"
@@ -31,9 +31,9 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - silat-network
+      - gamelan-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U silat"]
+      test: ["CMD-SHELL", "pg_isready -U gamelan"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,14 +42,14 @@ services:
   
   redis:
     image: redis:7-alpine
-    container_name: silat-redis
-    command: redis-server --appendonly yes --requirepass silat_redis_pass
+    container_name: gamelan-redis
+    command: redis-server --appendonly yes --requirepass gamelan_redis_pass
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
-      - silat-network
+      - gamelan-network
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
@@ -60,7 +60,7 @@ services:
   
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    container_name: silat-zookeeper
+    container_name: gamelan-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -69,7 +69,7 @@ services:
     volumes:
       - zookeeper-data:/var/lib/zookeeper/data
     networks:
-      - silat-network
+      - gamelan-network
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "2181"]
       interval: 10s
@@ -78,7 +78,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: silat-kafka
+    container_name: gamelan-kafka
     depends_on:
       - zookeeper
     environment:
@@ -98,7 +98,7 @@ services:
     volumes:
       - kafka-data:/var/lib/kafka/data
     networks:
-      - silat-network
+      - gamelan-network
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
@@ -107,29 +107,29 @@ services:
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: silat-kafka-ui
+    container_name: gamelan-kafka-ui
     depends_on:
       - kafka
     environment:
-      KAFKA_CLUSTERS_0_NAME: silat-cluster
+      KAFKA_CLUSTERS_0_NAME: gamelan-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     ports:
       - "8090:8080"
     networks:
-      - silat-network
+      - gamelan-network
 
   # ==================== KEYCLOAK ====================
   
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
-    container_name: silat-keycloak
+    container_name: gamelan-keycloak
     command: start-dev
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/silat_db
-      KC_DB_USERNAME: silat
-      KC_DB_PASSWORD: silat_password
+      KC_DB_URL: jdbc:postgresql://postgres:5432/gamelan_db
+      KC_DB_USERNAME: gamelan
+      KC_DB_PASSWORD: gamelan_password
       KC_DB_SCHEMA: keycloak
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -145,31 +145,31 @@ services:
       - keycloak-data:/opt/keycloak/data
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     networks:
-      - silat-network
+      - gamelan-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8180/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 5
 
-  # ==================== SILAT CONTROL PLANE ====================
+  # ==================== GAMELAN CONTROL PLANE ====================
   
-  silat-control-plane:
+  gamelan-control-plane:
     build:
       context: .
       dockerfile: src/main/docker/Dockerfile.jvm
-    container_name: silat-control-plane
+    container_name: gamelan-control-plane
     environment:
       # Database
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: silat_db
-      DB_USERNAME: silat
-      DB_PASSWORD: silat_password
+      DB_NAME: gamelan_db
+      DB_USERNAME: gamelan
+      DB_PASSWORD: gamelan_password
       
       # Redis
       REDIS_HOST: redis://redis:6379
-      REDIS_PASSWORD: silat_redis_pass
+      REDIS_PASSWORD: gamelan_redis_pass
       
       # Kafka
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -182,7 +182,7 @@ services:
       OTEL_ENABLED: "true"
       OTEL_ENDPOINT: http://jaeger:4317
       
-      # Silat
+      # Gamelan
       TENANT_ISOLATION: strict
       MAX_CONCURRENT_RUNS: 1000
       EXECUTOR_REGISTRY: redis
@@ -204,7 +204,7 @@ services:
       - kafka
       - keycloak
     networks:
-      - silat-network
+      - gamelan-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 30s
@@ -216,7 +216,7 @@ services:
   
   prometheus:
     image: prom/prometheus:latest
-    container_name: silat-prometheus
+    container_name: gamelan-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -228,13 +228,13 @@ services:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     networks:
-      - silat-network
+      - gamelan-network
     depends_on:
-      - silat-control-plane
+      - gamelan-control-plane
 
   grafana:
     image: grafana/grafana:latest
-    container_name: silat-grafana
+    container_name: gamelan-grafana
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
@@ -246,7 +246,7 @@ services:
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     networks:
-      - silat-network
+      - gamelan-network
     depends_on:
       - prometheus
 
@@ -254,7 +254,7 @@ services:
   
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: silat-jaeger
+    container_name: gamelan-jaeger
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
@@ -262,34 +262,34 @@ services:
       - "4317:4317"    # OTLP gRPC
       - "4318:4318"    # OTLP HTTP
     networks:
-      - silat-network
+      - gamelan-network
 
   # ==================== ADDITIONAL SERVICES ====================
   
   # PgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: silat-pgadmin
+    container_name: gamelan-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@silat.tech
+      PGADMIN_DEFAULT_EMAIL: admin@gamelan.tech
       PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "5050:80"
     networks:
-      - silat-network
+      - gamelan-network
     depends_on:
       - postgres
 
   # Redis Commander for Redis management
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: silat-redis-commander
+    container_name: gamelan-redis-commander
     environment:
-      REDIS_HOSTS: local:redis:6379:0:silat_redis_pass
+      REDIS_HOSTS: local:redis:6379:0:gamelan_redis_pass
     ports:
       - "8081:8081"
     networks:
-      - silat-network
+      - gamelan-network
     depends_on:
       - redis

@@ -5,20 +5,20 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>tech.kayys.silat</groupId>
-        <artifactId>silat-parent</artifactId>
+        <groupId>tech.kayys.gamelan</groupId>
+        <artifactId>gamelan-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>silat-plugins</artifactId>
+    <artifactId>gamelan-plugins</artifactId>
     <packaging>pom</packaging>
 
-    <name>Silat Plugins Parent</name>
-    <description>Parent module for all Silat plugins</description>
+    <name>Gamelan Plugins Parent</name>
+    <description>Parent module for all Gamelan plugins</description>
 
     <modules>
-        <module>silat-plugin-default</module>
-        <module>silat-plugin-consul</module>
+        <module>gamelan-plugin-default</module>
+        <module>gamelan-plugin-consul</module>
     </modules>
 
     <properties>
@@ -30,8 +30,8 @@
         <dependencies>
             <!-- Import parent BOM -->
             <dependency>
-                <groupId>tech.kayys.silat</groupId>
-                <artifactId>silat-parent</artifactId>
+                <groupId>tech.kayys.gamelan</groupId>
+                <artifactId>gamelan-parent</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>

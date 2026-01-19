@@ -1,0 +1,122 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) The original authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+project:
+  name: gamelan-cli
+  description: Gamelan Workflow Engine CLI
+  longDescription: A command-line interface for managing Gamelan workflow engine
+  links:
+    homepage: https://github.com/kayys/gamelan
+  authors:
+    - Kayys Tech Team
+  license: Apache-2.0
+  inceptionYear: 2024
+
+release:
+  github:
+    owner: kayys
+    name: gamelan
+    overwrite: true
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        enabled: true
+        format: '- {{contributorName}}{{#contributorUsernameAsLink}} ({{contributorUsernameAsLink}}){{/contributorUsernameAsLink}}'
+
+distributions:
+  gamelan-cli:
+    type: SINGLE_JAR
+    artifact:
+      path: target/gamelan-cli-{{projectVersion}}-runner.jar
+      transformName: 'gamelan-cli-{{projectVersion}}.jar'
+    executable:
+      name: gamelan
+      windowsExtension: exe
+    java:
+      mainClass: tech.kayys.gamelan.cli.GamelanCli
+    artifacts:
+      # Native binaries for different platforms
+      - path: target/gamelan-cli-{{projectVersion}}-runner
+        platform: 'linux-x86_64'
+        transformName: 'gamelan-cli-{{projectVersion}}-linux-x64'
+      - path: target/gamelan-cli-{{projectVersion}}-runner
+        platform: 'linux-aarch64'
+        transformName: 'gamelan-cli-{{projectVersion}}-linux-arm64'
+      - path: target/gamelan-cli-{{projectVersion}}-runner.exe
+        platform: 'windows-x86_64'
+        transformName: 'gamelan-cli-{{projectVersion}}-windows-x64.exe'
+      - path: target/gamelan-cli-{{projectVersion}}-runner
+        platform: 'osx-x86_64'
+        transformName: 'gamelan-cli-{{projectVersion}}-macos-x64'
+      - path: target/gamelan-cli-{{projectVersion}}-runner
+        platform: 'osx-aarch64'
+        transformName: 'gamelan-cli-{{projectVersion}}-macos-arm64'
+
+signing:
+  active: RELEASE
+  armored: true
+
+packagers:
+  brew:
+    active: RELEASE
+    formulaName: gamelan-cli
+    homepage: https://github.com/kayys/gamelan
+    description: Gamelan Workflow Engine CLI
+    dependencies:
+      - name: openjdk
+        minimumVersion: '21'
+    extraProperties:
+      skipCategory: true
+
+  scoop:
+    active: RELEASE
+    bucket:
+      owner: kayys
+      name: gamelan
+    homepage: https://github.com/kayys/gamelan
+    description: Gamelan Workflow Engine CLI
+    license: Apache-2.0
+
+  jbang:
+    active: RELEASE
+    file: src/main/jbang/gamelan-cli.java
+
+  nativeImage:
+    active: RELEASE
+    distributions:
+      - gamelan-cli
+
+uploadAssets:
+  githubReleases:
+    active: RELEASE
+    files:
+      - path: 'target/**/gamelan-cli-*-runner.jar'
+      - path: 'target/**/gamelan-cli-*-runner.exe'
+      - path: 'target/**/gamelan-cli-*-linux-x64'
+      - path: 'target/**/gamelan-cli-*-linux-arm64'
+      - path: 'target/**/gamelan-cli-*-windows-x64.exe'
+      - path: 'target/**/gamelan-cli-*-macos-x64'
+      - path: 'target/**/gamelan-cli-*-macos-arm64'
+
+announce:
+  twitter:
+    active: RELEASE
+    status: 'gamelan-cli {{projectVersion}} has been released! {{releaseNotesUrl}}'
+  mastodon:
+    active: RELEASE
+    status: 'gamelan-cli {{projectVersion}} has been released! {{releaseNotesUrl}}'

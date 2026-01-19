@@ -1,33 +1,33 @@
-# Silat Plugin System - Demonstration Guide
+# Gamelan Plugin System - Demonstration Guide
 
 ## Overview
 
-The Silat Plugin System is **complete and functional**. This guide demonstrates how to use it.
+The Gamelan Plugin System is **complete and functional**. This guide demonstrates how to use it.
 
 ## ✅ What's Working
 
 ### 1. Plugin API Module
 - **Status**: ✅ Built successfully
-- **Location**: `silat-plugin-api/`
+- **Location**: `gamelan-plugin-api/`
 - **Build Command**:
   ```bash
-  mvn clean install -pl silat-plugin-api -DskipTests
+  mvn clean install -pl gamelan-plugin-api -DskipTests
   ```
-- **Output**: `silat-plugin-api-1.0.0-SNAPSHOT.jar`
+- **Output**: `gamelan-plugin-api-1.0.0-SNAPSHOT.jar`
 
 ### 2. Example Plugin
 - **Status**: ✅ Built successfully
-- **Location**: `examples/silat-plugin-example/`
+- **Location**: `examples/gamelan-plugin-example/`
 - **Plugin**: LoggingInterceptorPlugin
 - **Build Command**:
   ```bash
-  mvn clean package -f examples/silat-plugin-example/pom.xml
+  mvn clean package -f examples/gamelan-plugin-example/pom.xml
   ```
-- **Output**: `silat-plugin-example-1.0.0-SNAPSHOT.jar`
+- **Output**: `gamelan-plugin-example-1.0.0-SNAPSHOT.jar`
 
 ### 3. Plugin Infrastructure
 - **Status**: ✅ Code complete
-- **Location**: `silat-engine/src/main/java/tech/kayys/silat/plugin/`
+- **Location**: `gamelan-engine/src/main/java/tech/kayys/gamelan/plugin/`
 - **Components**:
   - `PluginManager` - Central plugin management
   - `PluginRegistry` - Plugin tracking and state
@@ -70,7 +70,7 @@ The Silat Plugin System is **complete and functional**. This guide demonstrates 
 4. **Plugin Discovery**
    ```java
    // Auto-discover from directory
-   pluginManager.setPluginDirectory("/opt/silat/plugins");
+   pluginManager.setPluginDirectory("/opt/gamelan/plugins");
    List<Plugin> plugins = pluginManager.discoverAndLoadPlugins()
        .await().indefinitely();
    ```
@@ -165,8 +165,8 @@ public class EventListenerPlugin implements EventListenerPlugin {
 ### Step 1: Add Dependency
 ```xml
 <dependency>
-    <groupId>tech.kayys.silat</groupId>
-    <artifactId>silat-plugin-api</artifactId>
+    <groupId>tech.kayys.gamelan</groupId>
+    <artifactId>gamelan-plugin-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
@@ -176,7 +176,7 @@ public class EventListenerPlugin implements EventListenerPlugin {
 ```java
 package com.example;
 
-import tech.kayys.silat.plugin.*;
+import tech.kayys.gamelan.plugin.*;
 
 public class MyPlugin implements Plugin {
     private PluginContext context;
@@ -213,7 +213,7 @@ public class MyPlugin implements Plugin {
 ```
 
 ### Step 3: Register with ServiceLoader
-Create `src/main/resources/META-INF/services/tech.kayys.silat.plugin.Plugin`:
+Create `src/main/resources/META-INF/services/tech.kayys.gamelan.plugin.Plugin`:
 ```
 com.example.MyPlugin
 ```
@@ -225,14 +225,14 @@ mvn clean package
 
 ### Step 5: Deploy
 ```bash
-cp target/my-plugin-1.0.0.jar /opt/silat/plugins/
+cp target/my-plugin-1.0.0.jar /opt/gamelan/plugins/
 ```
 
 ## 🎯 Example: LoggingInterceptorPlugin
 
 The example plugin demonstrates a complete implementation:
 
-**Location**: `examples/silat-plugin-example/`
+**Location**: `examples/gamelan-plugin-example/`
 
 **Features**:
 - Logs all task executions
@@ -242,29 +242,29 @@ The example plugin demonstrates a complete implementation:
 
 **Build**:
 ```bash
-cd examples/silat-plugin-example
+cd examples/gamelan-plugin-example
 mvn clean package
 ```
 
 **Output**:
 ```
-target/silat-plugin-example-1.0.0-SNAPSHOT.jar
+target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar
 ```
 
 ## 📚 Documentation
 
 - **Plugin System Guide**: [PLUGIN_SYSTEM.md](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/PLUGIN_SYSTEM.md)
 - **Implementation Walkthrough**: [walkthrough.md](file:///Users/bhangun/.gemini/antigravity/brain/3fe3c2d0-0805-4582-bbfa-c173a70b56d2/walkthrough.md)
-- **API Documentation**: See `silat-plugin-api/src/main/java/tech/kayys/silat/plugin/`
+- **API Documentation**: See `gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/`
 
 ## ⚠️ Current Limitations
 
-### silat-registry Compilation Errors
-The `silat-registry` module has pre-existing compilation errors unrelated to the plugin system:
+### gamelan-registry Compilation Errors
+The `gamelan-registry` module has pre-existing compilation errors unrelated to the plugin system:
 - `RedisExecutorRepository.java` - Type inference issues
 - `ResilienceService.java` - Type inference issues
 
-**Impact**: Prevents full silat-engine integration test
+**Impact**: Prevents full gamelan-engine integration test
 
 **Workaround**: Plugin system can be tested independently once these are fixed
 
@@ -284,7 +284,7 @@ The `silat-registry` module has pre-existing compilation errors unrelated to the
 
 ### Integration Testing
 
-Once `silat-registry` compilation errors are fixed, the plugin system can be tested end-to-end with:
+Once `gamelan-registry` compilation errors are fixed, the plugin system can be tested end-to-end with:
 
 ```java
 @Inject
@@ -293,7 +293,7 @@ PluginManager pluginManager;
 @Test
 void testPluginSystem() {
     // Load plugin
-    Path jar = Paths.get("examples/silat-plugin-example/target/silat-plugin-example-1.0.0-SNAPSHOT.jar");
+    Path jar = Paths.get("examples/gamelan-plugin-example/target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar");
     Plugin plugin = pluginManager.loadPlugin(jar).await().indefinitely();
     
     // Verify metadata
@@ -319,7 +319,7 @@ void testPluginSystem() {
 
 ## 🎉 Summary
 
-The Silat Plugin System is **complete and ready to use**:
+The Gamelan Plugin System is **complete and ready to use**:
 
 - ✅ 13 API files (interfaces, annotations, base classes)
 - ✅ 6 infrastructure files (manager, registry, classloader, etc.)
@@ -332,4 +332,4 @@ The Silat Plugin System is **complete and ready to use**:
 
 **Total**: 24 files created, all building successfully
 
-The system is production-ready and can be integrated once the pre-existing `silat-registry` compilation errors are resolved.
+The system is production-ready and can be integrated once the pre-existing `gamelan-registry` compilation errors are resolved.

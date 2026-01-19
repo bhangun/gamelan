@@ -1,8 +1,8 @@
-# Silat Plugin System
+# Gamelan Plugin System
 
 ## Overview
 
-The Silat Plugin System allows you to extend the workflow engine with custom functionality through well-defined extension points.
+The Gamelan Plugin System allows you to extend the workflow engine with custom functionality through well-defined extension points.
 
 ## Quick Start
 
@@ -10,8 +10,8 @@ The Silat Plugin System allows you to extend the workflow engine with custom fun
 
 ```xml
 <dependency>
-    <groupId>tech.kayys.silat</groupId>
-    <artifactId>silat-plugin-api</artifactId>
+    <groupId>tech.kayys.gamelan</groupId>
+    <artifactId>gamelan-plugin-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
@@ -22,8 +22,8 @@ The Silat Plugin System allows you to extend the workflow engine with custom fun
 ```java
 package com.example;
 
-import tech.kayys.silat.plugin.*;
-import tech.kayys.silat.plugin.interceptor.ExecutionInterceptorPlugin;
+import tech.kayys.gamelan.plugin.*;
+import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
 
 public class MyPlugin implements ExecutionInterceptorPlugin {
     private PluginContext context;
@@ -61,7 +61,7 @@ public class MyPlugin implements ExecutionInterceptorPlugin {
 
 ### 3. Register Plugin with ServiceLoader
 
-Create `src/main/resources/META-INF/services/tech.kayys.silat.plugin.Plugin`:
+Create `src/main/resources/META-INF/services/tech.kayys.gamelan.plugin.Plugin`:
 
 ```
 com.example.MyPlugin
@@ -78,7 +78,7 @@ mvn clean package
 Copy the JAR to the plugin directory:
 
 ```bash
-cp target/my-plugin-1.0.0.jar /opt/silat/plugins/
+cp target/my-plugin-1.0.0.jar /opt/gamelan/plugins/
 ```
 
 ## Plugin Types
@@ -192,17 +192,17 @@ String dataDir = context.getDataDirectory();
 
 ## Example Plugin
 
-See [silat-plugin-example](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/examples/silat-plugin-example) for a complete working example.
+See [gamelan-plugin-example](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/examples/gamelan-plugin-example) for a complete working example.
 
 ## Configuration
 
 Configure plugins in `application.yaml`:
 
 ```yaml
-silat:
+gamelan:
   plugins:
     enabled: true
-    directory: /opt/silat/plugins
+    directory: /opt/gamelan/plugins
     hot-reload: true
     plugins:
       - id: my-plugin

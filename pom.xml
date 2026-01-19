@@ -4,12 +4,12 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>tech.kayys.silat</groupId>
-    <artifactId>silat-parent</artifactId>
+    <groupId>tech.kayys.gamelan</groupId>
+    <artifactId>gamelan-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Silat Workflow Engine</name>
+    <name>Gamelan Workflow Engine</name>
     <description>Enterprise-grade workflow engine for agentic AI and business automation</description>
 
     <properties>
@@ -28,21 +28,22 @@
     </properties>
 
     <modules>
-        <module>core/silat-plugin-api</module>
-        <module>core/silat-engine</module>
-        <module>core/silat-common</module>
-        <module>core/silat-api</module>
-        <module>core/silat-registry</module>
-        <module>ui/silat-cli</module>
-        <module>sdk/silat-sdk-client</module>
-        <module>sdk/silat-sdk-executor</module>
-        <module>protocol/silat-grpc</module>
-        <module>protocol/silat-kafka</module>
-        <module>runtime/silat-runtime</module>
-        <module>runtime/silat-runtime-standalone</module>
+        <module>core/gamelan-engine</module>
+        <module>core/gamelan-engine-core</module>
+        <module>core/gamelan-engine-api</module>
+        <module>core/gamelan-plugin-api</module>
+        <module>core/gamelan-registry</module>
+        <module>core/gamelan-runtime-core</module>
+        <module>ui/gamelan-cli</module>
+        <module>sdk/gamelan-sdk-client</module>
+        <module>sdk/gamelan-sdk-executor</module>
+        <module>protocol/gamelan-grpc</module>
+        <module>protocol/gamelan-kafka</module>
+        <module>runtime/gamelan-runtime-distributed</module>
+        <module>runtime/gamelan-runtime-standalone</module>
         <module>plugins</module>
-        <module>examples/silat-test-client</module>
-        <module>examples/silat-test-executor</module>
+        <module>examples/gamelan-test-client</module>
+        <module>examples/gamelan-test-executor</module>
     </modules>
 
     <dependencyManagement>

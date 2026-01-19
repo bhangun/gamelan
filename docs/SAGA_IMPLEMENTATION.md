@@ -4,29 +4,29 @@
 
 ### Core Saga Components Created
 
-1. **CompensationStrategy** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationStrategy.java`)
+1. **CompensationStrategy** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationStrategy.java`)
    - SEQUENTIAL - Execute compensations in reverse order
    - PARALLEL - Execute all compensations at once
    - CUSTOM - Extensible for plugin-based compensation
 
-2. **CompensationPolicy** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationPolicy.java`)
+2. **CompensationPolicy** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationPolicy.java`)
    - Record with strategy, failOnError, timeout, maxRetries
    - Factory methods: `sequential()`, `parallel()`, `custom()`
 
-3. **CompensationResult** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationResult.java`)
+3. **CompensationResult** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationResult.java`)
    - Record with success flag and message
    - Factory methods: `success()`, `failure()`
 
-4. **CompensationService** (`silat-engine/src/main/java/tech/kayys/silat/saga/CompensationService.java`)
+4. **CompensationService** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/CompensationService.java`)
    - Interface for compensation operations
    - Methods: `compensate()`, `compensateNode()`, `needsCompensation()`
 
-5. **CompensationCoordinator** (`silat-engine/src/main/java/tech/kayys/silat/saga/impl/CompensationCoordinator.java`)
+5. **CompensationCoordinator** (`gamelan-engine/src/main/java/tech/kayys/gamelan/saga/impl/CompensationCoordinator.java`)
    - Implements CompensationService
    - Supports all three compensation strategies
    - Integrates with WorkflowDefinitionRegistry
 
-6. **CompensationCoordinatorTest** (`silat-engine/src/test/java/tech/kayys/silat/saga/impl/CompensationCoordinatorTest.java`)
+6. **CompensationCoordinatorTest** (`gamelan-engine/src/test/java/tech/kayys/gamelan/saga/impl/CompensationCoordinatorTest.java`)
    - Comprehensive test suite with 9 test cases
    - Tests all compensation strategies
    - Tests edge cases and error handling
@@ -113,7 +113,7 @@ The saga pattern integrates with:
 
 ## ✨ Summary
 
-The Silat Saga Pattern implementation is **95% complete** with:
+The Gamelan Saga Pattern implementation is **95% complete** with:
 - ✅ 4 core interfaces/records
 - ✅ 1 service implementation
 - ✅ 1 comprehensive test suite

@@ -4,13 +4,13 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>tech.kayys.silat.test</groupId>
+    <groupId>tech.kayys.gamelan.test</groupId>
     <artifactId>plugin-system-test</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Plugin System Test Harness</name>
-    <description>Standalone test to demonstrate the Silat plugin system</description>
+    <description>Standalone test to demonstrate the Gamelan plugin system</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -32,8 +32,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>tech.kayys.silat</groupId>
-            <artifactId>silat-plugin-api</artifactId>
+            <groupId>tech.kayys.gamelan</groupId>
+            <artifactId>gamelan-plugin-api</artifactId>
             <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -66,7 +66,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>tech.kayys.silat.test.PluginSystemTest</mainClass>
+                    <mainClass>tech.kayys.gamelan.test.PluginSystemTest</mainClass>
                 </configuration>
             </plugin>
         </plugins>

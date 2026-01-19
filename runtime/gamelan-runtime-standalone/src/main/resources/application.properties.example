@@ -1,0 +1,20 @@
+# Gamelan Plugin Configuration
+
+# Enable/disable plugin loading
+gamelan.plugin.enabled=true
+
+# Plugin directories to scan (comma-separated)
+# Can be absolute or relative paths
+gamelan.plugin.directories=plugins,/opt/gamelan/plugins
+
+# List of plugin IDs to disable
+# Useful for temporarily disabling problematic plugins
+gamelan.plugin.disabled=legacy-plugin,experimental-feature
+
+# Fail on plugin load errors
+# If true, application won't start if any plugin fails to load
+# If false, errors are logged and application continues
+gamelan.plugin.fail-on-error=false
+
+# Hot-reload plugins in dev mode (experimental)
+gamelan.plugin.hot-reload=false

@@ -1,10 +1,10 @@
 # Installation Scripts
 
-This directory contains scripts to help with installing and managing the Silat CLI.
+This directory contains scripts to help with installing and managing the Gamelan CLI.
 
 ## Installation Script
 
-The `install-cli.sh` script provides an easy way to install the Silat CLI on your system.
+The `install-cli.sh` script provides an easy way to install the Gamelan CLI on your system.
 
 ### Usage
 
@@ -31,7 +31,7 @@ The `install-cli.sh` script provides an easy way to install the Silat CLI on you
 ### What the script does
 
 1. Checks for prerequisites
-2. Downloads the Silat CLI JAR file (or builds from source in development)
+2. Downloads the Gamelan CLI JAR file (or builds from source in development)
 3. Creates a wrapper script for easy execution
 4. Installs both files to the specified directory
 5. Sets appropriate permissions

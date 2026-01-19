@@ -1,0 +1,13 @@
+# Production-specific configuration
+# Ensures default tenant is disabled in production
+
+gamelan:
+  tenant:
+    # Never allow default tenant in production
+    allow-default: false
+
+# Production logging
+quarkus:
+  log:
+    level: INFO
+    console.json: true

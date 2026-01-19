@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package tech.kayys.gamelan.dispatcher;
+
+option java_multiple_files = true;
+option java_package = "tech.kayys.gamelan.dispatcher";
+option java_outer_classname = "ExecutorProto";
+
+service Executor {
+  rpc Execute (ExecutionRequest) returns (ExecutionAck);
+}
+
+message ExecutionRequest {
+  string run_id = 1;
+  string node_id = 2;
+  int32 attempt = 3;
+  string token = 4;
+  map<string, string> variables = 5;
+  string idempotency_key = 6;
+  string signature = 7;
+}
+
+message ExecutionAck {
+  bool accepted = 1;
+  int32 code = 2;
+  string message = 3;
+}
