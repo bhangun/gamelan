@@ -27,26 +27,7 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
 
     protected AbstractWorkflowExecutor() {
         // Extract executor type from annotation
-        Executor annotation = getClass().getAnnotation(Executor.class);
-
-        // Handle Quarkus/CDI proxies
-        if (annotation == null && getClass().getName().endsWith("_Subclass")) {
-            annotation = getClass().getSuperclass().getAnnotation(Executor.class);
-        }
-
-        if (annotation == null) {
-            LOG.error("Failed to find @Executor annotation on class: {}", getClass().getName());
-            // Attempt to look up the hierarchy
-            Class<?> current = getClass();
-            while (current != Object.class) {
-                annotation = current.getAnnotation(Executor.class);
-                if (annotation != null) {
-                    LOG.info("Found @Executor annotation on parent class: {}", current.getName());
-                    break;
-                }
-                current = current.getSuperclass();
-            }
-        }
+        Executor annotation = findExecutorAnnotation(getClass());
 
         if (annotation == null) {
             throw new IllegalStateException(
@@ -205,5 +186,26 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
      */
     public ExecutorMetrics getMetrics() {
         return metrics;
+    }
+
+    private Executor findExecutorAnnotation(Class<?> clazz) {
+        // Direct lookup
+        Executor annotation = clazz.getAnnotation(Executor.class);
+        if (annotation != null) {
+            return annotation;
+        }
+
+        // Hierarchy lookup (redundant if @Inherited is used, but safe for manual
+        // proxies)
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            annotation = current.getAnnotation(Executor.class);
+            if (annotation != null) {
+                return annotation;
+            }
+            current = current.getSuperclass();
+        }
+
+        return null;
     }
 }

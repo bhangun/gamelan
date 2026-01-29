@@ -1,7 +1,6 @@
 package tech.kayys.gamelan.registry.cache;
 
 import io.quarkus.cache.CacheResult;
-import io.quarkus.redis.datasource.ReactiveRedisDataSource;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

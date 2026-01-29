@@ -3,6 +3,7 @@ package tech.kayys.gamelan.sdk.executor.core;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 
 import java.lang.annotation.*;
+import java.lang.annotation.Inherited;
 
 /**
  * ============================================================================
@@ -45,6 +46,7 @@ import java.lang.annotation.*;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Inherited
 @Documented
 public @interface Executor {
 

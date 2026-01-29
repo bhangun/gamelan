@@ -5,11 +5,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
@@ -101,8 +102,16 @@ public class GrpcExecutorTransport implements ExecutorTransport {
     private final BroadcastProcessor<NodeExecutionTask> taskProcessor = BroadcastProcessor.create();
 
     // For background operations
-    private final Executor executor = Executors.newSingleThreadExecutor();
-    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2, new ThreadFactory() {
+        private final AtomicInteger counter = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "gamelan-grpc-transport-" + counter.getAndIncrement());
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
 
     // Task streaming state
     private volatile CompletableFuture<Void> taskStreamingFuture;
@@ -218,7 +227,9 @@ public class GrpcExecutorTransport implements ExecutorTransport {
         return stub.registerExecutor(request)
                 .onItem().invoke(resp -> LOG.info("Executor registered successfully with ID: {}", resp.getExecutorId()))
                 .onFailure().retry().withBackOff(retryDelay, Duration.ofSeconds(1)).atMost(maxRetries)
-                .onFailure().invoke(error -> LOG.error("Failed to register executor {} after {} retries", executorId, maxRetries, error))
+                .onFailure()
+                .invoke(error -> LOG.error("Failed to register executor {} after {} retries", executorId, maxRetries,
+                        error))
                 .replaceWithVoid();
     }
 
@@ -233,7 +244,9 @@ public class GrpcExecutorTransport implements ExecutorTransport {
         return stub.unregisterExecutor(request)
                 .onItem().invoke(resp -> LOG.info("Executor unregistered successfully: {}", executorId))
                 .onFailure().retry().withBackOff(retryDelay, Duration.ofSeconds(1)).atMost(maxRetries)
-                .onFailure().invoke(error -> LOG.error("Failed to unregister executor {} after {} retries", executorId, maxRetries, error))
+                .onFailure()
+                .invoke(error -> LOG.error("Failed to unregister executor {} after {} retries", executorId, maxRetries,
+                        error))
                 .replaceWithVoid();
     }
 
@@ -277,73 +290,73 @@ public class GrpcExecutorTransport implements ExecutorTransport {
 
         // Create the stream and handle items/errors
         stub.streamTasks(request)
-            .onItem().transform(protoTask -> {
-                WorkflowRunId runId = WorkflowRunId.of(protoTask.getRunId());
-                NodeId nodeId = NodeId.of(protoTask.getNodeId());
-                int attempt = protoTask.getAttempt();
-                ExecutionToken token = new ExecutionToken(
-                        protoTask.getExecutionToken(),
-                        runId,
-                        nodeId,
-                        attempt,
-                        Instant.now().plus(Duration.ofHours(1)));
+                .onItem().transform(protoTask -> {
+                    WorkflowRunId runId = WorkflowRunId.of(protoTask.getRunId());
+                    NodeId nodeId = NodeId.of(protoTask.getNodeId());
+                    int attempt = protoTask.getAttempt();
+                    ExecutionToken token = new ExecutionToken(
+                            protoTask.getExecutionToken(),
+                            runId,
+                            nodeId,
+                            attempt,
+                            Instant.now().plus(Duration.ofHours(1)));
 
-                return new NodeExecutionTask(
-                        runId,
-                        nodeId,
-                        attempt,
-                        token,
-                        mapper.structToMap(protoTask.getContext()),
-                        null // retryPolicy not provided in proto
-                );
-            })
-            .subscribe().with(
-                task -> {
-                    LOG.debug("Received task {} for execution", task.nodeId().value());
-                    taskProcessor.onNext(task);
-                },
-                error -> {
-                    LOG.error("Error in task stream for executor {}: {}", executorId, error.getMessage());
+                    return new NodeExecutionTask(
+                            runId,
+                            nodeId,
+                            attempt,
+                            token,
+                            mapper.structToMap(protoTask.getContext()),
+                            null // retryPolicy not provided in proto
+                    );
+                })
+                .subscribe().with(
+                        task -> {
+                            LOG.debug("Received task {} for execution", task.nodeId().value());
+                            taskProcessor.onNext(task);
+                        },
+                        error -> {
+                            LOG.error("Error in task stream for executor {}: {}", executorId, error.getMessage());
 
-                    if (isShutdown.get()) {
-                        taskStreamingFuture.complete(null);
-                        return;
-                    }
-
-                    // Check if it's a retryable error
-                    if (isRetryableError(error) && retryCount < maxRetries) {
-                        LOG.info("Scheduling task stream retry in {} seconds, attempt {}/{}",
-                                retryDelay.getSeconds(), retryCount + 1, maxRetries);
-
-                        scheduledExecutor.schedule(() -> {
-                            if (!isShutdown.get()) {
-                                scheduleTaskStreamWithRetry(retryCount + 1);
+                            if (isShutdown.get()) {
+                                taskStreamingFuture.complete(null);
+                                return;
                             }
-                        }, retryDelay.toMillis(), TimeUnit.MILLISECONDS);
-                    } else {
-                        LOG.error("Max retries reached or non-retryable error for task stream, stopping attempts");
-                        taskStreamingFuture.completeExceptionally(error);
-                    }
-                },
-                () -> {
-                    LOG.info("Task stream completed for executor: {}", executorId);
-                    if (!isShutdown.get()) {
-                        LOG.info("Restarting task stream for executor: {}", executorId);
-                        scheduleTaskStreamWithRetry(0);
-                    } else {
-                        taskStreamingFuture.complete(null);
-                    }
-                }
-            );
+
+                            // Check if it's a retryable error
+                            if (isRetryableError(error) && retryCount < maxRetries) {
+                                LOG.info("Scheduling task stream retry in {} seconds, attempt {}/{}",
+                                        retryDelay.getSeconds(), retryCount + 1, maxRetries);
+
+                                scheduledExecutor.schedule(() -> {
+                                    if (!isShutdown.get()) {
+                                        scheduleTaskStreamWithRetry(retryCount + 1);
+                                    }
+                                }, retryDelay.toMillis(), TimeUnit.MILLISECONDS);
+                            } else {
+                                LOG.error(
+                                        "Max retries reached or non-retryable error for task stream, stopping attempts");
+                                taskStreamingFuture.completeExceptionally(error);
+                            }
+                        },
+                        () -> {
+                            LOG.info("Task stream completed for executor: {}", executorId);
+                            if (!isShutdown.get()) {
+                                LOG.info("Restarting task stream for executor: {}", executorId);
+                                scheduleTaskStreamWithRetry(0);
+                            } else {
+                                taskStreamingFuture.complete(null);
+                            }
+                        });
     }
 
     private boolean isRetryableError(Throwable error) {
         if (error instanceof StatusRuntimeException) {
             Status status = ((StatusRuntimeException) error).getStatus();
             return status.getCode() == Status.Code.UNAVAILABLE ||
-                   status.getCode() == Status.Code.DEADLINE_EXCEEDED ||
-                   status.getCode() == Status.Code.INTERNAL ||
-                   status.getCode() == Status.Code.UNKNOWN;
+                    status.getCode() == Status.Code.DEADLINE_EXCEEDED ||
+                    status.getCode() == Status.Code.INTERNAL ||
+                    status.getCode() == Status.Code.UNKNOWN;
         }
         return true; // Assume other errors are retryable
     }

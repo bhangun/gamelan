@@ -10,8 +10,11 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.micrometer.core.instrument.Timer;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,8 +36,21 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorRegistry.class);
 
-    // Time threshold for considering an executor unhealthy (30 seconds)
-    private static final Duration HEALTH_THRESHOLD = Duration.ofSeconds(30);
+    // Time threshold for considering an executor unhealthy
+    @ConfigProperty(name = "gamelan.registry.health.threshold", defaultValue = "30s")
+    Duration healthThreshold;
+
+    // Time threshold for removing an executor from registry
+    @ConfigProperty(name = "gamelan.registry.stale.threshold", defaultValue = "5m")
+    Duration staleThreshold;
+
+    // Interval for running the cleanup task
+    @ConfigProperty(name = "gamelan.registry.cleanup.interval", defaultValue = "1m")
+    Duration cleanupInterval;
+
+    // Default selection strategy
+    @ConfigProperty(name = "gamelan.registry.selection.strategy", defaultValue = "round-robin")
+    String defaultStrategyName;
 
     // In-memory registry (could be backed by Consul, K8s, etc.)
     private final Map<String, ExecutorInfo> executors = new ConcurrentHashMap<>();
@@ -50,6 +66,13 @@ public class ExecutorRegistry implements ExecutorRegistryService {
     // Default strategy
     private ExecutorSelectionStrategy defaultStrategy = roundRobinStrategy;
 
+    private final java.util.concurrent.ScheduledExecutorService cleanupExecutor = java.util.concurrent.Executors
+            .newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "gamelan-registry-cleanup");
+                thread.setDaemon(true);
+                return thread;
+            });
+
     @Inject
     ExecutorRepository executorRepository;
 
@@ -61,19 +84,93 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
     // Initialize metrics service after injection
     @jakarta.annotation.PostConstruct
-    void initializeMetrics() {
-        // Initialize metrics service with a supplier that returns the current executor count
+    void init() {
+        // Initialize metrics service with a supplier that returns the current executor
+        // count
         metricsService.initialize(() -> executors.size());
+
+        // Set default strategy from config
+        if ("random".equalsIgnoreCase(defaultStrategyName)) {
+            defaultStrategy = randomStrategy;
+        } else if ("weighted".equalsIgnoreCase(defaultStrategyName)) {
+            defaultStrategy = weightedStrategy;
+        } else {
+            defaultStrategy = roundRobinStrategy;
+        }
+
+        LOG.info("ExecutorRegistry initialized with healthThreshold={}, staleThreshold={}, strategy={}",
+                healthThreshold, staleThreshold, defaultStrategy.getName());
+
+        // Start cleanup task
+        cleanupExecutor.scheduleAtFixedRate(this::cleanupStaleExecutors,
+                cleanupInterval.toMillis(), cleanupInterval.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    @jakarta.annotation.PreDestroy
+    void shutdown() {
+        cleanupExecutor.shutdown();
+        try {
+            if (!cleanupExecutor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                cleanupExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            cleanupExecutor.shutdownNow();
+        }
+    }
+
+    private void cleanupStaleExecutors() {
+        Instant now = Instant.now();
+        Instant staleInstant = now.minus(staleThreshold);
+        List<String> toRemove = new ArrayList<>();
+
+        healthInfo.forEach((executorId, health) -> {
+            if (health.lastHeartbeat.isBefore(staleInstant)) {
+                toRemove.add(executorId);
+            }
+        });
+
+        if (!toRemove.isEmpty()) {
+            LOG.info("Cleaning up {} stale executors: {}", toRemove.size(), toRemove);
+            toRemove.forEach(id -> {
+                unregisterExecutor(id).subscribe().with(
+                        item -> LOG.debug("Successfully cleaned up stale executor: {}", id),
+                        failure -> LOG.error("Failed to clean up stale executor: {}", id, failure));
+            });
+        }
     }
 
     @Override
     public Uni<Optional<ExecutorInfo>> getExecutorForNode(NodeId nodeId) {
         return Uni.createFrom().deferred(() -> {
-            var timerSample = metricsService.startSelectionTimer();
+            Timer.Sample timerSample = metricsService.startSelectionTimer();
+
+            // Check cache first
+            List<String> cachedExecutorIds = nodeExecutorCache.get(nodeId);
+            if (cachedExecutorIds != null && !cachedExecutorIds.isEmpty()) {
+                // Filter healthy from cache
+                List<ExecutorInfo> healthyCached = cachedExecutorIds.stream()
+                        .map(executors::get)
+                        .filter(e -> e != null && isHealthyNow(e))
+                        .collect(Collectors.toList());
+
+                if (!healthyCached.isEmpty()) {
+                    Optional<ExecutorInfo> selected = defaultStrategy.select(nodeId, healthyCached, Map.of());
+                    metricsService.stopSelectionTimer(timerSample);
+                    if (selected.isPresent()) {
+                        metricsService.incrementSelection();
+                        return Uni.createFrom().item(selected);
+                    }
+                }
+            }
+
             Optional<ExecutorInfo> result = selectBestExecutorForNode(nodeId);
             metricsService.stopSelectionTimer(timerSample);
             if (result.isPresent()) {
                 metricsService.incrementSelection();
+                // Cache the selection (simplified: just store the selected for now, or update
+                // the list)
+                // In a production system, we'd probably cache all compatible healthy executors
             }
             return Uni.createFrom().item(result);
         });
@@ -86,7 +183,7 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
     @Override
     public Uni<List<ExecutorInfo>> getHealthyExecutors() {
-        Instant threshold = Instant.now().minus(HEALTH_THRESHOLD);
+        Instant threshold = Instant.now().minus(healthThreshold);
 
         List<ExecutorInfo> healthyExecutors = executors.values().stream()
                 .filter(executor -> {
@@ -105,23 +202,30 @@ public class ExecutorRegistry implements ExecutorRegistryService {
         // Initialize health info
         healthInfo.put(executor.executorId(), new ExecutorHealthInfo(executor.executorId()));
 
+        // Invalidate cache
+        nodeExecutorCache.clear();
+
         // Persist to storage
         return executorRepository.save(executor)
-                .invoke(() -> {
+                .onItem().invoke(() -> {
                     LOG.info("Registered executor: {} (type: {}, communication: {})",
                             executor.executorId(), executor.executorType(), executor.communicationType());
                     metricsService.incrementRegistration();
+                    metricsService.incrementExecutorCount();
                 });
     }
 
     @Override
     public Uni<Void> unregisterExecutor(String executorId) {
-        executors.remove(executorId);
-        healthInfo.remove(executorId);
+        if (executors.remove(executorId) != null) {
+            healthInfo.remove(executorId);
+            nodeExecutorCache.clear();
+            metricsService.decrementExecutorCount();
+        }
 
         // Remove from persistent storage
         return executorRepository.delete(executorId)
-                .invoke(() -> {
+                .onItem().invoke(() -> {
                     LOG.info("Unregistered executor: {}", executorId);
                     metricsService.incrementUnregistration();
                 });
@@ -152,7 +256,7 @@ public class ExecutorRegistry implements ExecutorRegistryService {
             return Uni.createFrom().item(false);
         }
 
-        Instant threshold = Instant.now().minus(HEALTH_THRESHOLD);
+        Instant threshold = Instant.now().minus(healthThreshold);
         boolean isHealthy = health.lastHeartbeat.isAfter(threshold);
         return Uni.createFrom().item(isHealthy);
     }
@@ -182,13 +286,13 @@ public class ExecutorRegistry implements ExecutorRegistryService {
         if (pluginManager == null)
             return executor;
 
-        Optional<ServiceDiscoveryPlugin> discoveryPlugin = pluginManager.getAllPlugins().stream()
-                .filter(p -> p instanceof ServiceDiscoveryPlugin)
-                .map(p -> (ServiceDiscoveryPlugin) p)
-                .findFirst();
+        List<ServiceDiscoveryPlugin> discoveryPlugins = pluginManager.getPluginsByType(ServiceDiscoveryPlugin.class);
+        if (discoveryPlugins.isEmpty()) {
+            return executor;
+        }
 
-        if (discoveryPlugin.isPresent()) {
-            Optional<String> discoveredEndpoint = discoveryPlugin.get().discoverEndpoint(executor.executorId());
+        for (ServiceDiscoveryPlugin plugin : discoveryPlugins) {
+            Optional<String> discoveredEndpoint = plugin.discoverEndpoint(executor.executorId());
             if (discoveredEndpoint.isPresent()) {
                 LOG.debug("Service Discovery: Overriding endpoint for {} from {} to {}",
                         executor.executorId(), executor.endpoint(), discoveredEndpoint.get());
@@ -249,7 +353,7 @@ public class ExecutorRegistry implements ExecutorRegistryService {
 
     @Override
     public Uni<ExecutorStatistics> getStatistics() {
-        Instant threshold = Instant.now().minus(HEALTH_THRESHOLD);
+        Instant threshold = Instant.now().minus(healthThreshold);
 
         int totalExecutors = executors.size();
         int healthyCount = 0;
@@ -319,7 +423,7 @@ public class ExecutorRegistry implements ExecutorRegistryService {
             return false;
         }
 
-        Instant threshold = Instant.now().minus(HEALTH_THRESHOLD);
+        Instant threshold = Instant.now().minus(healthThreshold);
         return health.lastHeartbeat.isAfter(threshold);
     }
 
@@ -343,9 +447,11 @@ public class ExecutorRegistry implements ExecutorRegistryService {
      */
     public Uni<Void> loadFromPersistentStorage() {
         return executorRepository.findAll()
-                .invoke(persistentExecutors -> {
+                .onItem().invoke(persistentExecutors -> {
                     for (ExecutorInfo executor : persistentExecutors) {
-                        executors.put(executor.executorId(), executor);
+                        if (executors.put(executor.executorId(), executor) == null) {
+                            metricsService.incrementExecutorCount();
+                        }
                         // Initialize health info for loaded executors
                         if (!healthInfo.containsKey(executor.executorId())) {
                             healthInfo.put(executor.executorId(), new ExecutorHealthInfo(executor.executorId()));
