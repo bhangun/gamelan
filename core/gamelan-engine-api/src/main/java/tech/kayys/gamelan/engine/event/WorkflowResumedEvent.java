@@ -9,6 +9,7 @@ public record WorkflowResumedEvent(
         String eventId,
         WorkflowRunId runId,
         Map<String, Object> resumeData,
+        String humanTaskId,
         Instant occurredAt) implements ExecutionEvent {
     @Override
     public String eventType() {

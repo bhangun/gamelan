@@ -25,7 +25,11 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
     protected final ExecutorMetrics metrics;
     protected final AtomicInteger activeTaskCount = new AtomicInteger(0);
 
+    // Generate a unique ID for this instance if not provided
+    protected final String executorId;
+
     protected AbstractWorkflowExecutor() {
+
         // Extract executor type from annotation
         Executor annotation = findExecutorAnnotation(getClass());
 
@@ -41,6 +45,7 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
                 annotation.communicationType(),
                 SecurityConfig.disabled());
         this.metrics = new ExecutorMetrics(executorType);
+        this.executorId = executorType + "-" + java.util.UUID.randomUUID().toString();
     }
 
     @Override
@@ -58,10 +63,25 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
         return config.supportedNodeTypes().toArray(new String[0]);
     }
 
+    /**
+     * Initialize the executor (called during registration)
+     */
     @Override
-    public boolean isReady() {
-        return activeTaskCount.get() < getMaxConcurrentTasks();
+    public Uni<Void> initialize() {
+        return Uni.createFrom().voidItem();
     }
+
+    /**
+     * Cleanup the executor (called during unregistration)
+     */
+    @Override
+    public Uni<Void> cleanup() {
+        return Uni.createFrom().voidItem();
+    }
+
+    /**
+     * Check if the executor is ready to accept new tasks
+     */
 
     /**
      * Execute with comprehensive lifecycle hooks and error handling

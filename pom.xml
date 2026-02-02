@@ -45,8 +45,8 @@
         <module>plugins</module>
         <module>examples/gamelan-test-client</module>
         <module>examples/gamelan-test-executor</module>
-        <module>gamelan-executor-runtime-core</module>
-        <module>gamelan-executor-runtime</module>
+        <module>core/gamelan-executor-runtime-core</module>
+        <module>core/gamelan-executor-runtime</module>
     </modules>
 
     <dependencyManagement>

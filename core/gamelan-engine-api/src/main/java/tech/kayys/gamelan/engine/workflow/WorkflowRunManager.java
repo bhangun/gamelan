@@ -44,7 +44,8 @@ public interface WorkflowRunManager {
         Uni<WorkflowRun> resumeRun(
                         WorkflowRunId runId,
                         TenantId tenantId,
-                        Map<String, Object> resumeData);
+                        Map<String, Object> resumeData,
+                        String humanTaskId);
 
         Uni<Void> cancelRun(
                         WorkflowRunId runId,

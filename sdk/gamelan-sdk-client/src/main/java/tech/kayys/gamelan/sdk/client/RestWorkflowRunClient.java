@@ -1,6 +1,10 @@
 package tech.kayys.gamelan.sdk.client;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.buffer.Buffer;
+import io.vertx.ext.web.client.WebClientOptions;
+import io.vertx.mutiny.ext.web.client.HttpRequest;
+import io.vertx.mutiny.ext.web.client.WebClient;
 import tech.kayys.gamelan.engine.run.RunResponse;
 import tech.kayys.gamelan.engine.run.CreateRunRequest;
 import tech.kayys.gamelan.engine.execution.ExecutionHistory;
@@ -8,185 +12,279 @@ import java.util.Map;
 import java.util.List;
 
 /**
- * REST-based workflow run client
+ * REST-based implementation of {@link WorkflowRunClient}.
+ * Uses Vert.x Mutiny WebClient for reactive communication with the Gamelan
+ * service.
  */
 public class RestWorkflowRunClient implements WorkflowRunClient {
 
     private final GamelanClientConfig config;
     private final io.vertx.mutiny.ext.web.client.WebClient webClient;
-    private final io.vertx.mutiny.core.Vertx vertx;
+    private final java.util.concurrent.atomic.AtomicBoolean closed = new java.util.concurrent.atomic.AtomicBoolean(
+            false);
 
     private static final com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
             .registerModule(new com.fasterxml.jackson.module.paramnames.ParameterNamesModule())
             .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+    /**
+     * Initializes the REST client with provided configuration.
+     * 
+     * @param config the client configuration
+     * @param vertx  the Vert.x instance to use for communication
+     */
     RestWorkflowRunClient(GamelanClientConfig config, io.vertx.mutiny.core.Vertx vertx) {
         this.config = config;
-        this.vertx = vertx;
 
-        System.out.println("RestWorkflowRunClient initialized with endpoint: '" + config.endpoint() + "'");
-        System.out.println("Host: " + getHostFromEndpoint(config.endpoint()));
-        System.out.println("Port: " + getPortFromEndpoint(config.endpoint()));
+        WebClientOptions options = new WebClientOptions()
+                .setDefaultHost(config.baseUri().getHost())
+                .setDefaultPort(config.baseUri().getPort())
+                .setSsl(config.baseUri().getScheme().equalsIgnoreCase("https"))
+                .setConnectTimeout((int) config.timeout().toMillis())
+                .setIdleTimeout((int) config.timeout().getSeconds());
 
-        io.vertx.ext.web.client.WebClientOptions options = new io.vertx.ext.web.client.WebClientOptions()
-                .setDefaultHost(getHostFromEndpoint(config.endpoint()))
-                .setDefaultPort(getPortFromEndpoint(config.endpoint()))
-                .setSsl(config.endpoint().toLowerCase().startsWith("https"));
-
-        this.webClient = io.vertx.mutiny.ext.web.client.WebClient.create(vertx, options);
+        this.webClient = WebClient.create(vertx, options);
     }
 
-    private String getHostFromEndpoint(String endpoint) {
-        if (endpoint.startsWith("http")) {
-            return java.net.URI.create(endpoint).getHost();
-        }
-        int colonIndex = endpoint.indexOf(':');
-        if (colonIndex != -1) {
-            return endpoint.substring(0, colonIndex);
-        }
-        return endpoint;
-    }
+    /**
+     * Helper to create a request with standardized headers and interceptors.
+     */
+    private HttpRequest<Buffer> createRequest(io.vertx.core.http.HttpMethod method, String path) {
+        String fullPath = config.baseUri().getPath() == null || config.baseUri().getPath().isEmpty()
+                ? path
+                : config.baseUri().getPath() + path;
 
-    private int getPortFromEndpoint(String endpoint) {
-        if (endpoint.startsWith("http")) {
-            java.net.URI uri = java.net.URI.create(endpoint);
-            int port = uri.getPort();
-            if (port == -1) {
-                return uri.getScheme().equals("https") ? 443 : 80;
-            }
-            return port;
+        HttpRequest<Buffer> request = webClient.request(method, fullPath);
+
+        // Add headers
+        request.putHeader("X-Tenant-ID", config.tenantId());
+        if (config.apiKey() != null && !config.apiKey().trim().isEmpty()) {
+            request.putHeader("Authorization", "Bearer " + config.apiKey());
         }
-        int colonIndex = endpoint.indexOf(':');
-        if (colonIndex != -1) {
-            return Integer.parseInt(endpoint.substring(colonIndex + 1));
+        config.headers().forEach(request::putHeader);
+
+        // Apply interceptors
+        for (ClientInterceptor interceptor : config.interceptors()) {
+            request = interceptor.apply(request);
         }
-        return 80;
+
+        return request;
     }
 
     @Override
     public Uni<RunResponse> createRun(CreateRunRequest request) {
-        return webClient.post("/api/v1/workflow-runs")
-                .putHeader("X-Tenant-ID", config.tenantId())
-                .putHeader("Authorization", "Bearer " + config.apiKey())
-                .sendJson(request)
-                .map(response -> {
-                    System.out.println("RestWorkflowRunClient: createRun response status: " + response.statusCode());
-                    System.out.println("RestWorkflowRunClient: createRun response body: " + response.bodyAsString());
-
-                    io.vertx.core.json.JsonObject json = response.bodyAsJsonObject();
-                    if (json == null) {
-                        System.out.println("RestWorkflowRunClient: JSON is null!");
-                        return null;
+        checkClosed();
+        return sendJson(createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs"), request)
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to create run: " + response.bodyAsString(), response.statusCode()));
                     }
-
-                    Object idObj = json.getValue("id");
-                    String runId = (idObj instanceof io.vertx.core.json.JsonObject)
-                            ? ((io.vertx.core.json.JsonObject) idObj).getString("value")
-                            : (String) idObj;
-
-                    Object defIdObj = json.getValue("definitionId");
-                    String workflowId = (defIdObj instanceof io.vertx.core.json.JsonObject)
-                            ? ((io.vertx.core.json.JsonObject) defIdObj).getString("value")
-                            : (json.getString("workflowId") != null ? json.getString("workflowId") : (String) defIdObj);
-
-                    RunResponse runResponse = RunResponse.builder()
-                            .runId(runId)
-                            .status(json.getString("status"))
-                            .workflowId(workflowId)
-                            .build();
-
-                    System.out.println("RestWorkflowRunClient: Mapped RunResponse: id=" + runResponse.getRunId());
-                    return runResponse;
+                    return deserialize(response.bodyAsString(), RunResponse.class);
                 });
     }
-
-    // Implement other methods similarly...
 
     @Override
     public Uni<RunResponse> getRun(String runId) {
-        return webClient.get("/api/v1/workflow-runs/" + runId)
-                .putHeader("X-Tenant-ID", config.tenantId())
-                .putHeader("Authorization", "Bearer " + config.apiKey())
+        checkClosed();
+        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-runs/" + runId)
                 .send()
-                .map(response -> {
-                    try {
-                        return mapper.readValue(response.bodyAsString(), RunResponse.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to deserialize RunResponse: " + e.getMessage(), e);
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to get run: " + response.bodyAsString(), response.statusCode()));
                     }
+                    return deserialize(response.bodyAsString(), RunResponse.class);
                 });
     }
 
-    // ... (other methods)
-
     @Override
     public Uni<RunResponse> startRun(String runId) {
-        return webClient.post("/api/v1/workflow-runs/" + runId + "/start")
-                .putHeader("X-Tenant-ID", config.tenantId())
-                .putHeader("Authorization", "Bearer " + config.apiKey())
+        checkClosed();
+        return createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs/" + runId + "/start")
                 .send()
-                .map(response -> {
-                    try {
-                        return mapper.readValue(response.bodyAsString(), RunResponse.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to deserialize RunResponse: " + e.getMessage(), e);
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to start run: " + response.bodyAsString(), response.statusCode()));
                     }
+                    return deserialize(response.bodyAsString(), RunResponse.class);
                 });
     }
 
     @Override
     public Uni<RunResponse> suspendRun(String runId, String reason, String waitingOnNodeId) {
-        return null;
+        checkClosed();
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("reason", reason);
+        if (waitingOnNodeId != null) {
+            params.put("waitingOnNodeId", waitingOnNodeId);
+        }
+        return sendJson(
+                createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs/" + runId + "/suspend"),
+                params)
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to suspend run: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    return deserialize(response.bodyAsString(), RunResponse.class);
+                });
     }
 
     @Override
     public Uni<RunResponse> resumeRun(String runId, Map<String, Object> resumeData, String humanTaskId) {
-        return null;
+        checkClosed();
+        tech.kayys.gamelan.engine.run.dto.ResumeRunRequest request = new tech.kayys.gamelan.engine.run.dto.ResumeRunRequest(
+                resumeData, humanTaskId);
+        return sendJson(createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs/" + runId + "/resume"),
+                request)
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to resume run: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    return deserialize(response.bodyAsString(), RunResponse.class);
+                });
     }
 
     @Override
     public Uni<Void> cancelRun(String runId, String reason) {
-        return null;
+        checkClosed();
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("reason", reason);
+        return sendJson(createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs/" + runId + "/cancel"),
+                params)
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to cancel run: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    return Uni.createFrom().voidItem();
+                });
     }
 
     @Override
     public Uni<Void> signal(String runId, String signalName, String targetNodeId, Map<String, Object> payload) {
-        return null;
+        checkClosed();
+        Map<String, Object> params = new java.util.HashMap<>();
+        params.put("name", signalName);
+        if (targetNodeId != null) {
+            params.put("targetNodeId", targetNodeId);
+        }
+        if (payload != null) {
+            params.put("payload", payload);
+        }
+        return sendJson(createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs/" + runId + "/signal"),
+                params)
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to send signal: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    return Uni.createFrom().voidItem();
+                });
     }
 
     @Override
     public Uni<ExecutionHistory> getExecutionHistory(String runId) {
-        return webClient.get("/api/v1/workflow-runs/" + runId + "/history")
-                .putHeader("X-Tenant-ID", config.tenantId())
-                .putHeader("Authorization", "Bearer " + config.apiKey())
+        checkClosed();
+        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-runs/" + runId + "/history")
                 .send()
-                .map(response -> {
-                    try {
-                        return mapper.readValue(response.bodyAsString(), ExecutionHistory.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to deserialize ExecutionHistory: " + e.getMessage(), e);
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to get history: " + response.bodyAsString(), response.statusCode()));
                     }
+                    return deserialize(response.bodyAsString(), ExecutionHistory.class);
                 });
     }
 
     @Override
     public Uni<List<RunResponse>> queryRuns(String workflowId, String status, int page, int size) {
-        return null;
+        checkClosed();
+        HttpRequest<Buffer> request = createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-runs");
+        if (workflowId != null) {
+            request.addQueryParam("workflowId", workflowId);
+        }
+        if (status != null) {
+            request.addQueryParam("status", status);
+        }
+        request.addQueryParam("page", String.valueOf(page));
+        request.addQueryParam("size", String.valueOf(size));
+
+        return request.send()
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to query runs: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    // Jackson can deserialize List<RunResponse> if we use TypeReference
+                    try {
+                        List<RunResponse> results = mapper.readValue(response.bodyAsString(),
+                                new com.fasterxml.jackson.core.type.TypeReference<List<RunResponse>>() {
+                                });
+                        return Uni.createFrom().item(results);
+                    } catch (Exception e) {
+                        return Uni.createFrom()
+                                .failure(new GamelanClientException("Failed to deserialize query results", e));
+                    }
+                });
     }
 
     @Override
     public Uni<Long> getActiveRunsCount() {
-        return null;
+        checkClosed();
+        // Assuming there will be an endpoint or query param for this.
+        // For now, let's use query with status=RUNNING and just check size?
+        // No, engine has getActiveRunsCount. I'll add an endpoint for it.
+        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-runs/active-count")
+                .send()
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to get active count: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    return Uni.createFrom().item(Long.parseLong(response.bodyAsString().trim()));
+                });
+    }
+
+    /**
+     * Helper to serialize and send JSON body.
+     */
+    private <T> Uni<io.vertx.mutiny.ext.web.client.HttpResponse<Buffer>> sendJson(HttpRequest<Buffer> request, T body) {
+        try {
+            String json = mapper.writeValueAsString(body);
+            return request.sendBuffer(Buffer.buffer(json));
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new GamelanClientException("Failed to serialize request", e));
+        }
+    }
+
+    /**
+     * Helper to deserialize JSON response.
+     */
+    private <T> Uni<T> deserialize(String body, Class<T> clazz) {
+        try {
+            return Uni.createFrom().item(mapper.readValue(body, clazz));
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new GamelanClientException("Failed to deserialize response", e));
+        }
+    }
+
+    private void checkClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("Client is closed");
+        }
     }
 
     @Override
     public void close() {
-        if (webClient != null) {
-            webClient.close();
-        }
-        if (vertx != null) {
-            vertx.close();
+        if (closed.compareAndSet(false, true)) {
+            if (webClient != null) {
+                webClient.close();
+            }
         }
     }
 }

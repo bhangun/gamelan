@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * gRPC-based workflow definition client
  */
-class GrpcWorkflowDefinitionClient implements WorkflowDefinitionClient {
+public class GrpcWorkflowDefinitionClient implements WorkflowDefinitionClient {
 
     private final GamelanClientConfig config;
     private final AtomicBoolean closed = new AtomicBoolean(false);

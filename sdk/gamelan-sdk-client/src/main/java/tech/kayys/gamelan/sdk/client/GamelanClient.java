@@ -1,13 +1,20 @@
 package tech.kayys.gamelan.sdk.client;
 
 import java.time.Duration;
-import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 
 /**
  * ============================================================================
  * GAMELAN CLIENT SDK
  * ============================================================================
+ * Main entry point for the Gamelan SDK.
+ * This client provides a unified, fluent API for interacting with Gamelan
+ * workflow
+ * definitions and runs across different transport protocols (REST, gRPC, or
+ * LOCAL).
  */
 public class GamelanClient implements AutoCloseable {
 
@@ -17,24 +24,36 @@ public class GamelanClient implements AutoCloseable {
     private final WorkflowDefinitionClient definitionClient;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    private GamelanClient(GamelanClientConfig config) {
+    /**
+     * Internal constructor used by the Builder.
+     * 
+     * @param config the client configuration
+     */
+    public GamelanClient(GamelanClientConfig config) {
         this.config = config;
-        this.vertx = io.vertx.mutiny.core.Vertx.vertx();
+        this.vertx = config.vertx();
 
         // Initialize transport-specific clients
-        if (config.transport() == TransportType.REST) {
-            this.runClient = new RestWorkflowRunClient(config, vertx);
-            this.definitionClient = new RestWorkflowDefinitionClient(config, vertx);
-        } else if (config.transport() == TransportType.GRPC) {
-            this.runClient = new GrpcWorkflowRunClient(config);
-            this.definitionClient = new GrpcWorkflowDefinitionClient(config);
-        } else {
-            throw new IllegalArgumentException("Unsupported transport: " + config.transport());
+        switch (config.transport()) {
+            case REST -> {
+                this.runClient = new RestWorkflowRunClient(config, vertx);
+                this.definitionClient = new RestWorkflowDefinitionClient(config, vertx);
+            }
+            case LOCAL -> {
+                this.runClient = new LocalWorkflowRunClient(config.runManager(), config.tenantId());
+                this.definitionClient = new LocalWorkflowDefinitionClient(config.definitionService(),
+                        config.tenantId());
+            }
+            case GRPC -> {
+                this.runClient = new GrpcWorkflowRunClient(config);
+                this.definitionClient = new GrpcWorkflowDefinitionClient(config);
+            }
+            default -> throw new IllegalArgumentException("Unsupported transport: " + config.transport());
         }
     }
 
     /**
-     * Get the client configuration
+     * @return the client configuration
      */
     public GamelanClientConfig config() {
         return config;
@@ -42,68 +61,160 @@ public class GamelanClient implements AutoCloseable {
 
     // ==================== BUILDER ====================
 
+    /**
+     * Creates a new builder for {@link GamelanClient}.
+     * 
+     * @return a new builder instance
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Fluent builder for {@link GamelanClient}.
+     */
     public static class Builder {
-        private String endpoint;
-        private String tenantId;
-        private String apiKey;
-        private TransportType transport = TransportType.REST;
-        private Duration timeout = Duration.ofSeconds(30);
-        private Map<String, String> headers = new HashMap<>();
+        private final GamelanClientConfig.Builder configBuilder = GamelanClientConfig.builder();
 
+        /**
+         * Sets the generic endpoint.
+         * 
+         * @param endpoint endpoint string
+         * @return this builder
+         */
+        public Builder endpoint(String endpoint) {
+            configBuilder.endpoint(endpoint);
+            return this;
+        }
+
+        /**
+         * Sets the REST endpoint.
+         * 
+         * @param endpoint REST service URL
+         * @return this builder
+         */
         public Builder restEndpoint(String endpoint) {
-            this.endpoint = endpoint;
-            this.transport = TransportType.REST;
+            configBuilder.endpoint(endpoint).rest();
             return this;
         }
 
+        /**
+         * Sets the gRPC endpoint.
+         * 
+         * @param host gRPC server host
+         * @param port gRPC server port
+         * @return this builder
+         */
         public Builder grpcEndpoint(String host, int port) {
-            this.endpoint = host + ":" + port;
-            this.transport = TransportType.GRPC;
+            configBuilder.endpoint(host + ":" + port).grpc();
             return this;
         }
 
+        /**
+         * Sets the tenant identifier.
+         * 
+         * @param tenantId tenant ID
+         * @return this builder
+         */
         public Builder tenantId(String tenantId) {
-            this.tenantId = tenantId;
+            configBuilder.tenantId(tenantId);
             return this;
         }
 
+        /**
+         * Sets the API key for authentication.
+         * 
+         * @param apiKey authentication key
+         * @return this builder
+         */
         public Builder apiKey(String apiKey) {
-            this.apiKey = apiKey;
+            configBuilder.apiKey(apiKey);
             return this;
         }
 
+        /**
+         * Sets the request timeout.
+         * 
+         * @param timeout timeout duration
+         * @return this builder
+         */
         public Builder timeout(Duration timeout) {
-            this.timeout = timeout;
+            configBuilder.timeout(timeout);
             return this;
         }
 
+        /**
+         * Adds a custom header.
+         * 
+         * @param key   header name
+         * @param value header value
+         * @return this builder
+         */
         public Builder header(String key, String value) {
-            this.headers.put(key, value);
+            configBuilder.header(key, value);
             return this;
         }
 
-        public GamelanClient build() {
-            GamelanClientConfig config = GamelanClientConfig.builder()
-                    .endpoint(endpoint)
-                    .tenantId(tenantId)
-                    .apiKey(apiKey)
-                    .transport(transport)
-                    .timeout(timeout)
-                    .headers(headers)
-                    .build();
+        /**
+         * Provides an external Vertx instance.
+         * 
+         * @param vertx Mutiny Vertx instance
+         * @return this builder
+         */
+        public Builder vertx(io.vertx.mutiny.core.Vertx vertx) {
+            configBuilder.vertx(vertx);
+            return this;
+        }
 
-            return new GamelanClient(config);
+        /**
+         * Adds a custom interceptor to the request pipeline.
+         * 
+         * @param interceptor interceptor implementation
+         * @return this builder
+         */
+        public Builder interceptor(ClientInterceptor interceptor) {
+            configBuilder.interceptor(interceptor);
+            return this;
+        }
+
+        /**
+         * Provides the local workflow run manager.
+         * 
+         * @param runManager engine run manager
+         * @return this builder
+         */
+        public Builder runManager(WorkflowRunManager runManager) {
+            configBuilder.runManager(runManager);
+            return this;
+        }
+
+        /**
+         * Provides the local workflow definition service.
+         * 
+         * @param definitionService engine definition service
+         * @return this builder
+         */
+        public Builder definitionService(WorkflowDefinitionService definitionService) {
+            configBuilder.definitionService(definitionService);
+            return this;
+        }
+
+        /**
+         * Builds and returns a new {@link GamelanClient}.
+         * 
+         * @return initialized client
+         */
+        public GamelanClient build() {
+            return new GamelanClient(configBuilder.build());
         }
     }
 
     // ==================== API METHODS ====================
 
     /**
-     * Access workflow run operations
+     * Entry point for workflow run operations.
+     * 
+     * @return operations for managing workflow runs
      */
     public WorkflowRunOperations runs() {
         checkClosed();
@@ -111,7 +222,9 @@ public class GamelanClient implements AutoCloseable {
     }
 
     /**
-     * Access workflow definition operations
+     * Entry point for workflow definition operations.
+     * 
+     * @return operations for managing workflow definitions
      */
     public WorkflowDefinitionOperations workflows() {
         checkClosed();
@@ -125,7 +238,31 @@ public class GamelanClient implements AutoCloseable {
     }
 
     /**
-     * Close the client and release resources
+     * Shortcut for creating a new workflow run.
+     * 
+     * @param workflowId the ID of the workflow to run
+     * @return a builder for the run creation request
+     */
+    public CreateRunBuilder createRun(String workflowId) {
+        checkClosed();
+        return new CreateRunBuilder(runClient, workflowId);
+    }
+
+    /**
+     * Shortcut for defining a new workflow.
+     * 
+     * @param name the name of the workflow
+     * @return a builder for the workflow definition request
+     */
+    public WorkflowDefinitionBuilder defineWorkflow(String name) {
+        checkClosed();
+        return new WorkflowDefinitionBuilder(definitionClient, name);
+    }
+
+    /**
+     * Closes the client and releases underlying resources.
+     * If the Vertx instance was created by this client (managed), it will also be
+     * closed.
      */
     @Override
     public void close() {
@@ -136,7 +273,7 @@ public class GamelanClient implements AutoCloseable {
             if (definitionClient != null) {
                 definitionClient.close();
             }
-            if (vertx != null) {
+            if (config.managedVertx() && vertx != null) {
                 vertx.close();
             }
         }

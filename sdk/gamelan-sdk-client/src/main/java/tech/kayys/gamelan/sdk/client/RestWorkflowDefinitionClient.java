@@ -1,10 +1,11 @@
 package tech.kayys.gamelan.sdk.client;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.ext.web.client.HttpRequest;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import io.vertx.core.json.JsonObject;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionMapper;
@@ -13,12 +14,14 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * REST-based workflow definition client
+ * REST-based implementation of {@link WorkflowDefinitionClient}.
+ * Provides operations for creating, retrieving, listing, and deleting workflow
+ * definitions
+ * over HTTP.
  */
 public class RestWorkflowDefinitionClient implements WorkflowDefinitionClient {
 
     private final GamelanClientConfig config;
-    private final Vertx vertx;
     private final WebClient webClient;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -27,185 +30,155 @@ public class RestWorkflowDefinitionClient implements WorkflowDefinitionClient {
             .registerModule(new com.fasterxml.jackson.module.paramnames.ParameterNamesModule())
             .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+    /**
+     * Initializes the REST client with provided configuration.
+     * 
+     * @param config the client configuration
+     * @param vertx  the Mutiny Vert.x instance
+     */
     RestWorkflowDefinitionClient(GamelanClientConfig config, Vertx vertx) {
         this.config = config;
-        this.vertx = vertx;
 
-        System.out.println("RestWorkflowDefinitionClient initialized with endpoint: '" + config.endpoint() + "'");
-        System.out.println("Host: " + getHostFromEndpoint(config.endpoint()));
-        System.out.println("Port: " + getPortFromEndpoint(config.endpoint()));
-
-        // Use proper configuration
         WebClientOptions options = new WebClientOptions()
-                .setDefaultHost(getHostFromEndpoint(config.endpoint()))
-                .setDefaultPort(getPortFromEndpoint(config.endpoint()))
-                .setSsl(config.endpoint().toLowerCase().startsWith("https"))
+                .setDefaultHost(config.baseUri().getHost())
+                .setDefaultPort(config.baseUri().getPort())
+                .setSsl(config.baseUri().getScheme().equalsIgnoreCase("https"))
                 .setConnectTimeout((int) config.timeout().toMillis())
                 .setIdleTimeout((int) config.timeout().getSeconds());
 
         this.webClient = WebClient.create(vertx, options);
     }
 
+    /**
+     * Helper to create a request with standardized headers and interceptors.
+     */
+    private HttpRequest<Buffer> createRequest(io.vertx.core.http.HttpMethod method, String path) {
+        String fullPath = config.baseUri().getPath() == null || config.baseUri().getPath().isEmpty()
+                ? path
+                : config.baseUri().getPath() + path;
+
+        HttpRequest<Buffer> request = webClient.request(method, fullPath);
+
+        // Add headers
+        request.putHeader("X-Tenant-ID", config.tenantId());
+        if (config.apiKey() != null && !config.apiKey().trim().isEmpty()) {
+            request.putHeader("Authorization", "Bearer " + config.apiKey());
+        }
+        config.headers().forEach(request::putHeader);
+
+        // Apply interceptors
+        for (ClientInterceptor interceptor : config.interceptors()) {
+            request = interceptor.apply(request);
+        }
+
+        return request;
+    }
+
     @Override
     public Uni<WorkflowDefinition> createDefinition(WorkflowDefinition request) {
-        if (closed.get()) {
-            return Uni.createFrom().failure(new IllegalStateException("Client is closed"));
-        }
+        checkClosed();
 
-        CreateWorkflowDefinitionRequest dto = WorkflowDefinitionMapper
-                .toCreateRequest(request);
-        JsonObject requestBody;
-        try {
-            requestBody = new JsonObject(mapper.writeValueAsString(dto));
-        } catch (Exception e) {
-            return Uni.createFrom().failure(new RuntimeException("Failed to serialize request: " + e.getMessage(), e));
-        }
-
-        return applyAuthHeaders(webClient
-                .post(getPath("/api/v1/workflow-definitions"))
-                .putHeader("Content-Type", "application/json")
-                .putHeader("X-Tenant-ID", config.tenantId()))
-                .sendJson(requestBody)
-                .onItem().transform(response -> {
-                    if (response.statusCode() == 200 || response.statusCode() == 201) {
-                        String body = response.bodyAsString();
-                        try {
-                            return mapper.readValue(body, WorkflowDefinition.class);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to deserialize workflow definition: " + e.getMessage(),
-                                    e);
-                        }
+        CreateWorkflowDefinitionRequest dto = WorkflowDefinitionMapper.toCreateRequest(request);
+        return sendJson(createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-definitions"), dto)
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to create definition: " + response.bodyAsString(), response.statusCode()));
                     }
-                    throw new RuntimeException("Failed to create workflow definition: [" + response.statusCode() + "] "
-                            + response.statusMessage() + " - " + response.bodyAsString());
-                })
-                .onFailure().transform(
-                        msg -> new RuntimeException("Failed to create workflow definition: " + msg.getMessage(), msg));
+                    return deserialize(response.bodyAsString(), WorkflowDefinition.class);
+                });
     }
 
     @Override
     public Uni<WorkflowDefinition> getDefinition(String definitionId) {
-        return applyAuthHeaders(webClient
-                .get(getPath("/api/v1/workflow-definitions/" + definitionId))
-                .putHeader("Accept", "application/json")
-                .putHeader("X-Tenant-ID", config.tenantId()))
+        checkClosed();
+        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-definitions/" + definitionId)
                 .send()
-                .onItem().transform(response -> {
-                    try {
-                        return mapper.readValue(response.bodyAsString(), WorkflowDefinition.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to deserialize workflow definition: " + e.getMessage(), e);
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to get definition: " + response.bodyAsString(), response.statusCode()));
                     }
-                })
-                .onFailure().recoverWithUni(failure -> Uni.createFrom().failure(
-                        new RuntimeException("Failed to get workflow definition: " + failure.getMessage(), failure)));
+                    return deserialize(response.bodyAsString(), WorkflowDefinition.class);
+                });
     }
 
     @Override
     public Uni<List<WorkflowDefinition>> listDefinitions(boolean activeOnly) {
+        checkClosed();
         String query = activeOnly ? "?activeOnly=true" : "";
-        return applyAuthHeaders(webClient
-                .get(getPath("/api/v1/workflow-definitions" + query))
-                .putHeader("Accept", "application/json")
-                .putHeader("X-Tenant-ID", config.tenantId()))
+        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-definitions" + query)
                 .send()
-                .onItem().transform(response -> {
-                    try {
-                        return mapper.readValue(response.bodyAsString(),
-                                new com.fasterxml.jackson.core.type.TypeReference<List<WorkflowDefinition>>() {
-                                });
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to deserialize workflow definitions: " + e.getMessage(), e);
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to list definitions: " + response.bodyAsString(), response.statusCode()));
                     }
-                })
-                .onFailure().recoverWithUni(failure -> Uni.createFrom().failure(
-                        new RuntimeException("Failed to list workflow definitions: " + failure.getMessage(), failure)));
+                    return deserialize(response.bodyAsString(),
+                            new com.fasterxml.jackson.core.type.TypeReference<List<WorkflowDefinition>>() {
+                            });
+                });
     }
 
     @Override
     public Uni<Void> deleteDefinition(String definitionId) {
-        return applyAuthHeaders(webClient
-                .delete(getPath("/api/v1/workflow-definitions/" + definitionId))
-                .putHeader("X-Tenant-ID", config.tenantId()))
+        checkClosed();
+        return createRequest(io.vertx.core.http.HttpMethod.DELETE, "/api/v1/workflow-definitions/" + definitionId)
                 .send()
-                .onItem().transformToUni(response -> Uni.createFrom().voidItem())
-                .onFailure().recoverWithUni(failure -> Uni.createFrom().failure(
-                        new RuntimeException("Failed to delete workflow definition: " + failure.getMessage(),
-                                failure)));
+                .onItem().transformToUni(response -> {
+                    if (response.statusCode() >= 400) {
+                        return Uni.createFrom().failure(new GamelanClientException(
+                                "Failed to delete definition: " + response.bodyAsString(), response.statusCode()));
+                    }
+                    return Uni.createFrom().voidItem();
+                });
     }
 
     /**
-     * Apply authentication headers based on configuration
+     * Helper to serialize and send JSON body.
      */
-    private <T> io.vertx.mutiny.ext.web.client.HttpRequest<T> applyAuthHeaders(
-            io.vertx.mutiny.ext.web.client.HttpRequest<T> request) {
-        if (config.apiKey() != null && !config.apiKey().trim().isEmpty()) {
-            request.putHeader("Authorization", "Bearer " + config.apiKey());
-        }
-        // Add any additional headers from config
-        config.headers().forEach(request::putHeader);
-        return request;
-    }
-
-    /**
-     * Extract host from endpoint URL
-     */
-    private String getHostFromEndpoint(String endpoint) {
-        if (endpoint.startsWith("http")) {
-            return java.net.URI.create(endpoint).getHost();
-        }
-        // For host:port format
-        int colonIndex = endpoint.indexOf(':');
-        if (colonIndex != -1) {
-            return endpoint.substring(0, colonIndex);
-        }
-        return endpoint;
-    }
-
-    /**
-     * Extract port from endpoint URL
-     */
-    private int getPortFromEndpoint(String endpoint) {
-        if (endpoint.startsWith("http")) {
-            java.net.URI uri = java.net.URI.create(endpoint);
-            int port = uri.getPort();
-            if (port == -1) {
-                return uri.getScheme().equals("https") ? 443 : 80;
-            }
-            return port;
-        }
-        // For host:port format
-        int colonIndex = endpoint.indexOf(':');
-        if (colonIndex != -1) {
-            return Integer.parseInt(endpoint.substring(colonIndex + 1));
-        }
-        // Default to 80 for REST
-        return 80;
-    }
-
-    /**
-     * Get the API path, handling both absolute and relative endpoints
-     */
-    private String getPath(String path) {
-        if (config.endpoint().startsWith("http")) {
-            // If endpoint is a full URL, just return the path
-            return path;
-        } else {
-            // If endpoint is host:port, prepend with "/"
-            return path;
+    private <T> Uni<io.vertx.mutiny.ext.web.client.HttpResponse<Buffer>> sendJson(HttpRequest<Buffer> request, T body) {
+        try {
+            String json = mapper.writeValueAsString(body);
+            return request.sendBuffer(Buffer.buffer(json));
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new GamelanClientException("Failed to serialize request", e));
         }
     }
 
     /**
-     * Close the client and release resources
+     * Helper to deserialize JSON response.
      */
+    private <T> Uni<T> deserialize(String body, Class<T> clazz) {
+        try {
+            return Uni.createFrom().item(mapper.readValue(body, clazz));
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new GamelanClientException("Failed to deserialize response", e));
+        }
+    }
+
+    /**
+     * Helper to deserialize JSON response list.
+     */
+    private <T> Uni<T> deserialize(String body, com.fasterxml.jackson.core.type.TypeReference<T> typeRef) {
+        try {
+            return Uni.createFrom().item(mapper.readValue(body, typeRef));
+        } catch (Exception e) {
+            return Uni.createFrom().failure(new GamelanClientException("Failed to deserialize response", e));
+        }
+    }
+
+    private void checkClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("Client is closed");
+        }
+    }
+
+    @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             if (webClient != null) {
                 webClient.close();
-            }
-            if (vertx != null) {
-                vertx.close();
             }
         }
     }

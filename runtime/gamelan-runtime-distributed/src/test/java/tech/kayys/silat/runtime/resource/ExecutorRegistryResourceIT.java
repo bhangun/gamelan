@@ -1,4 +1,4 @@
-package tech.kayys.silat.runtime.resource;
+package tech.kayys.gamelan.runtime.resource;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 

@@ -216,12 +216,4 @@ After this architecture:
 
 ---
 
-## What we can do next (very natural next steps)
 
-1️⃣ Draw **class-level UML** for EngineContext & WorkflowContext
-2️⃣ Draw **BPMN token flow** diagram
-3️⃣ Draw **human approval lifecycle**
-4️⃣ Draw **A2A / MCP interaction flow**
-5️⃣ Turn this into **official Gamelan docs**
-
-Tell me which one you want next and I’ll continue at the same level of rigor.

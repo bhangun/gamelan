@@ -14,6 +14,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import tech.kayys.gamelan.engine.execution.ExecutionHistory;
+import tech.kayys.gamelan.engine.signal.Signal;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.run.CreateRunRequest;
 import tech.kayys.gamelan.engine.tenant.TenantId;
@@ -86,9 +87,10 @@ public class WorkflowRunResource {
 
     @POST
     @Path("/{id}/resume")
-    public Uni<WorkflowRun> resume(@PathParam("id") String id, Map<String, Object> resumeData) {
+    public Uni<WorkflowRun> resume(@PathParam("id") String id,
+            tech.kayys.gamelan.engine.run.dto.ResumeRunRequest request) {
         TenantId tenantId = securityContext.getCurrentTenant();
-        return runManager.resumeRun(WorkflowRunId.of(id), tenantId, resumeData);
+        return runManager.resumeRun(WorkflowRunId.of(id), tenantId, request.resumeData(), request.humanTaskId());
     }
 
     @POST
@@ -108,5 +110,28 @@ public class WorkflowRunResource {
         TenantId tenantId = securityContext.getCurrentTenant();
         WorkflowDefinitionId wfDefId = definitionId != null ? new WorkflowDefinitionId(definitionId) : null;
         return runManager.queryRuns(tenantId, wfDefId, status, page, size);
+    }
+
+    @GET
+    @Path("/active-count")
+    public Uni<Long> getActiveCount() {
+        TenantId tenantId = securityContext.getCurrentTenant();
+        return runManager.getActiveRunsCount(tenantId);
+    }
+
+    @POST
+    @Path("/{id}/signal")
+    @SuppressWarnings("unchecked")
+    public Uni<Void> signal(@PathParam("id") String id, Map<String, Object> payload) {
+        String name = (String) payload.get("name");
+        String targetNodeIdStr = (String) payload.get("targetNodeId");
+        Map<String, Object> data = (Map<String, Object>) payload.get("payload");
+
+        tech.kayys.gamelan.engine.node.NodeId targetNodeId = targetNodeIdStr != null
+                ? tech.kayys.gamelan.engine.node.NodeId.of(targetNodeIdStr)
+                : null;
+        Signal signal = new Signal(name, targetNodeId, data, java.time.Instant.now());
+
+        return runManager.signal(WorkflowRunId.of(id), signal);
     }
 }

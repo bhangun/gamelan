@@ -18,7 +18,9 @@ import tech.kayys.gamelan.engine.run.RetryPolicy;
 import tech.kayys.gamelan.engine.saga.CompensationPolicy;
 
 /**
- * Builder for workflow definitions
+ * Fluent builder for creating workflow definitions.
+ * Instances of this builder are obtained via
+ * {@link WorkflowDefinitionOperations#create(String)}.
  */
 public class WorkflowDefinitionBuilder {
 
@@ -39,51 +41,113 @@ public class WorkflowDefinitionBuilder {
         this.name = name;
     }
 
+    /**
+     * Sets the version of the workflow definition.
+     * 
+     * @param version the version string (default: "1.0.0")
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder version(String version) {
         this.version = version;
         return this;
     }
 
+    /**
+     * Sets the tenant ID for this workflow definition.
+     * 
+     * @param tenantId the tenant ID (default: "default")
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder tenantId(String tenantId) {
         this.tenantId = tenantId;
         return this;
     }
 
+    /**
+     * Sets the description of the workflow definition.
+     * 
+     * @param description a brief description
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder description(String description) {
         this.description = description;
         return this;
     }
 
+    /**
+     * Adds a node definition to the workflow.
+     * 
+     * @param node the node to add
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder addNode(NodeDefinition node) {
         nodes.add(node);
         return this;
     }
 
+    /**
+     * Adds an input definition to the workflow.
+     * 
+     * @param name  the input name
+     * @param input the input definition
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder addInput(String name, InputDefinition input) {
         inputs.put(name, input);
         return this;
     }
 
+    /**
+     * Adds an output definition to the workflow.
+     * 
+     * @param name   the output name
+     * @param output the output definition
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder addOutput(String name, OutputDefinition output) {
         outputs.put(name, output);
         return this;
     }
 
+    /**
+     * Sets the default retry policy for the workflow.
+     * 
+     * @param policy the retry policy
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder retryPolicy(RetryPolicy policy) {
         this.retryPolicy = policy;
         return this;
     }
 
+    /**
+     * Sets the default compensation policy for the workflow (Saga pattern).
+     * 
+     * @param policy the compensation policy
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder compensationPolicy(CompensationPolicy policy) {
         this.compensationPolicy = policy;
         return this;
     }
 
+    /**
+     * Adds a metadata label to the workflow definition.
+     * 
+     * @param key   the label key
+     * @param value the label value
+     * @return this builder
+     */
     public WorkflowDefinitionBuilder label(String key, String value) {
         labels.put(key, value);
         return this;
     }
 
+    /**
+     * Executes the definition creation request.
+     * 
+     * @return a Uni containing the created workflow definition
+     */
     public Uni<WorkflowDefinition> execute() {
         WorkflowMetadata metadata = new WorkflowMetadata(
                 labels,

@@ -1,5 +1,8 @@
 package tech.kayys.gamelan.core.node;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 import tech.kayys.gamelan.engine.context.EngineContext;
 import tech.kayys.gamelan.engine.context.WorkflowContext;
 import tech.kayys.gamelan.engine.node.NodeExecutionContext;
@@ -9,6 +12,8 @@ public class DefaultNodeExecutionContext implements NodeExecutionContext {
 
     private final EngineContext engine;
     private final WorkflowContext workflow;
+    private final Map<String, Object> addedVariables = new HashMap<>();
+    private String suspendReason;
 
     public DefaultNodeExecutionContext(EngineContext engine, WorkflowContext workflow) {
         this.engine = engine;
@@ -36,11 +41,19 @@ public class DefaultNodeExecutionContext implements NodeExecutionContext {
 
     @Override
     public void setVariable(String key, Object value) {
-        workflow.setVariable(key, value);
+        addedVariables.put(key, value);
     }
 
     @Override
     public void suspend(String reason) {
-        workflow.suspend(reason);
+        this.suspendReason = reason;
+    }
+
+    public Map<String, Object> getAddedVariables() {
+        return Collections.unmodifiableMap(addedVariables);
+    }
+
+    public String getSuspendReason() {
+        return suspendReason;
     }
 }

@@ -27,14 +27,4 @@ public interface WorkflowContext {
     Map<String, Object> variables();
 
     Map<NodeId, NodeResult> completedNodes();
-
-    void setVariable(String key, Object value);
-
-    void markNodeCompleted(NodeId nodeId, NodeResult result);
-
-    void suspend(String reason);
-
-    void resume();
-
-    void fail(Throwable error);
 }

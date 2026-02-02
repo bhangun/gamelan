@@ -88,12 +88,15 @@ public class WorkflowOrchestrator {
                                                                         if (result.success()) {
                                                                                 LOG.info("Compensation completed successfully for workflow {}",
                                                                                                 runIdValue);
-                                                                                return runManager.completeCompensation(runId,
+                                                                                return runManager.completeCompensation(
+                                                                                                runId,
                                                                                                 run.getTenantId());
                                                                         } else {
                                                                                 LOG.error("Compensation failed for workflow {}: {}",
-                                                                                                runIdValue, result.message());
-                                                                                return runManager.failCompensation(runId,
+                                                                                                runIdValue,
+                                                                                                result.message());
+                                                                                return runManager.failCompensation(
+                                                                                                runId,
                                                                                                 run.getTenantId(),
                                                                                                 new ErrorInfo(
                                                                                                                 "COMPENSATION_FAILED",
@@ -121,17 +124,35 @@ public class WorkflowOrchestrator {
                                         LOG.info("Orchestrating {} pending nodes for workflow {}",
                                                         pendingNodes.size(), runIdValue);
 
-                                        // Execute all pending nodes in parallel
+                                        // Get max parallel nodes from configuration (default: 10)
+                                        int maxParallelNodes = engineContext.configuration()
+                                                        .get("gamelan.orchestration.max-parallel-nodes", Integer.class)
+                                                        .orElse(10);
+
+                                        if (pendingNodes.size() > maxParallelNodes) {
+                                                LOG.info("Throttling {} pending nodes to max parallel limit of {}",
+                                                                pendingNodes.size(), maxParallelNodes);
+                                        }
+
+                                        // Execute pending nodes with bounded parallelism
                                         return definitionService.get(run.getDefinitionId(), run.getTenantId())
                                                         .chain(definition -> {
-                                                                List<Uni<Void>> executions = pendingNodes.stream()
-                                                                                .map(nodeId -> executeNodeForRun(run,
-                                                                                                definition.findNode(
-                                                                                                                nodeId)
-                                                                                                                .orElse(null)))
-                                                                                .toList();
-
-                                                                return Uni.join().all(executions).andFailFast()
+                                                                // Use Multi for bounded parallelism
+                                                                // transformToUniAndMerge default concurrency is 128,
+                                                                // but we want to control it via configuration
+                                                                return io.smallrye.mutiny.Multi.createFrom()
+                                                                                .iterable(pendingNodes)
+                                                                                .map(nodeId -> new Object() {
+                                                                                        final NodeDefinition def = definition
+                                                                                                        .findNode(nodeId)
+                                                                                                        .orElse(null);
+                                                                                })
+                                                                                .onItem()
+                                                                                .transformToUniAndMerge(
+                                                                                                item -> executeNodeForRun(
+                                                                                                                run,
+                                                                                                                item.def))
+                                                                                .collect().asList()
                                                                                 .replaceWithVoid();
                                                         });
                                 })
@@ -153,9 +174,22 @@ public class WorkflowOrchestrator {
                 LOG.info("Executing node {} (type: {}) for run {}",
                                 nodeId.value(), nodeDef.type(), run.getId().value());
 
-                // Mark node as started
+                // Atomic node start with idempotency check
                 return runManager.getRun(run.getId(), run.getTenantId())
-                                .invoke(freshRun -> freshRun.startNode(nodeId, nodeExec.getAttempt()))
+                                .chain(freshRun -> {
+                                        // Check if node is already started or completed (idempotency)
+                                        NodeExecution freshExec = freshRun.getNodeExecution(nodeId);
+                                        if (freshExec.getStatus() != NodeExecutionStatus.PENDING
+                                                        || freshExec.isCompleted()) {
+                                                LOG.debug("Node {} already started or completed (status: {}), skipping execution",
+                                                                nodeId.value(), freshExec.getStatus());
+                                                return Uni.createFrom().voidItem();
+                                        }
+
+                                        // Mark node as started atomically
+                                        freshRun.startNode(nodeId, nodeExec.getAttempt());
+                                        return Uni.createFrom().item(freshRun);
+                                })
                                 .chain(() -> {
                                         // Prepare node inputs from workflow context
                                         Map<String, Object> nodeInputs = prepareNodeInputs(run, nodeDef);
@@ -175,9 +209,11 @@ public class WorkflowOrchestrator {
                                                         new WorkflowContextAdapter(run));
 
                                         // Execute via WorkflowEngine (applies interceptors)
-                                        return workflowEngine.executeNode(nodeContext, executionContext);
+                                        return workflowEngine.executeNode(nodeContext, executionContext)
+                                                        .chain(result -> handleNodeResult(run, nodeId,
+                                                                        nodeExec.getAttempt(), result,
+                                                                        executionContext.getAddedVariables()));
                                 })
-                                .chain(result -> handleNodeResult(run, nodeId, nodeExec.getAttempt(), result))
                                 .onFailure()
                                 .recoverWithUni(error -> handleNodeError(run, nodeId, nodeExec.getAttempt(), error));
         }
@@ -213,10 +249,23 @@ public class WorkflowOrchestrator {
          * Handle successful node execution result
          */
         @SuppressWarnings("unchecked")
-        private Uni<Void> handleNodeResult(WorkflowRun run, NodeId nodeId, int attempt, NodeResult result) {
+        private Uni<Void> handleNodeResult(WorkflowRun run, NodeId nodeId, int attempt, NodeResult result,
+                        Map<String, Object> addedVariables) {
                 if (result.success()) {
                         LOG.info("Node {} completed successfully for run {}",
                                         nodeId.value(), run.getId().value());
+
+                        Map<String, Object> finalOutput = new java.util.HashMap<>();
+                        if (result.output() instanceof Map) {
+                                finalOutput.putAll((Map<String, Object>) result.output());
+                        } else if (result.output() != null) {
+                                finalOutput.put("result", result.output());
+                        }
+
+                        // Merge variables added via executionContext.setVariable()
+                        if (addedVariables != null) {
+                                finalOutput.putAll(addedVariables);
+                        }
 
                         return runManager.handleNodeResult(
                                         run.getId(),
@@ -225,9 +274,7 @@ public class WorkflowOrchestrator {
                                                         nodeId,
                                                         attempt,
                                                         NodeExecutionStatus.COMPLETED,
-                                                        (result.output() instanceof Map)
-                                                                        ? (Map<String, Object>) result.output()
-                                                                        : Map.of("result", result.output()),
+                                                        finalOutput,
                                                         null,
                                                         null));
                 } else {
@@ -256,11 +303,11 @@ public class WorkflowOrchestrator {
         }
 
         /**
-         * Handle node execution error
+         * Handle technical error during node execution
          */
         private Uni<Void> handleNodeError(WorkflowRun run, NodeId nodeId, int attempt, Throwable error) {
-                LOG.error("Error executing node {} for run {}",
-                                nodeId.value(), run.getId().value(), error);
+                LOG.error("Technical error executing node {} for run {}: {}",
+                                nodeId.value(), run.getId().value(), error.getMessage(), error);
 
                 return runManager.handleNodeResult(
                                 run.getId(),
@@ -271,7 +318,7 @@ public class WorkflowOrchestrator {
                                                 NodeExecutionStatus.FAILED,
                                                 null,
                                                 new ErrorInfo(
-                                                                "NODE_EXECUTION_ERROR",
+                                                                "NODE_TECHNICAL_ERROR",
                                                                 error.getMessage(),
                                                                 getStackTrace(error),
                                                                 Map.of()),
@@ -328,36 +375,15 @@ public class WorkflowOrchestrator {
 
                 @Override
                 public Map<NodeId, NodeResult> completedNodes() {
-                        // Need to map NodeExecution to NodeResult if needed
-                        return Map.of();
-                }
-
-                @Override
-                public void setVariable(String key, Object value) {
-                        run.getContext().setVariable(key, value);
-                }
-
-                @Override
-                @SuppressWarnings("unchecked")
-                public void markNodeCompleted(NodeId nodeId, NodeResult result) {
-                        run.completeNode(nodeId, 1,
-                                        (result.output() instanceof Map) ? (Map<String, Object>) result.output()
-                                                        : Map.of());
-                }
-
-                @Override
-                public void suspend(String reason) {
-                        run.suspend(reason, null);
-                }
-
-                @Override
-                public void resume() {
-                        run.resume(Map.of());
-                }
-
-                @Override
-                public void fail(Throwable error) {
-                        run.fail(new ErrorInfo("ERROR", error.getMessage(), "", Map.of()));
+                        // Return actual completed nodes from the run
+                        return run.getAllNodeExecutions().entrySet().stream()
+                                        .filter(entry -> entry.getValue().isCompleted())
+                                        .collect(java.util.stream.Collectors.toMap(
+                                                        Map.Entry::getKey,
+                                                        entry -> {
+                                                                NodeExecution exec = entry.getValue();
+                                                                return NodeResult.success(exec.getOutput());
+                                                        }));
                 }
         }
 }

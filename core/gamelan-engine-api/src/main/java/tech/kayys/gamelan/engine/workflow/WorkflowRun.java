@@ -346,7 +346,7 @@ public class WorkflowRun {
     /**
      * Resume the workflow
      */
-    public void resume(Map<String, Object> resumeData) {
+    public void resume(Map<String, Object> resumeData, String humanTaskId) {
         if (status != RunStatus.SUSPENDED) {
             throw new IllegalStateException("Cannot resume workflow in status: " + status);
         }
@@ -362,6 +362,7 @@ public class WorkflowRun {
                 UUID.randomUUID().toString(),
                 id,
                 resumeData,
+                humanTaskId,
                 Instant.now()));
 
         evaluateWorkflowProgress();
@@ -379,7 +380,7 @@ public class WorkflowRun {
 
         if (suspensionInfo != null &&
                 signal.targetNodeId().equals(suspensionInfo.waitingOnNodeId())) {
-            resume(signal.payload());
+            resume(signal.payload(), null);
         } else {
             pendingSignals.put(signal.name(), signal);
         }

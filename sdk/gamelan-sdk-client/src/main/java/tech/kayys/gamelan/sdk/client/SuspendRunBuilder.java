@@ -4,7 +4,9 @@ import io.smallrye.mutiny.Uni;
 import tech.kayys.gamelan.engine.run.RunResponse;
 
 /**
- * Builder for suspending runs
+ * Fluent builder for suspending a running workflow.
+ * Instances of this builder are obtained via
+ * {@link WorkflowRunOperations#suspend(String)}.
  */
 public class SuspendRunBuilder {
 
@@ -18,16 +20,33 @@ public class SuspendRunBuilder {
         this.runId = runId;
     }
 
+    /**
+     * Sets the reason for suspending the workflow.
+     * 
+     * @param reason the suspension reason
+     * @return this builder
+     */
     public SuspendRunBuilder reason(String reason) {
         this.reason = reason;
         return this;
     }
 
+    /**
+     * Optionally specifies a node ID that the workflow is waiting on.
+     * 
+     * @param nodeId the node ID
+     * @return this builder
+     */
     public SuspendRunBuilder waitingOnNode(String nodeId) {
         this.waitingOnNodeId = nodeId;
         return this;
     }
 
+    /**
+     * Executes the suspension request.
+     * 
+     * @return a Uni containing the updated run details
+     */
     public Uni<RunResponse> execute() {
         return client.suspendRun(runId, reason, waitingOnNodeId);
     }

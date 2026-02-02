@@ -5,7 +5,8 @@ import io.smallrye.mutiny.Uni;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 
 /**
- * Fluent API for workflow definition operations
+ * Provides a fluent API for managing workflow definitions.
+ * This class is accessed via {@link GamelanClient#workflowDefinitions()}.
  */
 public class WorkflowDefinitionOperations {
 
@@ -16,28 +17,39 @@ public class WorkflowDefinitionOperations {
     }
 
     /**
-     * Create a new workflow definition
+     * Initiates the creation of a new workflow definition.
+     * 
+     * @param name the name of the workflow
+     * @return a builder to configure and execute the definition creation
      */
     public WorkflowDefinitionBuilder create(String name) {
         return new WorkflowDefinitionBuilder(client, name);
     }
 
     /**
-     * Get a workflow definition
+     * Retrieves a specific workflow definition by its ID.
+     * 
+     * @param definitionId the ID of the workflow definition
+     * @return a Uni containing the workflow definition
      */
     public Uni<WorkflowDefinition> get(String definitionId) {
         return client.getDefinition(definitionId);
     }
 
     /**
-     * List workflow definitions
+     * Lists active workflow definitions.
+     * 
+     * @return a Uni containing a list of active workflow definitions
      */
     public Uni<List<WorkflowDefinition>> list() {
         return client.listDefinitions(true);
     }
 
     /**
-     * Delete a workflow definition
+     * Deletes a workflow definition.
+     * 
+     * @param definitionId the ID of the workflow definition to delete
+     * @return a Uni representing the completion of the deletion
      */
     public Uni<Void> delete(String definitionId) {
         return client.deleteDefinition(definitionId);

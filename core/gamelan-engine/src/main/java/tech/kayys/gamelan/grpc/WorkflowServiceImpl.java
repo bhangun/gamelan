@@ -127,15 +127,15 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         @Override
         public Uni<RunResponse> resumeRun(
-                        ResumeRunRequest request) {
+                        ResumeRunRequest grpcRequest) {
+                LOG.info("gRPC: Resuming workflow run: {}", grpcRequest.getRunId());
 
-                LOG.info("gRPC: Resuming workflow run: {}", request.getRunId());
+                TenantId tenantId = TenantId.of(grpcRequest.getTenantId());
+                WorkflowRunId runId = WorkflowRunId.of(grpcRequest.getRunId());
+                Map<String, Object> resumeData = mapper.structToMap(grpcRequest.getResumeData());
+                String humanTaskId = grpcRequest.getHumanTaskId();
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
-                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
-                Map<String, Object> resumeData = mapper.structToMap(request.getResumeData());
-
-                return runManager.resumeRun(runId, tenantId, resumeData)
+                return runManager.resumeRun(runId, tenantId, resumeData, humanTaskId)
                                 .map(mapper::toProtoRunResponse)
                                 .onFailure().transform(this::mapException);
         }

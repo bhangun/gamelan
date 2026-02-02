@@ -120,15 +120,23 @@ public class DefaultWorkflowRunManager implements tech.kayys.gamelan.engine.work
     public Uni<WorkflowRun> resumeRun(
             WorkflowRunId runId,
             TenantId tenantId,
-            Map<String, Object> resumeData) {
+            Map<String, Object> resumeData,
+            String humanTaskId) {
         return runRepository.withLock(runId, run -> {
-            run.resume(resumeData);
+            run.resume(resumeData, humanTaskId);
             return runRepository.update(run)
                     .call(() -> historyRepository.append(
                             runId,
                             ExecutionEventTypes.STATUS_CHANGED,
                             RunStatus.RUNNING.name(),
-                            resumeData));
+                            java.util.stream.Stream.concat(
+                                    resumeData.entrySet().stream(),
+                                    java.util.stream.Stream.of(java.util.Map.entry("humanTaskId",
+                                            humanTaskId != null ? humanTaskId : "")))
+                                    .collect(java.util.stream.Collectors.toMap(
+                                            java.util.Map.Entry::getKey,
+                                            java.util.Map.Entry::getValue,
+                                            (v1, v2) -> v2))));
         });
     }
 
@@ -241,16 +249,19 @@ public class DefaultWorkflowRunManager implements tech.kayys.gamelan.engine.work
                                         result.status() == tech.kayys.gamelan.engine.node.NodeExecutionStatus.COMPLETED))
                                 .chain(() -> {
                                     // Apply result
-                                    if (result.status() == tech.kayys.gamelan.engine.node.NodeExecutionStatus.COMPLETED) {
+                                    if (result
+                                            .status() == tech.kayys.gamelan.engine.node.NodeExecutionStatus.COMPLETED) {
                                         run.completeNode(result.nodeId(), result.attempt(),
                                                 result.output() != null ? result.output() : Map.of());
                                         return runRepository.update(run)
-                                                .invoke(() -> eventBus.publish("gamelan.runs.v1.updated", runId.value()))
+                                                .invoke(() -> eventBus.publish("gamelan.runs.v1.updated",
+                                                        runId.value()))
                                                 .replaceWithVoid();
                                     } else {
                                         run.failNode(result.nodeId(), result.attempt(), result.error());
                                         return runRepository.update(run)
-                                                .invoke(() -> eventBus.publish("gamelan.runs.v1.updated", runId.value()))
+                                                .invoke(() -> eventBus.publish("gamelan.runs.v1.updated",
+                                                        runId.value()))
                                                 .replaceWithVoid();
                                     }
                                 });

@@ -38,29 +38,6 @@ public class DefaultWorkflowContext implements WorkflowContext {
     }
 
     @Override
-    public void markNodeCompleted(NodeId nodeId, NodeResult result) {
-        completedNodes.put(nodeId, result);
-        updatedAt = Instant.now();
-    }
-
-    @Override
-    public void suspend(String reason) {
-        status = RunStatus.SUSPENDED;
-        variables.put("_suspendReason", reason);
-    }
-
-    @Override
-    public void resume() {
-        status = RunStatus.RUNNING;
-    }
-
-    @Override
-    public void fail(Throwable error) {
-        status = RunStatus.FAILED;
-        variables.put("_error", error.getMessage());
-    }
-
-    @Override
     public Map<NodeId, NodeResult> completedNodes() {
         return Map.copyOf(completedNodes);
     }
@@ -73,12 +50,6 @@ public class DefaultWorkflowContext implements WorkflowContext {
     @Override
     public WorkflowRunId runId() {
         return runId;
-    }
-
-    @Override
-    public void setVariable(String key, Object value) {
-        variables.put(key, value);
-        updatedAt = Instant.now();
     }
 
     @Override

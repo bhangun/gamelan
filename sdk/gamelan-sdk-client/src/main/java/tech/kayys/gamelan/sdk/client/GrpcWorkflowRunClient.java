@@ -10,20 +10,25 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * gRPC-based workflow run client
+ * gRPC-based implementation of {@link WorkflowRunClient}.
+ * Currently a stub as gRPC transport is not yet implemented.
  */
-class GrpcWorkflowRunClient implements WorkflowRunClient {
+public class GrpcWorkflowRunClient implements WorkflowRunClient {
 
     private final GamelanClientConfig config;
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    // gRPC stub would be injected here
 
+    /**
+     * Initializes the gRPC client with provided configuration.
+     * 
+     * @param config the client configuration
+     */
     GrpcWorkflowRunClient(GamelanClientConfig config) {
         this.config = config;
     }
 
     /**
-     * Get the client configuration
+     * @return the client configuration
      */
     public GamelanClientConfig config() {
         return config;
@@ -32,68 +37,66 @@ class GrpcWorkflowRunClient implements WorkflowRunClient {
     @Override
     public Uni<RunResponse> createRun(CreateRunRequest request) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<RunResponse> getRun(String runId) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<RunResponse> startRun(String runId) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<RunResponse> suspendRun(String runId, String reason, String waitingOnNodeId) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<RunResponse> resumeRun(String runId, Map<String, Object> resumeData, String humanTaskId) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<Void> cancelRun(String runId, String reason) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<Void> signal(String runId, String signalName, String targetNodeId, Map<String, Object> payload) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<ExecutionHistory> getExecutionHistory(String runId) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<List<RunResponse>> queryRuns(String workflowId, String status, int page, int size) {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public Uni<Long> getActiveRunsCount() {
         checkClosed();
-        return null;
+        return Uni.createFrom().failure(new UnsupportedOperationException("gRPC transport not implemented yet"));
     }
 
     @Override
     public void close() {
-        if (closed.compareAndSet(false, true)) {
-            // Close gRPC resources if needed
-        }
+        closed.set(true);
     }
 
     private void checkClosed() {

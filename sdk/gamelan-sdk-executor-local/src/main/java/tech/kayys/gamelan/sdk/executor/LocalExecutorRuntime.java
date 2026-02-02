@@ -54,6 +54,13 @@ public class LocalExecutorRuntime extends BaseExecutorRuntime {
         // Local runtime doesn't need explicit registration
         // Executors are available immediately via CDI
         LOG.info("Local Executor Runtime started successfully");
+
+        // Register executors with transport
+        transport.register(java.util.List.copyOf(executors.values()))
+                .subscribe().with(
+                        v -> LOG.info("Registered executors with transport"),
+                        error -> LOG.error("Failed to register executors", error));
+
         LOG.info("Registered executors: {}", executors.keySet());
     }
 
@@ -64,10 +71,6 @@ public class LocalExecutorRuntime extends BaseExecutorRuntime {
     @Override
     public void stop() {
         LOG.info("Stopping Local Executor Runtime");
-
-        // For local mode, we just clean up resources
-        // No need to unregister from remote engine
-
         super.stop();
     }
 
