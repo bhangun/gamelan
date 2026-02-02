@@ -3,6 +3,9 @@ package tech.kayys.gamelan.sdk.client;
 import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
 
 public class GamelanClientTest {
 
@@ -25,6 +28,35 @@ public class GamelanClientTest {
         assertEquals(TransportType.REST, client.config().transport());
 
         client.close();
+    }
+
+    @Test
+    void testTransportSwitching() {
+        // Local
+        WorkflowRunManager runManager = mock(WorkflowRunManager.class);
+        WorkflowDefinitionService defService = mock(WorkflowDefinitionService.class);
+        GamelanClient localClient = GamelanClient.builder()
+                .tenantId("test-tenant")
+                .local(runManager, defService, "test-tenant")
+                .build();
+        assertEquals(TransportType.LOCAL, localClient.config().transport());
+        localClient.close();
+
+        // gRPC
+        GamelanClient grpcClient = GamelanClient.builder()
+                .tenantId("test-tenant")
+                .grpcEndpoint("localhost", 9090)
+                .build();
+        assertEquals(TransportType.GRPC, grpcClient.config().transport());
+        grpcClient.close();
+
+        // REST
+        GamelanClient restClient = GamelanClient.builder()
+                .tenantId("test-tenant")
+                .restEndpoint("http://localhost:8080")
+                .build();
+        assertEquals(TransportType.REST, restClient.config().transport());
+        restClient.close();
     }
 
     @Test

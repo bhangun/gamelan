@@ -101,12 +101,40 @@ public class GamelanClient implements AutoCloseable {
         /**
          * Sets the gRPC endpoint.
          * 
-         * @param host gRPC server host
-         * @param port gRPC server port
+         * @param endpoint gRPC service address (host:port)
+         * @return this builder
+         */
+        public Builder grpcEndpoint(String endpoint) {
+            configBuilder.endpoint(endpoint).grpc();
+            return this;
+        }
+
+        /**
+         * Sets the gRPC endpoint with host and port.
+         * 
+         * @param host gRPC host
+         * @param port gRPC port
          * @return this builder
          */
         public Builder grpcEndpoint(String host, int port) {
             configBuilder.endpoint(host + ":" + port).grpc();
+            return this;
+        }
+
+        /**
+         * Configures the client for local execution using provided services.
+         * 
+         * @param runManager        engine run manager
+         * @param definitionService engine definition service
+         * @param tenantId          tenant ID
+         * @return this builder
+         */
+        public Builder local(WorkflowRunManager runManager, WorkflowDefinitionService definitionService,
+                String tenantId) {
+            configBuilder.endpoint("local").local()
+                    .runManager(runManager)
+                    .definitionService(definitionService)
+                    .tenantId(tenantId);
             return this;
         }
 

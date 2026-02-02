@@ -147,6 +147,16 @@ public class WorkflowRun {
         return run;
     }
 
+    // ==================== GETTERS ====================
+
+    public WorkflowRunId id() {
+        return id;
+    }
+
+    public RunStatus status() {
+        return status;
+    }
+
     /**
      * Reconstitute from event stream (Event Sourcing)
      */
