@@ -33,19 +33,19 @@ to be implement plugin mechanism
 
 *Viewed [PluginRegistry.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin/PluginRegistry.java) *
 
-*Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin) *
+*Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-spi/src/main/java/tech/kayys/gamelan/plugin) *
 
 *Searched filesystem*
 
 *Searched filesystem*
 
-*Listed directory [interceptor](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/interceptor) *
+*Listed directory [interceptor](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-spi/src/main/java/tech/kayys/gamelan/plugin/interceptor) *
 
 *Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin) *
 
-*Viewed [ExecutionInterceptorPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/interceptor/ExecutionInterceptorPlugin.java) *
+*Viewed [ExecutionInterceptorPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-spi/src/main/java/tech/kayys/gamelan/plugin/interceptor/ExecutionInterceptorPlugin.java) *
 
-*Viewed [pom.xml](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/pom.xml) *
+*Viewed [pom.xml](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-spi/pom.xml) *
 
 *Searched filesystem*
 
@@ -375,7 +375,7 @@ Now let me move on to creating integration tests and plugin development document
 
 *Edited relevant file*
 
-*Viewed [EventListenerPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/event/EventListenerPlugin.java) *
+*Viewed [EventListenerPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-spi/src/main/java/tech/kayys/gamelan/plugin/event/EventListenerPlugin.java) *
 
 ### Planner Response
 

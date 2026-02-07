@@ -30,7 +30,7 @@ Create and deploy custom workflow-gamelan plugins to extend platform capabilitie
 
 - Maven 3.8+
 - JDK 17+
-- gamelan-plugin-api on classpath
+- gamelan-plugin-spi on classpath
 
 ## Steps
 
@@ -49,7 +49,7 @@ mvn archetype:generate \
 ```xml
 <dependency>
   <groupId>tech.kayys.gamelan</groupId>
-  <artifactId>gamelan-plugin-api</artifactId>
+  <artifactId>gamelan-plugin-spi</artifactId>
   <version>1.0.0</version>
   <scope>provided</scope>
 </dependency>

@@ -7,7 +7,7 @@ This is a standalone test that demonstrates the Gamelan Plugin System functional
 1. Build the plugin API:
 ```bash
 cd /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow
-mvn clean install -pl gamelan-plugin-api -DskipTests
+mvn clean install -pl gamelan-plugin-spi -DskipTests
 ```
 
 2. Build the example plugin:

@@ -512,7 +512,7 @@ extensionRegistry.register(new MyPlugin());
 ## Integration with Other Modules
 
 - **gamelan-engine-spi**: Implements all contracts
-- **gamelan-plugin-api**: Uses plugin system
+- **gamelan-plugin-spi**: Uses plugin system
 - **gamelan-protocol-grpc**: Maps domain objects to gRPC messages
 - **gamelan-protocol-kafka**: Maps domain objects to Kafka messages
 - **gamelan-sdk-executor-core**: Receives task results
@@ -520,6 +520,6 @@ extensionRegistry.register(new MyPlugin());
 ## See Also
 
 - **[gamelan-engine-spi](../gamelan-engine-spi/README.md)**: API contracts
-- **[gamelan-plugin-api](../gamelan-plugin-api/README.md)**: Plugin development
+- **[gamelan-plugin-spi](../gamelan-plugin-spi/README.md)**: Plugin development
 - **[gamelan-engine](../gamelan-engine/README.md)**: Main engine module
 - **[gamelan-executor-registry](../gamelan-executor-registry/README.md)**: Executor management

@@ -35,7 +35,7 @@ Create a new Maven project:
     <dependencies>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-plugin-api</artifactId>
+            <artifactId>gamelan-plugin-spi</artifactId>
             <version>1.0.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>

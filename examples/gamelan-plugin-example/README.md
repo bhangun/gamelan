@@ -45,4 +45,4 @@ Use this as a template for your own plugins:
 ## See Also
 
 - [Plugin Development Guide](../../docs/plugin-development-guide.md)
-- [Gamelan Plugin API](../../core/gamelan-plugin-api)
+- [Gamelan Plugin API](../../core/gamelan-plugin-spi)

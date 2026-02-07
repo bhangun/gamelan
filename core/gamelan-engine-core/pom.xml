@@ -25,7 +25,7 @@
 
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-plugin-api</artifactId>
+            <artifactId>gamelan-plugin-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Minimal dependencies - only what plugins need -->

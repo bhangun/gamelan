@@ -365,7 +365,7 @@ public interface ExecutorRegistry {
 This API module integrates with:
 
 - **gamelan-engine-core**: Implementation of API contracts
-- **gamelan-plugin-api**: Plugin system built on extension interfaces
+- **gamelan-plugin-spi**: Plugin system built on extension interfaces
 - **gamelan-sdk-executor-core**: Executor base classes and interfaces
 - **gamelan-protocol-grpc**: Data mapping between API and gRPC messages
 - **gamelan-protocol-kafka**: Data mapping between API and Kafka messages
@@ -381,7 +381,7 @@ gamelan-engine-core
   ├── [depends on gamelan-engine-spi]
   └── [implements all interfaces]
 
-gamelan-plugin-api
+gamelan-plugin-spi
   ├── [depends on gamelan-engine-spi]
   └── [extends extension system]
 ```
@@ -474,5 +474,5 @@ WorkflowEngine engine = ctx.getService(WorkflowEngine.class);
 ## See Also
 
 - **[gamelan-engine-core](../gamelan-engine-core/README.md)**: Implementation of these interfaces
-- **[gamelan-plugin-api](../gamelan-plugin-api/README.md)**: Plugin system
+- **[gamelan-plugin-spi](../gamelan-plugin-spi/README.md)**: Plugin system
 - **[gamelan-engine](../gamelan-engine/README.md)**: Main engine module

@@ -30,7 +30,7 @@ Add the following dependency to your project:
 ```xml
 <dependency>
     <groupId>tech.kayys.gamelan</groupId>
-    <artifactId>gamelan-plugin-api</artifactId>
+    <artifactId>gamelan-plugin-spi</artifactId>
     <version>${gamelan.version}</version>
 </dependency>
 ```
@@ -586,7 +586,7 @@ public void onEngineStartup(EngineContext context) {
 
 - **gamelan-engine-spi**: Defines extension interfaces
 - **gamelan-engine-core**: Uses plugin system for extensions
-- **gamelan-plugin-api**: This module provides implementation
+- **gamelan-plugin-spi**: This module provides implementation
 
 ## See Also
 

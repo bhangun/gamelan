@@ -11,7 +11,7 @@ The Gamelan Plugin System allows you to extend the workflow engine with custom f
 ```xml
 <dependency>
     <groupId>tech.kayys.gamelan</groupId>
-    <artifactId>gamelan-plugin-api</artifactId>
+    <artifactId>gamelan-plugin-spi</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>

@@ -30,7 +30,7 @@
         <module>gamelan-engine</module>
         <module>gamelan-engine-core</module>
         <module>gamelan-engine-spi</module>
-        <module>gamelan-plugin-api</module>
+        <module>gamelan-plugin-spi</module>
         <module>gamelan-executor-registry</module>
         <module>gamelan-runtime-core</module>
         <module>gamelan-sdk-executor-core</module>

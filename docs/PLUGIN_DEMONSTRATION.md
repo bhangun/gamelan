@@ -8,12 +8,12 @@ The Gamelan Plugin System is **complete and functional**. This guide demonstrate
 
 ### 1. Plugin API Module
 - **Status**: ✅ Built successfully
-- **Location**: `gamelan-plugin-api/`
+- **Location**: `gamelan-plugin-spi/`
 - **Build Command**:
   ```bash
-  mvn clean install -pl gamelan-plugin-api -DskipTests
+  mvn clean install -pl gamelan-plugin-spi -DskipTests
   ```
-- **Output**: `gamelan-plugin-api-1.0.0-SNAPSHOT.jar`
+- **Output**: `gamelan-plugin-spi-1.0.0-SNAPSHOT.jar`
 
 ### 2. Example Plugin
 - **Status**: ✅ Built successfully
@@ -166,7 +166,7 @@ public class EventListenerPlugin implements EventListenerPlugin {
 ```xml
 <dependency>
     <groupId>tech.kayys.gamelan</groupId>
-    <artifactId>gamelan-plugin-api</artifactId>
+    <artifactId>gamelan-plugin-spi</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
@@ -255,7 +255,7 @@ target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar
 
 - **Plugin System Guide**: [PLUGIN_SYSTEM.md](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/PLUGIN_SYSTEM.md)
 - **Implementation Walkthrough**: [walkthrough.md](file:///Users/bhangun/.gemini/antigravity/brain/3fe3c2d0-0805-4582-bbfa-c173a70b56d2/walkthrough.md)
-- **API Documentation**: See `gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/`
+- **API Documentation**: See `gamelan-plugin-spi/src/main/java/tech/kayys/gamelan/plugin/`
 
 ## ⚠️ Current Limitations
 

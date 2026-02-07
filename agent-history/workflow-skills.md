@@ -1850,7 +1850,7 @@ drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-core
 drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-engine
 drwxr-xr-x@  6 bhangun  staff    192 Jan 27 18:42 golek-infrastructure
 drwxr-xr-x@  9 bhangun  staff    288 Jan 27 11:35 golek-model-repo-core
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-plugin-api
+drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-plugin-spi
 drwxr-xr-x@  8 bhangun  staff    256 Jan 27 16:54 golek-provider-core
 total 16
 drwxr-xr-x@  5 bhangun  staff   160 Jan 27 11:35 .
@@ -2569,7 +2569,7 @@ drwxr-xr-x@  4 bhangun  staff   128 Jan 22 10:45 gamelan-executor-runtime
 drwxr-xr-x@  4 bhangun  staff   128 Jan 22 10:44 gamelan-executor-runtime-core
 drwxr-xr-x@  2 bhangun  staff    64 Jan 22 10:46 gamelan-executor-runtime-py
 drwxr-xr-x@  2 bhangun  staff    64 Jan 22 10:46 gamelan-executor-runtime-py-core
-drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-plugin-api
+drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-plugin-spi
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-runtime-core
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-sdk-executor-core
 
@@ -2726,7 +2726,7 @@ Let me check key documentation:
 11. ```xml
 12. <dependency>
 13.     <groupId>tech.kayys.gamelan</groupId>
-14.     <artifactId>gamelan-plugin-api</artifactId>
+14.     <artifactId>gamelan-plugin-spi</artifactId>
 15.     <version>1.0.0-SNAPSHOT</version>
 16.     <scope>provided</scope>
 17. </dependency>
