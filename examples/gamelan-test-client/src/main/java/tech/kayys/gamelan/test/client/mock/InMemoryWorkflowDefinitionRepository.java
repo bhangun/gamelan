@@ -39,6 +39,14 @@ public class InMemoryWorkflowDefinitionRepository implements WorkflowDefinitionR
     }
 
     @Override
+    public Uni<WorkflowDefinition> findByName(String name, TenantId tenantId) {
+        return Uni.createFrom().item(definitions.values().stream()
+                .filter(d -> d.name().equals(name))
+                .findFirst()
+                .orElse(null));
+    }
+
+    @Override
     public Uni<Void> delete(WorkflowDefinitionId id, TenantId tenantId) {
         definitions.remove(id);
         return Uni.createFrom().voidItem();

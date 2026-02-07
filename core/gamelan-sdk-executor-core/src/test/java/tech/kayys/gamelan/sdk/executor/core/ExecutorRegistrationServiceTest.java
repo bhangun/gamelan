@@ -30,7 +30,9 @@ public class ExecutorRegistrationServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(vertx.eventBus()).thenReturn(eventBus);
-        when(eventBus.request(anyString(), any())).thenReturn(Uni.createFrom().item("success"));
+        io.vertx.mutiny.core.eventbus.Message<Object> mockMessage = mock(io.vertx.mutiny.core.eventbus.Message.class);
+        when(mockMessage.body()).thenReturn("success");
+        when(eventBus.request(anyString(), any())).thenReturn(Uni.createFrom().item(mockMessage));
         when(vertx.setPeriodic(anyLong(), any())).thenReturn(1L);
 
         service = new ExecutorRegistrationService();

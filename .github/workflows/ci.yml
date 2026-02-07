@@ -30,6 +30,14 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean install -DskipTests
 
+    - name: Generate error codes docs
+      run: ./scripts/generate-error-codes.sh
+
+    - name: Verify error codes docs are up-to-date
+      run: |
+        git status --porcelain
+        git diff --exit-code docs/error-codes.md
+
     - name: Run tests
       run: mvn -B test
 

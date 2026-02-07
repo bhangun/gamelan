@@ -115,6 +115,28 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
     }
 
     @Override
+    public Uni<WorkflowDefinition> findByName(String name, TenantId tenantId) {
+        String sql = """
+                SELECT definition_json, created_at
+                FROM workflow_definitions
+                WHERE name = $1 AND tenant_id = $2 AND is_active = true
+                ORDER BY created_at DESC LIMIT 1
+                """;
+
+        return pgPool.preparedQuery(sql)
+                .execute(io.vertx.mutiny.sqlclient.Tuple.of(name, tenantId.value()))
+                .map(rows -> {
+                    if (!rows.iterator().hasNext()) {
+                        return null;
+                    }
+
+                    io.vertx.mutiny.sqlclient.Row row = rows.iterator().next();
+                    return deserializeDefinition(row);
+                })
+                .onFailure().invoke(error -> LOG.error("Failed to load definition by name", error));
+    }
+
+    @Override
     public Uni<Void> delete(WorkflowDefinitionId id, TenantId tenantId) {
         String sql = """
                 UPDATE workflow_definitions

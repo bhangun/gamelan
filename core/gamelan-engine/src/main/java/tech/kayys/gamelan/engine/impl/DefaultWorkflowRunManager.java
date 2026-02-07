@@ -7,6 +7,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tech.kayys.gamelan.engine.ExecutionEventTypes;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.node.NodeExecutionResult;
 import tech.kayys.gamelan.engine.run.RunStatus;
@@ -180,7 +182,8 @@ public class DefaultWorkflowRunManager implements tech.kayys.gamelan.engine.work
         return runRepository.withLock(runId, run -> {
             ValidationResult vr = transitionValidator.validate(run.getStatus(), RunStatus.FAILED);
             if (!vr.isValid()) {
-                return Uni.createFrom().failure(new IllegalStateException(vr.message()));
+                return Uni.createFrom().failure(
+                        new GamelanException(ErrorCode.RUN_INVALID_STATE, vr.message()));
             }
 
             run.fail(error);

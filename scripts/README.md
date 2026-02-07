@@ -2,6 +2,14 @@
 
 This directory contains scripts to help with installing and managing the Gamelan CLI.
 
+## Error Code Docs
+
+Generate the centralized error codes documentation:
+
+```bash
+./scripts/generate-error-codes.sh
+```
+
 ## Installation Script
 
 The `install-cli.sh` script provides an easy way to install the Gamelan CLI on your system.

@@ -2,7 +2,8 @@ package tech.kayys.gamelan.core.workflow;
 
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,8 @@ public class WorkflowDefinitionRegistry {
         return repository.findById(id, tenantId)
                 .map(definition -> {
                     if (definition == null) {
-                        throw new NoSuchElementException(
+                        throw new GamelanException(
+                                ErrorCode.WORKFLOW_NOT_FOUND,
                                 "Workflow definition not found: " + id.value());
                     }
 
@@ -74,7 +76,7 @@ public class WorkflowDefinitionRegistry {
         // Validate definition
         if (!definition.isValid()) {
             return Uni.createFrom().failure(
-                    new IllegalArgumentException("Invalid workflow definition"));
+                    new GamelanException(ErrorCode.WORKFLOW_INVALID_DEFINITION, "Invalid workflow definition"));
         }
 
         // Save to repository
@@ -97,6 +99,15 @@ public class WorkflowDefinitionRegistry {
             boolean activeOnly) {
 
         return repository.findByTenant(tenantId, activeOnly);
+    }
+
+    /**
+     * Get workflow definition by name
+     */
+    public Uni<WorkflowDefinition> getByName(String name, TenantId tenantId) {
+        // Cache could potentially be used here too, but for now repository call is
+        // safer for 'latest version' semantics if not specified
+        return repository.findByName(name, tenantId);
     }
 
     /**

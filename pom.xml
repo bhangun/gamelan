@@ -13,29 +13,24 @@
     <description>Enterprise-grade workflow engine for agentic AI and business automation</description>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
-        <lombok.version>1.18.30</lombok.version>
+        <maven.compiler.release>25</maven.compiler.release>
+        <lombok.version>1.18.40</lombok.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.version>3.15.1</quarkus.platform.version>
+        <quarkus.platform.version>3.31.1</quarkus.platform.version>
         <grpc.version>1.60.0</grpc.version>
         <protobuf.version>3.25.5</protobuf.version>
         <testcontainers.version>1.19.3</testcontainers.version>
     </properties>
 
     <modules>
-        <module>core/gamelan-engine</module>
-        <module>core/gamelan-engine-core</module>
-        <module>core/gamelan-engine-api</module>
-        <module>core/gamelan-plugin-api</module>
-        <module>core/gamelan-executor-registry</module>
-        <module>core/gamelan-runtime-core</module>
-        <module>core/gamelan-sdk-executor-core</module>
-        <module>sdk/gamelan-sdk-client</module>
+        <module>core</module>
+
+        <module>sdk/gamelan-sdk-client-remote</module>
         <module>sdk/gamelan-sdk-executor-local</module>
         <module>sdk/gamelan-sdk-executor-remote</module>
         <module>protocol/gamelan-protocol-grpc</module>
@@ -43,6 +38,7 @@
         <module>runtime/gamelan-runtime-distributed</module>
         <module>runtime/gamelan-runtime-standalone</module>
         <module>plugins</module>
+        <module>extensions/gamelan-dag</module>
         <module>examples/gamelan-test-client</module>
         <module>examples/gamelan-test-executor</module>
         <module>core/gamelan-executor-runtime-core</module>

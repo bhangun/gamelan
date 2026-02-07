@@ -15,7 +15,7 @@ import tech.kayys.gamelan.engine.execution.ExecutionContext;
 import tech.kayys.gamelan.engine.execution.ExecutionError;
 import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
 import tech.kayys.gamelan.grpc.v1.*;
-import tech.kayys.gamelan.engine.error.ErrorInfo;
+
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;

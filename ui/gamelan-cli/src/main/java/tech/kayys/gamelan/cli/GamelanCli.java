@@ -7,11 +7,18 @@ import picocli.CommandLine.Option;
 @Command(
     name = "gamelan",
     description = "Gamelan Workflow Engine CLI",
+    footer = {
+        "",
+        "Error codes:",
+        "  gamelan error-codes",
+        "  gamelan error-codes --format json"
+    },
     subcommands = {
         WorkflowDefinitionCommands.class,
         WorkflowRunCommands.class,
         ExecutorCommands.class,
-        ConfigCommands.class
+        ConfigCommands.class,
+        ErrorCodeCommands.class
     },
     mixinStandardHelpOptions = true,
     version = "1.0.0"

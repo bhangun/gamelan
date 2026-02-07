@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import tech.kayys.gamelan.engine.execution.ExecutionPlan;
 import tech.kayys.gamelan.core.workflow.WorkflowDefinitionRegistry;
 import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
@@ -20,6 +22,8 @@ import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
+import tech.kayys.gamelan.engine.workflow.WorkflowMode;
+import tech.kayys.gamelan.engine.plugin.PluginService;
 
 /**
  * Core execution engine that evaluates workflow progress
@@ -32,6 +36,12 @@ public class WorkflowExecutionEngine {
 
     @Inject
     WorkflowDefinitionRegistry definitionRegistry;
+
+    @Inject
+    Instance<PluginService> pluginService;
+
+    @ConfigProperty(name = "gamelan.dag.scheduler.enabled", defaultValue = "false")
+    boolean dagSchedulerEnabled;
 
     /**
      * Evaluate workflow and determine next nodes to execute
@@ -52,6 +62,10 @@ public class WorkflowExecutionEngine {
                 }
             }
 
+            if (definition.mode() == WorkflowMode.DAG && dagSchedulerEnabled) {
+                readyNodes = orderDagReadyNodes(definition, readyNodes);
+            }
+
             // Check for workflow completion
             boolean isComplete = isWorkflowComplete(run, definition);
 
@@ -65,6 +79,34 @@ public class WorkflowExecutionEngine {
                     isStuck,
                     collectWorkflowOutputs(run, definition));
         });
+    }
+
+    private List<NodeId> orderDagReadyNodes(WorkflowDefinition definition, List<NodeId> readyNodes) {
+        if (readyNodes == null || readyNodes.isEmpty()) {
+            return readyNodes;
+        }
+        if (pluginService == null || !pluginService.isResolvable()) {
+            return readyNodes;
+        }
+        try {
+            Class<?> serviceClass = Class.forName("tech.kayys.gamelan.dag.DagSchedulerService");
+            PluginService service = pluginService.get();
+            var optional = service.getService(serviceClass);
+            if (optional.isEmpty()) {
+                return readyNodes;
+            }
+            Object scheduler = optional.get();
+            var method = serviceClass.getMethod("orderReadyNodes", WorkflowDefinition.class, List.class);
+            Object result = method.invoke(scheduler, definition, readyNodes);
+            if (result instanceof List<?> list) {
+                @SuppressWarnings("unchecked")
+                List<NodeId> ordered = (List<NodeId>) list;
+                return ordered;
+            }
+        } catch (Exception e) {
+            LOG.warn("DAG scheduler not available, using default ordering", e);
+        }
+        return readyNodes;
     }
 
     /**

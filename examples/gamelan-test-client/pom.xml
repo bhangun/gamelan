@@ -40,7 +40,7 @@
 
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-engine-api</artifactId>
+            <artifactId>gamelan-engine-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
 

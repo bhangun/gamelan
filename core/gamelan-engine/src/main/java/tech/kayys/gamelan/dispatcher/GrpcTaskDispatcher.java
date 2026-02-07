@@ -20,6 +20,8 @@ import jakarta.inject.Inject;
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 
 @ApplicationScoped
 public class GrpcTaskDispatcher implements TaskDispatcher {
@@ -60,7 +62,9 @@ public class GrpcTaskDispatcher implements TaskDispatcher {
         if (executor.endpoint() == null || executor.endpoint().isBlank()) {
             failureCounter.increment();
             return Uni.createFrom().failure(
-                    new IllegalArgumentException("Executor gRPC endpoint is missing"));
+                    new GamelanException(
+                            ErrorCode.DISPATCHER_INVALID_REQUEST,
+                            "Executor gRPC endpoint is missing"));
         }
 
         return Uni.createFrom().item(buildRequest(task, executor))

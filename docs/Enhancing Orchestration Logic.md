@@ -27,11 +27,11 @@ to be implement plugin mechanism
 
 *Searched filesystem*
 
-*Viewed [EngineContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/context/EngineContext.java) *
+*Viewed [EngineContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/context/EngineContext.java) *
 
 *Viewed [DefaultEngineContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-core/src/main/java/tech/kayys/gamelan/core/engine/DefaultEngineContext.java) *
 
-*Viewed [PluginRegistry.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/plugin/PluginRegistry.java) *
+*Viewed [PluginRegistry.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin/PluginRegistry.java) *
 
 *Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin) *
 
@@ -41,7 +41,7 @@ to be implement plugin mechanism
 
 *Listed directory [interceptor](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/interceptor) *
 
-*Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/plugin) *
+*Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin) *
 
 *Viewed [ExecutionInterceptorPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-plugin-api/src/main/java/tech/kayys/gamelan/plugin/interceptor/ExecutionInterceptorPlugin.java) *
 
@@ -69,11 +69,11 @@ This is a system-generated message that is sent due to the user's review policy.
 
 *Edited relevant file*
 
-*Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/plugin) *
+*Listed directory [plugin](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin) *
 
-*Viewed [GamelanPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/plugin/GamelanPlugin.java) *
+*Viewed [GamelanPlugin.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin/GamelanPlugin.java) *
 
-*Viewed [PluginMetadata.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/plugin/PluginMetadata.java) *
+*Viewed [PluginMetadata.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/plugin/PluginMetadata.java) *
 
 *Edited relevant file*
 
@@ -187,15 +187,15 @@ do next steps
 
 *Searched filesystem*
 
-*Viewed [ExecutorDispatcher.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/executor/ExecutorDispatcher.java) *
+*Viewed [ExecutorDispatcher.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/executor/ExecutorDispatcher.java) *
 
 *Viewed [RpcExecutorDispatcher.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-core/src/main/java/tech/kayys/gamelan/core/executor/RpcExecutorDispatcher.java) *
 
-*Viewed [NodeContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/node/NodeContext.java) *
+*Viewed [NodeContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/node/NodeContext.java) *
 
-*Viewed [NodeExecutionContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/node/NodeExecutionContext.java) *
+*Viewed [NodeExecutionContext.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/node/NodeExecutionContext.java) *
 
-*Viewed [NodeId.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/node/NodeId.java) *
+*Viewed [NodeId.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/node/NodeId.java) *
 
 *Edited relevant file*
 
@@ -239,11 +239,11 @@ do next
 
 *Edited relevant file*
 
-*Listed directory [engine](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine) *
+*Listed directory [engine](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine) *
 
 *Listed directory [engine](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-core/src/main/java/tech/kayys/gamelan/core/engine) *
 
-*Listed directory [run](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/run) *
+*Listed directory [run](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/run) *
 
 *Viewed [GamelanStandaloneRuntime.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/runtime/gamelan-runtime-standalone/src/main/java/tech/kayys/gamelan/runtime/standalone/GamelanStandaloneRuntime.java) *
 
@@ -343,7 +343,7 @@ I'll work on the high priority enhancements first, then move to medium priority.
 
 *Edited relevant file*
 
-*Viewed [WorkflowDefinition.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/workflow/WorkflowDefinition.java) *
+*Viewed [WorkflowDefinition.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/workflow/WorkflowDefinition.java) *
 
 ### Planner Response
 
@@ -351,11 +351,11 @@ Now I'll implement the complete orchestration logic. Let me analyze the workflow
 
 *Searched filesystem*
 
-*Viewed [WorkflowRun.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/workflow/WorkflowRun.java) *
+*Viewed [WorkflowRun.java](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/workflow/WorkflowRun.java) *
 
 ### Planner Response
 
-Excellent! I can see that [WorkflowRun](cci:2://file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-api/src/main/java/tech/kayys/gamelan/engine/workflow/WorkflowRun.java:59:0-784:1) already has comprehensive orchestration logic including node scheduling, dependency resolution, and state management. Now I need to enhance the [WorkflowOrchestrator](cci:2://file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-core/src/main/java/tech/kayys/gamelan/core/orchestration/WorkflowOrchestrator.java:25:0-81:1) to use this existing logic properly:
+Excellent! I can see that [WorkflowRun](cci:2://file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-spi/src/main/java/tech/kayys/gamelan/engine/workflow/WorkflowRun.java:59:0-784:1) already has comprehensive orchestration logic including node scheduling, dependency resolution, and state management. Now I need to enhance the [WorkflowOrchestrator](cci:2://file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/core/gamelan-engine-core/src/main/java/tech/kayys/gamelan/core/orchestration/WorkflowOrchestrator.java:25:0-81:1) to use this existing logic properly:
 
 *Edited relevant file*
 

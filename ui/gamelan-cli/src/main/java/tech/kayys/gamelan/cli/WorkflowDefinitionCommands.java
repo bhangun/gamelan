@@ -76,7 +76,7 @@ public class WorkflowDefinitionCommands {
 
                 return 0;
             } catch (StatusRuntimeException e) {
-                System.err.println("gRPC error: " + e.getStatus().getDescription());
+                GrpcErrorPrinter.print(e);
                 return 1;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
@@ -120,7 +120,7 @@ public class WorkflowDefinitionCommands {
 
                 return 0;
             } catch (StatusRuntimeException e) {
-                System.err.println("gRPC error: " + e.getStatus().getDescription());
+                GrpcErrorPrinter.print(e);
                 return 1;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
@@ -163,7 +163,7 @@ public class WorkflowDefinitionCommands {
 
                 return 0;
             } catch (StatusRuntimeException e) {
-                System.err.println("gRPC error: " + e.getStatus().getDescription());
+                GrpcErrorPrinter.print(e);
                 return 1;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
@@ -219,7 +219,7 @@ public class WorkflowDefinitionCommands {
 
                 return 0;
             } catch (StatusRuntimeException e) {
-                System.err.println("gRPC error: " + e.getStatus().getDescription());
+                GrpcErrorPrinter.print(e);
                 return 1;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
@@ -258,7 +258,7 @@ public class WorkflowDefinitionCommands {
 
                 return 0;
             } catch (StatusRuntimeException e) {
-                System.err.println("gRPC error: " + e.getStatus().getDescription());
+                GrpcErrorPrinter.print(e);
                 return 1;
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());

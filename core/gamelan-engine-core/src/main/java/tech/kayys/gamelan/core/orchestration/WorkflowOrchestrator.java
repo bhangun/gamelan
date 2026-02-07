@@ -16,7 +16,9 @@ import tech.kayys.gamelan.core.engine.WorkflowEngine;
 import tech.kayys.gamelan.core.node.DefaultNodeExecutionContext;
 import tech.kayys.gamelan.engine.context.EngineContext;
 import tech.kayys.gamelan.engine.context.WorkflowContext;
+import tech.kayys.gamelan.engine.error.ErrorCode;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
+import tech.kayys.gamelan.engine.error.GamelanException;
 import tech.kayys.gamelan.engine.node.DefaultNodeExecutionResult;
 import tech.kayys.gamelan.engine.node.NodeContext;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
@@ -77,7 +79,9 @@ public class WorkflowOrchestrator {
 
                 return runRepository.findById(runId)
                                 .onItem().ifNull()
-                                .failWith(() -> new IllegalArgumentException("Run not found: " + runIdValue))
+                                .failWith(() -> new GamelanException(
+                                                ErrorCode.RUN_NOT_FOUND,
+                                                "Run not found: " + runIdValue))
                                 .chain(run -> {
                                         // Handle compensation if workflow is compensating
                                         if (run.getStatus() == RunStatus.COMPENSATING) {

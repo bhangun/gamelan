@@ -1845,7 +1845,7 @@ drwxr-xr-x@ 11 bhangun  staff    352 Jan 27 08:52 .
 drwxr-xr-x@ 20 bhangun  staff    640 Jan 28 22:07 ..
 -rw-r--r--@  1 bhangun  staff  10244 Jan 27 11:35 .DS_Store
 -rw-r--r--@  1 bhangun  staff  11844 Jan 26 16:56 README.md
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-api
+drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-spi
 drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-core
 drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-engine
 drwxr-xr-x@  6 bhangun  staff    192 Jan 27 18:42 golek-infrastructure
@@ -2562,7 +2562,7 @@ drwxr-xr-x@ 14 bhangun  staff   448 Jan 22 10:47 .
 drwxr-xr-x@ 21 bhangun  staff   672 Jan 22 10:45 ..
 -rw-r--r--@  1 bhangun  staff  8196 Jan 19 16:14 .DS_Store
 drwxr-xr-x@ 17 bhangun  staff   544 Jan 19 22:59 gamelan-engine
-drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-engine-api
+drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-engine-spi
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-engine-core
 drwxr-xr-x@  7 bhangun  staff   224 Jan 19 22:59 gamelan-executor-registry
 drwxr-xr-x@  4 bhangun  staff   128 Jan 22 10:45 gamelan-executor-runtime

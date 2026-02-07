@@ -16,6 +16,8 @@ import tech.kayys.gamelan.engine.signal.Signal;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -262,23 +264,47 @@ public class WorkflowServiceImpl implements WorkflowService {
         private Throwable mapException(Throwable throwable) {
                 LOG.error("gRPC error", throwable);
 
-                if (throwable instanceof java.util.NoSuchElementException) {
-                        return Status.NOT_FOUND
-                                        .withDescription(throwable.getMessage())
-                                        .asRuntimeException();
-                } else if (throwable instanceof IllegalArgumentException ||
-                                throwable instanceof IllegalStateException) {
-                        return Status.INVALID_ARGUMENT
-                                        .withDescription(throwable.getMessage())
-                                        .asRuntimeException();
-                } else if (throwable instanceof SecurityException) {
-                        return Status.PERMISSION_DENIED
-                                        .withDescription(throwable.getMessage())
-                                        .asRuntimeException();
-                } else {
-                        return Status.INTERNAL
-                                        .withDescription("Internal server error")
-                                        .asRuntimeException();
+                ErrorCode errorCode = mapErrorCode(throwable);
+                String message = throwable.getMessage();
+                if (message == null || message.isBlank()) {
+                        message = errorCode.getDefaultMessage();
                 }
+
+                return mapStatus(errorCode.getHttpStatus())
+                                .withDescription(errorCode.getCode() + ": " + message)
+                                .asRuntimeException();
+        }
+
+        private ErrorCode mapErrorCode(Throwable throwable) {
+                if (throwable instanceof GamelanException ge) {
+                        return ge.getErrorCode();
+                }
+                if (throwable instanceof java.util.NoSuchElementException) {
+                        return ErrorCode.RUN_NOT_FOUND;
+                }
+                if (throwable instanceof IllegalArgumentException) {
+                        return ErrorCode.VALIDATION_FAILED;
+                }
+                if (throwable instanceof IllegalStateException) {
+                        return ErrorCode.RUNTIME_ERROR;
+                }
+                if (throwable instanceof SecurityException) {
+                        return ErrorCode.TENANT_UNAUTHORIZED;
+                }
+                return ErrorCode.INTERNAL_ERROR;
+        }
+
+        private Status mapStatus(int httpStatus) {
+                return switch (httpStatus) {
+                        case 400 -> Status.INVALID_ARGUMENT;
+                        case 401 -> Status.UNAUTHENTICATED;
+                        case 403 -> Status.PERMISSION_DENIED;
+                        case 404 -> Status.NOT_FOUND;
+                        case 409 -> Status.FAILED_PRECONDITION;
+                        case 429 -> Status.RESOURCE_EXHAUSTED;
+                        case 502, 503 -> Status.UNAVAILABLE;
+                        case 504 -> Status.DEADLINE_EXCEEDED;
+                        default -> Status.INTERNAL;
+                };
         }
 }

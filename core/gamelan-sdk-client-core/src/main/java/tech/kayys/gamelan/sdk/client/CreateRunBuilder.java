@@ -1,0 +1,87 @@
+package tech.kayys.gamelan.sdk.client;
+
+import io.smallrye.mutiny.Uni;
+import tech.kayys.gamelan.engine.run.RunResponse;
+import tech.kayys.gamelan.engine.run.CreateRunRequest;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Fluent builder for creating and optionally starting a workflow run.
+ */
+public class CreateRunBuilder {
+
+    private final WorkflowRunClient client;
+    private final String workflowDefinitionId;
+    private final Map<String, Object> inputs = new HashMap<>();
+    private final Map<String, String> labels = new HashMap<>();
+    private String workflowVersion = "1.0.0";
+    private String correlationId;
+    private boolean autoStart = false;
+
+    public CreateRunBuilder(WorkflowRunClient client, String workflowDefinitionId) {
+        this.client = client;
+        this.workflowDefinitionId = workflowDefinitionId;
+    }
+
+    public CreateRunBuilder version(String version) {
+        this.workflowVersion = version;
+        return this;
+    }
+
+    public CreateRunBuilder input(String key, Object value) {
+        inputs.put(key, value);
+        return this;
+    }
+
+    public CreateRunBuilder inputs(Map<String, Object> inputs) {
+        this.inputs.putAll(inputs);
+        return this;
+    }
+
+    public CreateRunBuilder correlationId(String correlationId) {
+        this.correlationId = correlationId;
+        return this;
+    }
+
+    public CreateRunBuilder autoStart(boolean autoStart) {
+        this.autoStart = autoStart;
+        return this;
+    }
+
+    public CreateRunBuilder label(String key, String value) {
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalArgumentException("Label key cannot be null or empty");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("Label value cannot be null");
+        }
+        this.labels.put(key, value);
+        return this;
+    }
+
+    public CreateRunBuilder labels(Map<String, String> labels) {
+        if (labels != null) {
+            for (Map.Entry<String, String> entry : labels.entrySet()) {
+                label(entry.getKey(), entry.getValue());
+            }
+        }
+        return this;
+    }
+
+    public Uni<RunResponse> execute() {
+        CreateRunRequest request = new CreateRunRequest(
+                workflowDefinitionId,
+                workflowVersion,
+                inputs,
+                correlationId,
+                autoStart);
+        return client.createRun(request);
+    }
+
+    public Uni<RunResponse> executeAndStart() {
+        this.autoStart = true;
+        return execute();
+    }
+}

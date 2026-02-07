@@ -22,6 +22,8 @@ import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 
 @ApplicationScoped
 public class RestTaskDispatcher implements TaskDispatcher {
@@ -66,7 +68,9 @@ public class RestTaskDispatcher implements TaskDispatcher {
         if (endpoint == null || endpoint.isBlank()) {
             failureCounter.increment();
             return Uni.createFrom().failure(
-                    new IllegalArgumentException("Executor REST endpoint is missing"));
+                    new GamelanException(
+                            ErrorCode.DISPATCHER_INVALID_REQUEST,
+                            "Executor REST endpoint is missing"));
         }
 
         RestExecutionRequest payload = RestExecutionRequest.from(task, executor);
@@ -99,7 +103,10 @@ public class RestTaskDispatcher implements TaskDispatcher {
             body = objectMapper.writeValueAsString(request);
         } catch (Exception e) {
             return Uni.createFrom().failure(
-                    new IllegalStateException("Failed to serialize execution request", e));
+                    new GamelanException(
+                            ErrorCode.DISPATCHER_INVALID_REQUEST,
+                            "Failed to serialize execution request",
+                            e));
         }
 
         return webClient

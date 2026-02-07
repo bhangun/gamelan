@@ -56,7 +56,8 @@ public class WorkflowDefinitionService implements tech.kayys.gamelan.engine.work
         return dtos.stream().map(this::mapNodeDefinition).toList();
     }
 
-    private tech.kayys.gamelan.engine.node.NodeDefinition mapNodeDefinition(tech.kayys.gamelan.engine.node.dto.NodeDefinitionDto dto) {
+    private tech.kayys.gamelan.engine.node.NodeDefinition mapNodeDefinition(
+            tech.kayys.gamelan.engine.node.dto.NodeDefinitionDto dto) {
         if (dto == null)
             return null;
 
@@ -81,7 +82,8 @@ public class WorkflowDefinitionService implements tech.kayys.gamelan.engine.work
                 dto.critical());
     }
 
-    private tech.kayys.gamelan.engine.run.Transition mapTransition(tech.kayys.gamelan.engine.transition.dto.TransitionDto dto) {
+    private tech.kayys.gamelan.engine.run.Transition mapTransition(
+            tech.kayys.gamelan.engine.transition.dto.TransitionDto dto) {
         if (dto == null)
             return null;
 
@@ -101,7 +103,8 @@ public class WorkflowDefinitionService implements tech.kayys.gamelan.engine.work
                         entry -> mapInputDefinition(entry.getValue())));
     }
 
-    private tech.kayys.gamelan.engine.node.InputDefinition mapInputDefinition(tech.kayys.gamelan.engine.io.dto.InputDefinitionDto dto) {
+    private tech.kayys.gamelan.engine.node.InputDefinition mapInputDefinition(
+            tech.kayys.gamelan.engine.io.dto.InputDefinitionDto dto) {
         if (dto == null)
             return null;
 
@@ -123,7 +126,8 @@ public class WorkflowDefinitionService implements tech.kayys.gamelan.engine.work
                         entry -> mapOutputDefinition(entry.getValue())));
     }
 
-    private tech.kayys.gamelan.engine.node.OutputDefinition mapOutputDefinition(tech.kayys.gamelan.engine.io.dto.OutputDefinitionDto dto) {
+    private tech.kayys.gamelan.engine.node.OutputDefinition mapOutputDefinition(
+            tech.kayys.gamelan.engine.io.dto.OutputDefinitionDto dto) {
         if (dto == null)
             return null;
 
@@ -133,7 +137,8 @@ public class WorkflowDefinitionService implements tech.kayys.gamelan.engine.work
                 dto.description());
     }
 
-    private tech.kayys.gamelan.engine.run.RetryPolicy mapRetryPolicy(tech.kayys.gamelan.engine.run.dto.RetryPolicyDto dto) {
+    private tech.kayys.gamelan.engine.run.RetryPolicy mapRetryPolicy(
+            tech.kayys.gamelan.engine.run.dto.RetryPolicyDto dto) {
         if (dto == null)
             return null;
 
@@ -172,7 +177,12 @@ public class WorkflowDefinitionService implements tech.kayys.gamelan.engine.work
     public Uni<List<WorkflowDefinition>> list(
             tech.kayys.gamelan.engine.tenant.TenantId tenantId,
             boolean activeOnly) {
-        return Uni.createFrom().item(List.of());
+        return registry.listDefinitions(tenantId, activeOnly);
+    }
+
+    @Override
+    public Uni<WorkflowDefinition> getByName(String name, tech.kayys.gamelan.engine.tenant.TenantId tenantId) {
+        return registry.getByName(name, tenantId);
     }
 
     public Uni<WorkflowDefinition> update(

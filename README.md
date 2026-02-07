@@ -59,6 +59,15 @@ GAMELAN WORKFLOW ENGINE - PROJECT STRUCTURE
   - Consul/K8s (Service discovery)
   - OpenTelemetry (Observability)
 
+  Error Codes
+  ===========
+
+  Generate the error code docs:
+
+  ```bash
+  ./scripts/generate-error-codes.sh
+  ```
+
   Usage
   =====
 
@@ -76,6 +85,18 @@ GAMELAN WORKFLOW ENGINE - PROJECT STRUCTURE
 
   # Show help
   gamelan --help
+  ```
+
+  ### Error Codes
+
+  ```bash
+  # Show error codes (prints docs if available in repo)
+  gamelan error-codes
+  ```
+
+  ```bash
+  # JSON output (for tooling)
+  gamelan error-codes --format json
   ```
 
   ### Workflow Definition Management
