@@ -45,7 +45,7 @@ public class MetricsCollectorPlugin implements ExecutionInterceptorPlugin {
                 "metrics-collector",
                 "Metrics Collector Plugin",
                 "1.0.0",
-                "Gamelan Team",
+                "bhangun",
                 "Collects workflow execution metrics",
                 null,
                 null);

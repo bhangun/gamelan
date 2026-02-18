@@ -7,7 +7,7 @@ import tech.kayys.gamelan.engine.run.CreateRunRequest;
 import tech.kayys.gamelan.engine.run.RunResponse;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.signal.Signal;
-import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;

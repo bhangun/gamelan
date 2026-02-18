@@ -6,7 +6,7 @@ import jakarta.inject.Inject;
 
 import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
 import tech.kayys.gamelan.engine.workflow.dto.UpdateWorkflowDefinitionRequest;
-import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import java.util.List;

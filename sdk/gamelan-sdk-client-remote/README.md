@@ -41,4 +41,4 @@ Uni<RunResponse> run = client.runs()
 
 ## Documentation
 
-- [AGENTS.md](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-client/AGENTS.md): Guide for creating and using workflow executors.
+- [AGENTS.md](file://~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-client/AGENTS.md): Guide for creating and using workflow executors.

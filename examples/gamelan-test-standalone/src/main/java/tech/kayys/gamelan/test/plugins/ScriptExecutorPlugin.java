@@ -167,7 +167,7 @@ public class ScriptExecutorPlugin implements ExecutorPlugin {
             .name("script-executor")
             .version("1.0.0")
             .description("Script execution plugin supporting JavaScript, Groovy, Python")
-            .author("Gamelan Team")
+            .author("bhangun")
             .build();
     }
 }

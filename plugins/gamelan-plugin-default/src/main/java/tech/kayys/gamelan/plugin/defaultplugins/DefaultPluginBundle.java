@@ -82,7 +82,7 @@ public class DefaultPluginBundle implements GamelanPlugin {
                 .id("default-plugin-bundle")
                 .name("Default Plugin Bundle")
                 .version("1.0.0")
-                .author("Gamelan Team")
+                .author("bhangun")
                 .description("A bundle of default plugins for the Gamelan workflow engine")
                 .build();
     }

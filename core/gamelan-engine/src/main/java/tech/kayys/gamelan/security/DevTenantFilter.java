@@ -16,8 +16,10 @@ import jakarta.ws.rs.ext.Provider;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 
 /**
- * Development-only filter to set a default tenant when no tenant context is available.
- * This filter is only active in the 'dev' profile to ensure tenant isolation in production.
+ * Development-only filter to set a default tenant when no tenant context is
+ * available.
+ * This filter is only active in the 'dev' profile to ensure tenant isolation in
+ * production.
  */
 @IfBuildProfile("dev")
 @Provider

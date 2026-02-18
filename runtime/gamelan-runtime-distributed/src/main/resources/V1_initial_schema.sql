@@ -4,7 +4,7 @@
 -- ============================================================================
 -- Migration: V1__initial_schema.sql
 -- Description: Initial schema for workflow engine with event sourcing
--- Author: Gamelan Team
+-- Author: bhangun
 -- Date: 2025-01-02
 
 -- Enable required extensions

@@ -9,7 +9,7 @@ import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
-import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.tenant.TenantId;
 import tech.kayys.gamelan.engine.signal.Signal;
 
 import java.time.Instant;

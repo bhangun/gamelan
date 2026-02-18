@@ -39,7 +39,7 @@ public class SimpleValidatorPlugin implements WorkflowValidatorPlugin {
                 "simple-validator",
                 "Simple Validator Plugin",
                 "1.0.0",
-                "Gamelan Team",
+                "bhangun",
                 "Performs basic workflow validation",
                 null,
                 null);

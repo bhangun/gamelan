@@ -37,7 +37,7 @@ public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
                 "logging-interceptor",
                 "Logging Interceptor Plugin",
                 "1.0.0",
-                "Gamelan Team",
+                "bhangun",
                 "Logs workflow execution events",
                 null,
                 null);

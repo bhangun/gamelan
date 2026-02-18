@@ -133,7 +133,7 @@ public class HttpExecutorPlugin implements ExecutorPlugin {
             .name("http-executor")
             .version("1.0.0")
             .description("HTTP request executor plugin")
-            .author("Gamelan Team")
+            .author("bhangun")
             .build();
     }
 }

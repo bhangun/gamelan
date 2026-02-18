@@ -14,7 +14,7 @@ import io.smallrye.mutiny.Uni;
 import tech.kayys.gamelan.engine.callback.CallbackRegistration;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.run.RunStatus;
-import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;

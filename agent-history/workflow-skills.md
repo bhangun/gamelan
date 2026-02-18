@@ -9,7 +9,7 @@
 
 ### 👤 User
 
-can you create skills of inference-golek like this wayang/skills
+can you create skills of inference-gollek like this wayang/skills
 
 ---
 
@@ -17,14 +17,14 @@ can you create skills of inference-golek like this wayang/skills
 
 ### 💭 Reasoning
 
-*The user is asking me to create skills in the `inference-golek` directory similar to how they are organized in the `wayang/skills` directory. 
+*The user is asking me to create skills in the `inference-gollek` directory similar to how they are organized in the `wayang/skills` directory. 
 
-Let me first understand the current structure by exploring the `wayang/skills` directory and `inference-golek` directory to understand what needs to be replicated.
+Let me first understand the current structure by exploring the `wayang/skills` directory and `inference-gollek` directory to understand what needs to be replicated.
 
 I should:
 1. Look at the `wayang/skills` directory to understand its structure
-2. Look at the `inference-golek` directory to see what's currently there
-3. Create a similar skills structure in `inference-golek`
+2. Look at the `inference-gollek` directory to see what's currently there
+3. Create a similar skills structure in `inference-gollek`
 
 Let me start by exploring these directories.*
 
@@ -34,9 +34,9 @@ Let me start by exploring these directories.*
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills
 
 <details>
 <summary>9 lines</summary>
@@ -62,9 +62,9 @@ WORKFLOWS.md
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek
 
 <details>
 <summary>17 lines</summary>
@@ -108,22 +108,22 @@ Let me check what's inside the wayang/skills directory to understand the structu
 
 **Explore wayang/skills directory structure**
 
-$ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills -type f -name "*.md" -o -type d | head -30
+$ find ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills -type f -name "*.md" -o -type d | head -30
 
 <details>
 <summary>11 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/WORKFLOWS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/EXECUTORS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/CONCEPTS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PLUGINS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PROTOCOLS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SECURITY.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/WORKFLOWS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/EXECUTORS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/CONCEPTS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PLUGINS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PROTOCOLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SECURITY.md
 <exited with exit code 0>
 ```
 
@@ -144,9 +144,9 @@ Now let me view the SKILLS.md file to understand what skills are documented:
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md
 
 <details>
 <summary>267 lines</summary>
@@ -440,7 +440,7 @@ Now let me check if there's a skills directory structure in wayang:
 
 **Check wayang subdirectories**
 
-$ ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/ | grep -E "^d"
+$ ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/ | grep -E "^d"
 
 <details>
 <summary>9 lines</summary>
@@ -476,21 +476,21 @@ Perfect! Now let me check the contents of the wayang/skills directory to see wha
 
 **List all files in wayang/skills**
 
-$ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills -type f | sort
+$ find ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills -type f | sort
 
 <details>
 <summary>10 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/CONCEPTS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/EXECUTORS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PLUGINS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PROTOCOLS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SECURITY.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/WORKFLOWS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/CONCEPTS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/EXECUTORS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PLUGINS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/PROTOCOLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SECURITY.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/SKILLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/WORKFLOWS.md
 <exited with exit code 0>
 ```
 
@@ -503,7 +503,7 @@ $ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang
 
 ### 💬 Copilot
 
-Now let me confirm what needs to be created in inference-golek:
+Now let me confirm what needs to be created in inference-gollek:
 
 ---
 
@@ -511,9 +511,9 @@ Now let me confirm what needs to be created in inference-golek:
 
 ### ✅ `bash`
 
-**Check if skills directory exists in inference-golek**
+**Check if skills directory exists in inference-gollek**
 
-$ ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills 2>/dev/null || echo "skills directory does not exist"
+$ ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills 2>/dev/null || echo "skills directory does not exist"
 
 ```
 skills directory does not exist
@@ -535,7 +535,7 @@ Copilot CLI version 0.0.396 downloaded. Restart to update.
 
 ### 💬 Copilot
 
-Let me check the key markdown files from wayang/skills to understand what should be in inference-golek/skills:
+Let me check the key markdown files from wayang/skills to understand what should be in inference-gollek/skills:
 
 ---
 
@@ -543,9 +543,9 @@ Let me check the key markdown files from wayang/skills to understand what should
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/README.md
 
 <details>
 <summary>414 lines</summary>
@@ -976,9 +976,9 @@ Let me check the key markdown files from wayang/skills to understand what should
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md (lines 1-50)
+~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang/skills/ARCHITECTURE.md (lines 1-50)
 
 <details>
 <summary>50 lines</summary>
@@ -1045,7 +1045,7 @@ Let me check the key markdown files from wayang/skills to understand what should
 
 ### 💬 Copilot
 
-Now I understand the structure. Let me create the skills directory and documentation files in inference-golek, customized for the inference module. I'll create these files:
+Now I understand the structure. Let me create the skills directory and documentation files in inference-gollek, customized for the inference module. I'll create these files:
 
 ---
 
@@ -1053,9 +1053,9 @@ Now I understand the structure. Let me create the skills directory and documenta
 
 ### ✅ `bash`
 
-**Create skills directory in inference-golek**
+**Create skills directory in inference-gollek**
 
-$ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills
+$ mkdir -p ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills
 
 ```
 
@@ -1069,7 +1069,7 @@ $ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/in
 
 ### 💬 Copilot
 
-Now let me create the skill documentation files customized for inference-golek:
+Now let me create the skill documentation files customized for inference-gollek:
 
 ---
 
@@ -1077,12 +1077,12 @@ Now let me create the skill documentation files customized for inference-golek:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md with 4819 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md with 4819 characters
 ```
 
 
@@ -1092,7 +1092,7 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### 💬 Copilot
 
-Now let me create the SKILLS.md file for inference-golek:
+Now let me create the SKILLS.md file for inference-gollek:
 
 ---
 
@@ -1100,12 +1100,12 @@ Now let me create the SKILLS.md file for inference-golek:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SKILLS.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SKILLS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SKILLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SKILLS.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SKILLS.md with 6743 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SKILLS.md with 6743 characters
 ```
 
 
@@ -1123,12 +1123,12 @@ Now let me create the remaining documentation files:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/ARCHITECTURE.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/ARCHITECTURE.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/ARCHITECTURE.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/ARCHITECTURE.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/ARCHITECTURE.md with 7376 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/ARCHITECTURE.md with 7376 characters
 ```
 
 
@@ -1146,12 +1146,12 @@ Now let me create CONCEPTS.md:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/CONCEPTS.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/CONCEPTS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/CONCEPTS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/CONCEPTS.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/CONCEPTS.md with 6956 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/CONCEPTS.md with 6956 characters
 ```
 
 
@@ -1169,12 +1169,12 @@ Now let me create EXECUTORS.md:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/EXECUTORS.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/EXECUTORS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/EXECUTORS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/EXECUTORS.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/EXECUTORS.md with 8753 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/EXECUTORS.md with 8753 characters
 ```
 
 
@@ -1192,12 +1192,12 @@ Now let me create the remaining files - PLUGINS.md, PROTOCOLS.md, SECURITY.md, a
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PLUGINS.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PLUGINS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PLUGINS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PLUGINS.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PLUGINS.md with 9535 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PLUGINS.md with 9535 characters
 ```
 
 
@@ -1215,12 +1215,12 @@ Now let me create PROTOCOLS.md:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PROTOCOLS.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PROTOCOLS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PROTOCOLS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PROTOCOLS.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PROTOCOLS.md with 9542 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PROTOCOLS.md with 9542 characters
 ```
 
 
@@ -1238,12 +1238,12 @@ Now let me create SECURITY.md and WORKFLOWS.md:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SECURITY.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SECURITY.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SECURITY.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SECURITY.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SECURITY.md with 9953 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SECURITY.md with 9953 characters
 ```
 
 
@@ -1261,12 +1261,12 @@ Now let me create the final file - WORKFLOWS.md:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/WORKFLOWS.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/WORKFLOWS.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/WORKFLOWS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/WORKFLOWS.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/WORKFLOWS.md with 10556 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/WORKFLOWS.md with 10556 characters
 ```
 
 
@@ -1286,7 +1286,7 @@ Perfect! Let me verify all the files have been created:
 
 **Verify all skills documentation files created**
 
-$ ls -lh /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/
+$ ls -lh ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/
 
 <details>
 <summary>11 lines</summary>
@@ -1324,21 +1324,21 @@ Perfect! All 9 documentation files have been successfully created. Let me create
 
 **Count total lines in all documentation files**
 
-$ wc -l /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/*.md
+$ wc -l ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/*.md
 
 <details>
 <summary>11 lines</summary>
 
 ```
-342 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/ARCHITECTURE.md
-     343 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/CONCEPTS.md
-     519 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/EXECUTORS.md
-     530 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PLUGINS.md
-     551 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/PROTOCOLS.md
-     251 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md
-     598 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SECURITY.md
-     322 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/SKILLS.md
-     628 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/WORKFLOWS.md
+342 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/ARCHITECTURE.md
+     343 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/CONCEPTS.md
+     519 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/EXECUTORS.md
+     530 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PLUGINS.md
+     551 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/PROTOCOLS.md
+     251 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md
+     598 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SECURITY.md
+     322 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/SKILLS.md
+     628 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/WORKFLOWS.md
     4084 total
 <exited with exit code 0>
 ```
@@ -1352,13 +1352,13 @@ $ wc -l /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/infer
 
 ### 💬 Copilot
 
-✅ **Complete!** I've successfully created a `skills` directory in `inference-golek` with comprehensive documentation similar to the `wayang/skills` structure.
+✅ **Complete!** I've successfully created a `skills` directory in `inference-gollek` with comprehensive documentation similar to the `wayang/skills` structure.
 
 ## Summary
 
-Created 9 documentation files (4,084 lines total) in `/inference-golek/skills/`:
+Created 9 documentation files (4,084 lines total) in `/inference-gollek/skills/`:
 
-1. **README.md** - Overview of Inference-Golek platform and capabilities
+1. **README.md** - Overview of Inference-Gollek platform and capabilities
 2. **SKILLS.md** - 18 core skills/capabilities (inference.execute, model.manage, etc.)
 3. **ARCHITECTURE.md** - System architecture, layers, and data flows
 4. **CONCEPTS.md** - Core concepts (workflows, tokens, models, executors, etc.)
@@ -1368,7 +1368,7 @@ Created 9 documentation files (4,084 lines total) in `/inference-golek/skills/`:
 8. **SECURITY.md** - Authentication, authorization, encryption, audit logging, compliance
 9. **WORKFLOWS.md** - Workflow definition, execution, error handling, and examples
 
-Each document is tailored to **Inference-Golek's inference orchestration domain** while maintaining consistency with the Wayang platform structure.
+Each document is tailored to **Inference-Gollek's inference orchestration domain** while maintaining consistency with the Wayang platform structure.
 
 ---
 
@@ -1388,10 +1388,10 @@ it you mostly only copy from the example i show you. did you understand what i m
 
 1. First asked them what they meant by "skills" 
 2. Understood the actual purpose and structure
-3. Created inference-golek specific content that makes sense for that module
+3. Created inference-gollek specific content that makes sense for that module
 
-Looking back, I see that wayang/skills contains documentation files about the Wayang platform's capabilities and architecture. The user asked me to "create skills of inference-golek like this wayang/skills" - which could mean:
-- Copy the same documentation structure but adapt it for inference-golek
+Looking back, I see that wayang/skills contains documentation files about the Wayang platform's capabilities and architecture. The user asked me to "create skills of inference-gollek like this wayang/skills" - which could mean:
+- Copy the same documentation structure but adapt it for inference-gollek
 - OR create some other kind of "skills" artifact
 
 But I think the real issue is that I didn't understand what "skills" actually represents. Looking at the SKILLS.md file I created, it seems like "skills" in this context refers to the platform's capabilities - like "inference.execute", "model.manage", etc.
@@ -1405,7 +1405,7 @@ I should admit I don't fully understand and ask clarifying questions about:
 - What they mean by "skills"
 - What problem these skills should solve
 - Whether they want documentation, code, configuration, or something else
-- How skills relate to the inference-golek module specifically*
+- How skills relate to the inference-gollek module specifically*
 
 ---
 
@@ -1433,13 +1433,13 @@ Let me ask some clarifying questions:
    - Is this just documentation, or does it serve a functional purpose?
    - Are there corresponding code/implementation files somewhere?
 
-4. **For inference-golek specifically** - what should "skills" represent?
+4. **For inference-gollek specifically** - what should "skills" represent?
    - The ML inference capabilities?
    - Different inference execution modes?
    - Plugin types for inference?
    - Something domain-specific to ML inference?
 
-I should have asked these questions first instead of just copying the pattern. What did you actually mean when you said "create skills of inference-golek like this wayang/skills"?
+I should have asked these questions first instead of just copying the pattern. What did you actually mean when you said "create skills of inference-gollek like this wayang/skills"?
 
 ---
 
@@ -1613,14 +1613,14 @@ Ah! Now I understand. **Skills** are:
 - Used by AI agents/LLMs to understand how to perform specific tasks
 - Can be invoked explicitly or implicitly by the agent
 
-So for **inference-golek**, skills should be:
+So for **inference-gollek**, skills should be:
 
 **Executable instruction packages** that define HOW to accomplish specific inference tasks, not just documentation about features.
 
 For example, instead of what I created, skills should look like:
 
 ```
-inference-golek/skills/
+inference-gollek/skills/
 ├── run-inference/
 │   ├── SKILL.md          (instructions for running inference)
 │   ├── scripts/          (executable code/templates)
@@ -1649,7 +1649,7 @@ Is this correct? Should I recreate the skills directory with this structure inst
 
 ### 👤 User
 
-yes so you must understand what inside the inference-golek. modify the exsiting
+yes so you must understand what inside the inference-gollek. modify the exsiting
 
 ---
 
@@ -1658,13 +1658,13 @@ yes so you must understand what inside the inference-golek. modify the exsiting
 ### 💭 Reasoning
 
 *The user wants me to:
-1. Understand what's actually inside inference-golek
+1. Understand what's actually inside inference-gollek
 2. Look at the actual codebase/structure
-3. Create meaningful skills based on what inference-golek actually does
+3. Create meaningful skills based on what inference-gollek actually does
 
-I need to explore the inference-golek directory to understand what it actually contains, what capabilities it has, what tasks it performs, then create skills that document how to use/accomplish those tasks.
+I need to explore the inference-gollek directory to understand what it actually contains, what capabilities it has, what tasks it performs, then create skills that document how to use/accomplish those tasks.
 
-Let me first explore the inference-golek structure properly.*
+Let me first explore the inference-gollek structure properly.*
 
 ---
 
@@ -1672,44 +1672,44 @@ Let me first explore the inference-golek structure properly.*
 
 ### ✅ `bash`
 
-**Explore inference-golek structure and main files**
+**Explore inference-gollek structure and main files**
 
-$ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek -type f -name "*.md" -o -name "*.java" -o -name "*.py" -o -name "pom.xml" -o -name "*.yml" | head -30
+$ find ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek -type f -name "*.md" -o -name "*.java" -o -name "*.py" -o -name "pom.xml" -o -name "*.yml" | head -30
 
 <details>
 <summary>31 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-local/pom.xml
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-local/src/main/java/tech/kayys/golek/model/repo/local/LocalModelRepository.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-local/src/main/java/tech/kayys/golek/model/repo/local/LocalModelRepositoryProvider.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/pom.xml
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/src/main/java/tech/kayys/golek/model/repo/hf/HuggingFaceRepositoryProvider.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/src/main/java/tech/kayys/golek/model/repo/hf/HuggingFaceClient.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/src/main/java/tech/kayys/golek/model/repo/hf/HuggingFaceRepository.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/src/main/java/tech/kayys/golek/model/repo/hf/HuggingFaceModelInfo.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/src/main/java/tech/kayys/golek/model/repo/hf/HuggingFaceArtifactResolver.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/repository/golek-model-repo-hf/src/main/java/tech/kayys/golek/model/repo/hf/HuggingFaceConfig.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/model-repo.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/pom.xml
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/test/java/tech/kayys/golek/model/core/CachedModelRepositoryTest.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/test/java/tech/kayys/golek/model/core/ModelRunnerFactoryTest.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/test/java/tech/kayys/golek/model/core/SelectionPolicyTest.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/repository/ModelRepository.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/repository/ModelRepositoryProvider.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/repository/ModelRepositoryRegistry.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/RunnerCandidate.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/RunnerMetrics.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/SelectionPolicy.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/DiskSpace.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/CachedModelRepository.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/ModelRunnerFactory.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/SupportedDevice.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/HardwareDetector.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/HardwareCapabilities.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/ResourceMetrics.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/ModelRef.java
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/golek-model-repo-core/src/main/java/tech/kayys/golek/model/core/ResourceRequirements.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-local/pom.xml
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-local/src/main/java/tech/kayys/gollek/model/repo/local/LocalModelRepository.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-local/src/main/java/tech/kayys/gollek/model/repo/local/LocalModelRepositoryProvider.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/pom.xml
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/src/main/java/tech/kayys/gollek/model/repo/hf/HuggingFaceRepositoryProvider.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/src/main/java/tech/kayys/gollek/model/repo/hf/HuggingFaceClient.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/src/main/java/tech/kayys/gollek/model/repo/hf/HuggingFaceRepository.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/src/main/java/tech/kayys/gollek/model/repo/hf/HuggingFaceModelInfo.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/src/main/java/tech/kayys/gollek/model/repo/hf/HuggingFaceArtifactResolver.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/repository/gollek-model-repo-hf/src/main/java/tech/kayys/gollek/model/repo/hf/HuggingFaceConfig.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/model-repo.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/pom.xml
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/test/java/tech/kayys/gollek/model/core/CachedModelRepositoryTest.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/test/java/tech/kayys/gollek/model/core/ModelRunnerFactoryTest.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/test/java/tech/kayys/gollek/model/core/SelectionPolicyTest.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/repository/ModelRepository.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/repository/ModelRepositoryProvider.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/repository/ModelRepositoryRegistry.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/RunnerCandidate.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/RunnerMetrics.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/SelectionPolicy.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/DiskSpace.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/CachedModelRepository.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/ModelRunnerFactory.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/SupportedDevice.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/HardwareDetector.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/HardwareCapabilities.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/ResourceMetrics.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/ModelRef.java
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/gollek-model-repo-core/src/main/java/tech/kayys/gollek/model/core/ResourceRequirements.java
 <exited with exit code 0>
 ```
 
@@ -1722,9 +1722,9 @@ $ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/infere
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek
 
 <details>
 <summary>18 lines</summary>
@@ -1767,9 +1767,9 @@ Good! Now let me look at the README and key files:
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/README.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/README.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/README.md
 
 <details>
 <summary>46 lines</summary>
@@ -1819,7 +1819,7 @@ Good! Now let me look at the README and key files:
 42. 7. **Error Handling Integration**
 43.    - Standardized `ErrorPayload` schema
 44.    - Audit events for all failures
-45.    - golek error-as-input compatibility
+45.    - gollek error-as-input compatibility
 46.    - Human-in-the-loop escalation support
 ```
 
@@ -1834,34 +1834,9 @@ Good! Now let me look at the README and key files:
 
 **Check core and runtime modules**
 
-$ ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/core/ && ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/runtime/
+$ ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/core/ && ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/runtime/
 
-<details>
-<summary>19 lines</summary>
 
-```
-total 48
-drwxr-xr-x@ 11 bhangun  staff    352 Jan 27 08:52 .
-drwxr-xr-x@ 20 bhangun  staff    640 Jan 28 22:07 ..
--rw-r--r--@  1 bhangun  staff  10244 Jan 27 11:35 .DS_Store
--rw-r--r--@  1 bhangun  staff  11844 Jan 26 16:56 README.md
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-spi
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-core
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-engine
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 18:42 golek-infrastructure
-drwxr-xr-x@  9 bhangun  staff    288 Jan 27 11:35 golek-model-repo-core
-drwxr-xr-x@  6 bhangun  staff    192 Jan 27 11:35 golek-plugin-spi
-drwxr-xr-x@  8 bhangun  staff    256 Jan 27 16:54 golek-provider-core
-total 16
-drwxr-xr-x@  5 bhangun  staff   160 Jan 27 11:35 .
-drwxr-xr-x@ 20 bhangun  staff   640 Jan 28 22:07 ..
--rw-r--r--@  1 bhangun  staff  6148 Jan 27 11:35 .DS_Store
-drwxr-xr-x@  6 bhangun  staff   192 Jan 19 10:05 golek-runtime-distributed
-drwxr-xr-x@  6 bhangun  staff   192 Jan 27 11:35 golek-runtime-portable
-<exited with exit code 0>
-```
-
-</details>
 
 
 ---
@@ -1878,9 +1853,9 @@ Now let me check the provider-spi.md and look at plugins:
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/provider-spi.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/provider-spi.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/provider-spi.md (lines 1-100)
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/provider-spi.md (lines 1-100)
 
 <details>
 <summary>100 lines</summary>
@@ -1892,7 +1867,7 @@ Now let me check the provider-spi.md and look at plugins:
 4. 
 5. 
 6. ================================================================================
-7. tech/kayys/golek/provider/adapter/AbstractProvider.java
+7. tech/kayys/gollek/provider/adapter/AbstractProvider.java
 8. Size: 9.0 KB | Modified: 2026-01-19 14:05:34
 9. --------------------------------------------------------------------------------
 10. package tech.kayys.wayang.inference.providers.adapter;
@@ -1999,7 +1974,7 @@ Now let me check the provider-spi.md and look at plugins:
 
 **Check plugins directory**
 
-$ ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/plugins/ && find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/plugins -type d -maxdepth 1
+$ ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/plugins/ && find ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/plugins -type d -maxdepth 1
 
 <details>
 <summary>13 lines</summary>
@@ -2009,14 +1984,14 @@ total 24
 drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 .
 drwxr-xr-x@ 20 bhangun  staff   640 Jan 28 22:07 ..
 -rw-r--r--@  1 bhangun  staff  6148 Jan 27 11:35 .DS_Store
-drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 golek-plugin-content-safety
-drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 golek-plugin-model-router
-drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 golek-plugin-quota
+drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 gollek-plugin-content-safety
+drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 gollek-plugin-model-router
+drwxr-xr-x@  7 bhangun  staff   224 Jan 27 11:35 gollek-plugin-quota
 -rw-r--r--@  1 bhangun  staff   953 Jan 27 17:08 pom.xml
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/plugins
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/plugins/golek-plugin-model-router
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/plugins/golek-plugin-quota
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/plugins/golek-plugin-content-safety
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/plugins
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/plugins/gollek-plugin-model-router
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/plugins/gollek-plugin-quota
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/plugins/gollek-plugin-content-safety
 <exited with exit code 0>
 ```
 
@@ -2039,7 +2014,7 @@ Perfect! Now I understand. Let me check what actual capabilities exist and recre
 
 **Remove old skills directory and create fresh one**
 
-$ rm -rf /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills && mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills
+$ rm -rf ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills && mkdir -p ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills
 
 ```
 
@@ -2053,7 +2028,7 @@ $ rm -rf /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/infe
 
 ### 💬 Copilot
 
-Now let me create actual executable skills based on what inference-golek does:
+Now let me create actual executable skills based on what inference-gollek does:
 
 ---
 
@@ -2061,9 +2036,9 @@ Now let me create actual executable skills based on what inference-golek does:
 
 ### ❌ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/SKILL.md
 
 ```
 Parent directory does not exist
@@ -2078,7 +2053,7 @@ Parent directory does not exist
 
 **Create skill directories**
 
-$ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/scripts /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/references
+$ mkdir -p ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/scripts ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/references
 
 ```
 
@@ -2092,12 +2067,12 @@ $ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/in
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/SKILL.md with 4633 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/SKILL.md with 4633 characters
 ```
 
 
@@ -2115,9 +2090,9 @@ Now create more skills based on actual capabilities:
 
 ### ❌ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository/SKILL.md
 
 ```
 Parent directory does not exist
@@ -2132,7 +2107,7 @@ Parent directory does not exist
 
 **Create skill directories**
 
-$ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/{load-model-from-repository,configure-plugin,handle-multi-tenancy,monitor-inference}/scripts
+$ mkdir -p ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/{load-model-from-repository,configure-plugin,handle-multi-tenancy,monitor-inference}/scripts
 
 ```
 
@@ -2146,12 +2121,12 @@ $ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/in
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository/SKILL.md with 4413 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository/SKILL.md with 4413 characters
 ```
 
 
@@ -2161,12 +2136,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/configure-plugin/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/configure-plugin/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/configure-plugin/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/configure-plugin/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/configure-plugin/SKILL.md with 6224 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/configure-plugin/SKILL.md with 6224 characters
 ```
 
 
@@ -2176,12 +2151,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/handle-multi-tenancy/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/handle-multi-tenancy/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/handle-multi-tenancy/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/handle-multi-tenancy/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/handle-multi-tenancy/SKILL.md with 8021 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/handle-multi-tenancy/SKILL.md with 8021 characters
 ```
 
 
@@ -2191,12 +2166,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/monitor-inference/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/monitor-inference/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/monitor-inference/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/monitor-inference/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/monitor-inference/SKILL.md with 9260 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/monitor-inference/SKILL.md with 9260 characters
 ```
 
 
@@ -2216,24 +2191,24 @@ Perfect! Let me verify all the skills have been created:
 
 **Verify all skills created**
 
-$ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills -name "SKILL.md" -type f | xargs ls -lh && echo "---" && find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills -maxdepth 1 -type d
+$ find ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills -name "SKILL.md" -type f | xargs ls -lh && echo "---" && find ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills -maxdepth 1 -type d
 
 <details>
 <summary>13 lines</summary>
 
 ```
--rw-r--r--@ 1 bhangun  staff   6.1K Jan 28 22:23 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/configure-plugin/SKILL.md
--rw-r--r--@ 1 bhangun  staff   8.1K Jan 28 22:24 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/handle-multi-tenancy/SKILL.md
--rw-r--r--@ 1 bhangun  staff   4.3K Jan 28 22:23 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository/SKILL.md
--rw-r--r--@ 1 bhangun  staff   9.3K Jan 28 22:24 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/monitor-inference/SKILL.md
--rw-r--r--@ 1 bhangun  staff   4.5K Jan 28 22:23 /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference/SKILL.md
+-rw-r--r--@ 1 bhangun  staff   6.1K Jan 28 22:23 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/configure-plugin/SKILL.md
+-rw-r--r--@ 1 bhangun  staff   8.1K Jan 28 22:24 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/handle-multi-tenancy/SKILL.md
+-rw-r--r--@ 1 bhangun  staff   4.3K Jan 28 22:23 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository/SKILL.md
+-rw-r--r--@ 1 bhangun  staff   9.3K Jan 28 22:24 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/monitor-inference/SKILL.md
+-rw-r--r--@ 1 bhangun  staff   4.5K Jan 28 22:23 ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference/SKILL.md
 ---
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/configure-plugin
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/handle-multi-tenancy
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/monitor-inference
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/run-inference
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/load-model-from-repository
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/configure-plugin
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/handle-multi-tenancy
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/monitor-inference
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/run-inference
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/load-model-from-repository
 <exited with exit code 0>
 ```
 
@@ -2254,12 +2229,12 @@ Excellent! Now let me create an index file to tie them all together:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills/README.md with 6823 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills/README.md with 6823 characters
 ```
 
 
@@ -2279,13 +2254,13 @@ Perfect! Let me verify the complete structure:
 
 **Show skills directory structure**
 
-$ tree /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills -L 2 2>/dev/null || find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills -type f -o -type d | sort
+$ tree ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills -L 2 2>/dev/null || find ~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills -type f -o -type d | sort
 
 <details>
 <summary>20 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/inference-golek/skills
+~/Workspace/workkayys/Products/Wayang/wayang-platform/inference-gollek/skills
 ├── README.md
 ├── configure-plugin
 │   ├── SKILL.md
@@ -2317,11 +2292,11 @@ $ tree /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/infere
 
 ### 💬 Copilot
 
-Perfect! ✅ **Done!** I've created proper **executable skills** for inference-golek based on its actual capabilities:
+Perfect! ✅ **Done!** I've created proper **executable skills** for inference-gollek based on its actual capabilities:
 
 ## Summary
 
-Created 5 actionable skills in `/inference-golek/skills/`:
+Created 5 actionable skills in `/inference-gollek/skills/`:
 
 1. **run-inference** - Execute ML models with multi-format support (GGUF, ONNX, Triton, Cloud APIs)
 2. **load-model-from-repository** - Load models from HuggingFace, local, or cloud storage with caching
@@ -2336,7 +2311,7 @@ Each skill:
 - Covers prerequisites, options, error handling
 - Links to related skills
 
-The skills are **based on what inference-golek actually does** - not generic documentation. An AI agent can now read these and execute real tasks with the inference-golek platform.
+The skills are **based on what inference-gollek actually does** - not generic documentation. An AI agent can now read these and execute real tasks with the inference-gollek platform.
 
 ---
 
@@ -2352,7 +2327,7 @@ can you do the same for workflow-gamelan
 
 ### 💭 Reasoning
 
-*The user wants me to create skills for workflow-gamelan similar to what I just did for inference-golek. I need to:
+*The user wants me to create skills for workflow-gamelan similar to what I just did for inference-gollek. I need to:
 
 1. First, explore the workflow-gamelan codebase to understand what it actually does
 2. Identify the real capabilities and features
@@ -2367,9 +2342,9 @@ Let me start by exploring the workflow-gamelan directory structure and files.*
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan
 
 <details>
 <summary>19 lines</summary>
@@ -2407,28 +2382,28 @@ utils
 
 **Explore workflow-gamelan structure**
 
-$ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan -maxdepth 2 -type f \( -name "*.md" -o -name "pom.xml" \) | head -20
+$ find ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan -maxdepth 2 -type f \( -name "*.md" -o -name "pom.xml" \) | head -20
 
 <details>
 <summary>17 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/plugins/pom.xml
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/pom.xml
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_SYSTEM.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_PATTERN.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/plugin-development-guide.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/summary.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/wlakthrough.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/Enhancing Orchestration Logic.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/seq.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/goal_architecture.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_DEMONSTRATION.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_IMPLEMENTATION.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/next-step.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/scripts/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/AGENTS.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/plugins/pom.xml
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/pom.xml
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_SYSTEM.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_PATTERN.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/plugin-development-guide.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/summary.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/wlakthrough.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/Enhancing Orchestration Logic.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/seq.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/goal_architecture.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_DEMONSTRATION.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_IMPLEMENTATION.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/next-step.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/scripts/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/AGENTS.md
 <exited with exit code 0>
 ```
 
@@ -2449,9 +2424,9 @@ Let me check the README and key documentation:
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/README.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/README.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/README.md (lines 1-80)
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/README.md (lines 1-80)
 
 <details>
 <summary>80 lines</summary>
@@ -2550,13 +2525,13 @@ Let me check the README and key documentation:
 
 **Check core modules**
 
-$ ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/{core,runtime,sdk,protocol,plugins}/ | head -30
+$ ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/{core,runtime,sdk,protocol,plugins}/ | head -30
 
 <details>
 <summary>29 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/core/:
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/core/:
 total 24
 drwxr-xr-x@ 14 bhangun  staff   448 Jan 22 10:47 .
 drwxr-xr-x@ 21 bhangun  staff   672 Jan 22 10:45 ..
@@ -2573,7 +2548,7 @@ drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-plugin-spi
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-runtime-core
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-sdk-executor-core
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/plugins/:
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/plugins/:
 total 24
 drwxr-xr-x@  6 bhangun  staff   192 Jan 19 10:16 .
 drwxr-xr-x@ 21 bhangun  staff   672 Jan 22 10:45 ..
@@ -2582,7 +2557,7 @@ drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-plugin-consul
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 22:59 gamelan-plugin-default
 -rw-r--r--@  1 bhangun  staff  1786 Jan 19 10:11 pom.xml
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/protocol/:
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/protocol/:
 total 16
 drwxr-xr-x@  5 bhangun  staff   160 Jan 19 20:35 .
 drwxr-xr-x@ 21 bhangun  staff   672 Jan 22 10:45 ..
@@ -2606,9 +2581,9 @@ Let me check key documentation:
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_PATTERN.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_PATTERN.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_PATTERN.md (lines 1-80)
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/SAGA_PATTERN.md (lines 1-80)
 
 <details>
 <summary>80 lines</summary>
@@ -2705,9 +2680,9 @@ Let me check key documentation:
 
 ### ✅ `view`
 
-**view the file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_SYSTEM.md.**
+**view the file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_SYSTEM.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_SYSTEM.md (lines 1-80)
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/docs/PLUGIN_SYSTEM.md (lines 1-80)
 
 <details>
 <summary>80 lines</summary>
@@ -2814,7 +2789,7 @@ Now let me check runtime and executor info:
 
 **Check runtime and SDK**
 
-$ ls -la /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/runtime/ && find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk -name "*.md" | head -5
+$ ls -la ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/runtime/ && find ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk -name "*.md" | head -5
 
 <details>
 <summary>12 lines</summary>
@@ -2826,11 +2801,11 @@ drwxr-xr-x@ 21 bhangun  staff   672 Jan 22 10:45 ..
 -rw-r--r--@  1 bhangun  staff  6148 Jan 27 11:32 .DS_Store
 drwxr-xr-x@ 15 bhangun  staff   480 Jan 19 22:59 gamelan-runtime-distributed
 drwxr-xr-x@ 22 bhangun  staff   704 Jan 19 22:59 gamelan-runtime-standalone
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-local/target/test-classes/tech/kayys/gamelan/sdk/executor/examples/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-local/docs/example.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-local/src/test/java/tech/kayys/gamelan/sdk/executor/examples/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-remote/target/test-classes/tech/kayys/gamelan/sdk/executor/examples/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-remote/docs/example.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-local/target/test-classes/tech/kayys/gamelan/sdk/executor/examples/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-local/docs/example.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-local/src/test/java/tech/kayys/gamelan/sdk/executor/examples/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-remote/target/test-classes/tech/kayys/gamelan/sdk/executor/examples/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/sdk/gamelan-sdk-executor-remote/docs/example.md
 <exited with exit code 0>
 ```
 
@@ -2853,7 +2828,7 @@ Good! Now I understand workflow-gamelan. Let me create the skills directory:
 
 **Create skills directory structure**
 
-$ mkdir -p /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/{define-workflow,register-executor,execute-workflow,handle-saga-compensation,build-plugin,monitor-workflow}/scripts
+$ mkdir -p ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/{define-workflow,register-executor,execute-workflow,handle-saga-compensation,build-plugin,monitor-workflow}/scripts
 
 ```
 
@@ -2875,12 +2850,12 @@ Now let me create the skills based on workflow-gamelan's capabilities:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md with 7441 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md with 7441 characters
 ```
 
 
@@ -2890,12 +2865,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md with 9268 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md with 9268 characters
 ```
 
 
@@ -2905,12 +2880,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md with 9307 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md with 9307 characters
 ```
 
 
@@ -2920,12 +2895,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md with 9753 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md with 9753 characters
 ```
 
 
@@ -2935,12 +2910,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md with 11554 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md with 11554 characters
 ```
 
 
@@ -2950,12 +2925,12 @@ Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md with 12238 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md with 12238 characters
 ```
 
 
@@ -2973,12 +2948,12 @@ Now let me create the README file to tie everything together:
 
 ### ✅ `create`
 
-**create a new file at /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md.**
+**create a new file at ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md.**
 
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md
 
 ```
-Created file /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md with 9896 characters
+Created file ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md with 9896 characters
 ```
 
 
@@ -2998,19 +2973,19 @@ Perfect! Let me verify the complete structure:
 
 **Verify all workflow-gamelan skills created**
 
-$ find /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills -type f -name "*.md" | sort && echo "---" && wc -l /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/*/*.md 2>/dev/null | tail -1
+$ find ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills -type f -name "*.md" | sort && echo "---" && wc -l ~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/*/*.md 2>/dev/null | tail -1
 
 <details>
 <summary>10 lines</summary>
 
 ```
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md
-/Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/README.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/build-plugin/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/define-workflow/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/execute-workflow/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/handle-saga-compensation/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/monitor-workflow/SKILL.md
+~/Workspace/workkayys/Products/Wayang/wayang-platform/workflow-gamelan/skills/register-executor/SKILL.md
 ---
     2528 total
 <exited with exit code 0>

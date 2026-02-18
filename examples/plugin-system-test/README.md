@@ -6,7 +6,7 @@ This is a standalone test that demonstrates the Gamelan Plugin System functional
 
 1. Build the plugin API:
 ```bash
-cd /Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow
+cd ~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow
 mvn clean install -pl gamelan-plugin-spi -DskipTests
 ```
 
@@ -51,7 +51,7 @@ Test 1: Loading Example Plugin
 ✓ Plugin loaded: Logging Interceptor Plugin
   - ID: logging-interceptor
   - Version: 1.0.0
-  - Author: Gamelan Team
+  - Author: bhangun
   - Description: Logs all task executions for debugging and monitoring
 
 Test 2: Starting Plugin

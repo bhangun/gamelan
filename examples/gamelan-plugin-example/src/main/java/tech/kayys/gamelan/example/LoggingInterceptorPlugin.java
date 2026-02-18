@@ -38,7 +38,7 @@ public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
             "logging-interceptor",
             "Logging Interceptor Plugin",
             "1.0.0",
-            "Gamelan Team",
+            "bhangun",
             "Logs all task executions for debugging and monitoring",
             List.of(),
             Map.of("log-level", "INFO")

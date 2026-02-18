@@ -253,8 +253,8 @@ target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar
 
 ## 📚 Documentation
 
-- **Plugin System Guide**: [PLUGIN_SYSTEM.md](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/PLUGIN_SYSTEM.md)
-- **Implementation Walkthrough**: [walkthrough.md](file:///Users/bhangun/.gemini/antigravity/brain/3fe3c2d0-0805-4582-bbfa-c173a70b56d2/walkthrough.md)
+- **Plugin System Guide**: [PLUGIN_SYSTEM.md](file://~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/PLUGIN_SYSTEM.md)
+- **Implementation Walkthrough**: [walkthrough.md](file://~/.gemini/antigravity/brain/3fe3c2d0-0805-4582-bbfa-c173a70b56d2/walkthrough.md)
 - **API Documentation**: See `gamelan-plugin-spi/src/main/java/tech/kayys/gamelan/plugin/`
 
 ## ⚠️ Current Limitations

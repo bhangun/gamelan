@@ -192,7 +192,7 @@ String dataDir = context.getDataDirectory();
 
 ## Example Plugin
 
-See [gamelan-plugin-example](file:///Users/bhangun/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/examples/gamelan-plugin-example) for a complete working example.
+See [gamelan-plugin-example](file://~/Workspace/workkayys/Products/Wayang/wayang-platform/wayang-workflow/examples/gamelan-plugin-example) for a complete working example.
 
 ## Configuration
 
