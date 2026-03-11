@@ -7,7 +7,8 @@ import tech.kayys.gamelan.engine.run.CreateRunRequest;
 import tech.kayys.gamelan.engine.run.RunResponse;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.signal.Signal;
-import tech.kayys.gamelan.tenant.TenantId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import java.time.Instant;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
@@ -69,7 +70,7 @@ public class LocalWorkflowRunClient implements WorkflowRunClient {
 
     @Override
     public Uni<Void> signal(String runId, String signalName, String targetNodeId, Map<String, Object> payload) {
-        Signal signal = new Signal(signalName, targetNodeId != null ? NodeId.of(targetNodeId) : null, payload);
+        Signal signal = new Signal(signalName, targetNodeId != null ? NodeId.of(targetNodeId) : null, payload, Instant.now());
         return runManager.signal(WorkflowRunId.of(runId), signal);
     }
 

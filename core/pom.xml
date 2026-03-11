@@ -33,6 +33,8 @@
         <module>gamelan-plugin-spi</module>
         <module>gamelan-executor-registry</module>
         <module>gamelan-runtime-core</module>
+        <module>gamelan-executor-runtime-core</module>
+        <module>gamelan-executor-runtime</module>
         <module>gamelan-sdk-executor-core</module>
         <module>gamelan-sdk-client-core</module>
     </modules>

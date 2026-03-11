@@ -174,7 +174,7 @@ public class EventListenerPlugin implements EventListenerPlugin {
 
 ### Step 2: Implement Plugin Interface
 ```java
-package com.example;
+packagetech.kayys;
 
 import tech.kayys.gamelan.plugin.*;
 

@@ -14,14 +14,14 @@
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
-        <lombok.version>1.18.40</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.version>3.31.2</quarkus.platform.version>
+        <quarkus.platform.version>3.15.1</quarkus.platform.version>
         <grpc.version>1.60.0</grpc.version>
         <protobuf.version>3.25.5</protobuf.version>
         <testcontainers.version>1.19.3</testcontainers.version>
@@ -29,10 +29,7 @@
 
     <modules>
         <module>core</module>
-
-        <module>sdk/gamelan-sdk-client-remote</module>
-        <module>sdk/gamelan-sdk-executor-local</module>
-        <module>sdk/gamelan-sdk-executor-remote</module>
+        <module>sdk</module>
         <module>protocol/gamelan-protocol-grpc</module>
         <module>protocol/gamelan-protocol-kafka</module>
         <module>runtime/gamelan-runtime-distributed</module>
@@ -41,8 +38,9 @@
         <module>extensions/gamelan-dag</module>
         <module>examples/gamelan-test-client</module>
         <module>examples/gamelan-test-executor</module>
-        <module>core/gamelan-executor-runtime-core</module>
-        <module>core/gamelan-executor-runtime</module>
+        <module>examples/gamelan-test-standalone</module>
+        <module>examples/gamelan-plugin-example</module>
+        <module>examples/plugin-system-test</module>
     </modules>
 
     <dependencyManagement>
@@ -63,6 +61,14 @@
                 <version>${grpc.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

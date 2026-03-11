@@ -20,7 +20,7 @@ The Gamelan Plugin System allows you to extend the workflow engine with custom f
 ### 2. Create Your Plugin
 
 ```java
-package com.example;
+packagetech.kayys;
 
 import tech.kayys.gamelan.plugin.*;
 import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;

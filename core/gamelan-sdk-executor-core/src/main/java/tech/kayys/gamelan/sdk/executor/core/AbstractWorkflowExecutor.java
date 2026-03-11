@@ -21,6 +21,8 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractWorkflowExecutor.class);
 
     protected final String executorType;
+    protected final String version;
+    protected final String description;
     protected final ExecutorConfig config;
     protected final ExecutorMetrics metrics;
     protected final AtomicInteger activeTaskCount = new AtomicInteger(0);
@@ -44,6 +46,8 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
                 Arrays.asList(annotation.supportedNodeTypes()),
                 annotation.communicationType(),
                 SecurityConfig.disabled());
+        this.version = annotation.version();
+        this.description = annotation.description();
         this.metrics = new ExecutorMetrics(executorType);
         this.executorId = executorType + "-" + java.util.UUID.randomUUID().toString();
     }
@@ -51,6 +55,26 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
     @Override
     public final String getExecutorType() {
         return executorType;
+    }
+
+    @Override
+    public final String getVersion() {
+        return version;
+    }
+
+    @Override
+    public final String getDescription() {
+        return description;
+    }
+
+    @Override
+    public final ExecutorInfo getExecutorInfo() {
+        return new ExecutorInfo(
+                executorType,
+                version,
+                description,
+                getSupportedNodeTypes(),
+                getMaxConcurrentTasks());
     }
 
     @Override

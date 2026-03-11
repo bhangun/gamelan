@@ -15,7 +15,7 @@ public class LoggingPlugin implements ExecutionInterceptorPlugin {
     
     @Override
     public void initialize(PluginContext context) {
-        LOG.info("LoggingPlugin initialized: {}", context.pluginId());
+        LOG.info("LoggingPlugin initialized: {}", context.getMetadata().id());
     }
 
     @Override
@@ -39,19 +39,19 @@ public class LoggingPlugin implements ExecutionInterceptorPlugin {
     }
 
     @Override
-    public Uni<Void> beforeExecution(TaskContext task) {
+    public Uni<Void> beforeExecution(ExecutionInterceptorPlugin.TaskContext task) {
         LOG.info(">>> BEFORE execution of node: {}", task.nodeId());
         return Uni.createFrom().voidItem();
     }
 
     @Override
-    public Uni<Void> afterExecution(TaskContext task, ExecutionResult result) {
+    public Uni<Void> afterExecution(ExecutionInterceptorPlugin.TaskContext task, ExecutionInterceptorPlugin.ExecutionResult result) {
         LOG.info("<<< AFTER execution of node: {} (Success: {})", task.nodeId(), result.isSuccess());
         return Uni.createFrom().voidItem();
     }
 
     @Override
-    public Uni<Void> onError(TaskContext task, Throwable error) {
+    public Uni<Void> onError(ExecutionInterceptorPlugin.TaskContext task, Throwable error) {
         LOG.error("!!! ERROR executing node: {}", task.nodeId(), error);
         return Uni.createFrom().voidItem();
     }

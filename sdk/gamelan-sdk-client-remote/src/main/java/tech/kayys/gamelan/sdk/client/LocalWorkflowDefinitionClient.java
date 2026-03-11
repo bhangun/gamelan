@@ -4,7 +4,7 @@ import io.smallrye.mutiny.Uni;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
-import tech.kayys.gamelan.tenant.TenantId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -74,4 +74,10 @@ public @interface Executor {
      * Executor version
      */
     String version() default "1.0.0";
+
+    /**
+     * Human-readable description of what this executor does.
+     * Exposed via the registry and UI catalog.
+     */
+    String description() default "";
 }

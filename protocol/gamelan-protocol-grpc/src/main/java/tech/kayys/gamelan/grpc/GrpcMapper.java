@@ -14,13 +14,12 @@ import tech.kayys.gamelan.engine.node.NodeExecutionResult;
 import tech.kayys.gamelan.engine.execution.ExecutionContext;
 import tech.kayys.gamelan.engine.execution.ExecutionError;
 import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
-import tech.kayys.gamelan.grpc.v1.*;
-
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
+import tech.kayys.gamelan.grpc.v1.*;
 
 /**
  * Maps between domain objects and Protocol Buffer messages
@@ -35,8 +34,7 @@ public class GrpcMapper {
 
     // ==================== RUN RESPONSE MAPPING ====================
 
-    public RunResponse toProtoRunResponse(
-            WorkflowRun run) {
+    public RunResponse toProtoRunResponse(WorkflowRun run) {
 
         WorkflowRunSnapshot snapshot = run.createSnapshot();
 
@@ -60,19 +58,16 @@ public class GrpcMapper {
             builder.setDurationMs(durationMs);
         }
 
-        // Add variables
         if (snapshot.variables() != null) {
             builder.setVariables(mapToStruct(snapshot.variables()));
         }
 
-        // Add node executions
         snapshot.nodeExecutions().forEach((nodeId, exec) -> {
             builder.putNodeExecutions(
                     nodeId.value(),
                     toProtoNodeExecution(exec));
         });
 
-        // Add execution path
         builder.addAllExecutionPath(snapshot.executionPath());
 
         return builder.build();
@@ -80,8 +75,7 @@ public class GrpcMapper {
 
     // ==================== NODE EXECUTION MAPPING ====================
 
-    public tech.kayys.gamelan.grpc.v1.NodeExecution toProtoNodeExecution(
-            tech.kayys.gamelan.engine.node.NodeExecution exec) {
+    public NodeExecution toProtoNodeExecution(tech.kayys.gamelan.engine.node.NodeExecution exec) {
 
         NodeExecution.Builder builder = NodeExecution.newBuilder()
                 .setNodeId(exec.getNodeId().value())
@@ -101,10 +95,9 @@ public class GrpcMapper {
 
     // ==================== ERROR INFO MAPPING ====================
 
-    public tech.kayys.gamelan.grpc.v1.ErrorInfo toProtoErrorInfo(
-            tech.kayys.gamelan.engine.error.ErrorInfo error) {
+    public ErrorInfo toProtoErrorInfo(tech.kayys.gamelan.engine.error.ErrorInfo error) {
 
-        return tech.kayys.gamelan.grpc.v1.ErrorInfo.newBuilder()
+        return ErrorInfo.newBuilder()
                 .setCode(error.code())
                 .setMessage(error.message())
                 .setStackTrace(error.stackTrace())
@@ -114,8 +107,7 @@ public class GrpcMapper {
 
     // ==================== HISTORY MAPPING ====================
 
-    public ExecutionHistoryResponse toProtoHistoryResponse(
-            ExecutionHistory history) {
+    public ExecutionHistoryResponse toProtoHistoryResponse(ExecutionHistory history) {
 
         ExecutionHistoryResponse.Builder builder = ExecutionHistoryResponse.newBuilder()
                 .setRunId(history.getRunId().value())
@@ -140,8 +132,7 @@ public class GrpcMapper {
 
     // ==================== NODE RESULT MAPPING ====================
 
-    public NodeExecutionResult toDomainNodeResult(
-            TaskResult protoResult) {
+    public NodeExecutionResult toDomainNodeResult(TaskResult protoResult) {
 
         return new SimpleNodeExecutionResult(
                 WorkflowRunId.of(protoResult.getRunId()),
@@ -166,7 +157,7 @@ public class GrpcMapper {
             WorkflowRunId runId,
             NodeId nodeId,
             int attempt,
-            NodeExecutionStatus statusVal, // Renamed to avoid conflict with getStatus
+            NodeExecutionStatus statusVal,
             Map<String, Object> updatedContextVal,
             tech.kayys.gamelan.engine.error.ErrorInfo errorVal,
             ExecutionToken executionToken,
@@ -174,11 +165,6 @@ public class GrpcMapper {
             java.time.Duration durationVal,
             Map<String, String> metadataVal,
             tech.kayys.gamelan.engine.run.WaitInfo waitInfoVal) implements NodeExecutionResult {
-
-        // Fluent accessors (provided by record components):
-        // runId(), attempt(), executionToken()
-
-        // Getter accessors (implemented explicitly):
 
         @Override
         public String getNodeId() {
@@ -271,16 +257,12 @@ public class GrpcMapper {
                 timestamp.getNanos());
     }
 
-    public RunStatus toProtoRunStatus(
-            tech.kayys.gamelan.engine.run.RunStatus status) {
-        return RunStatus.valueOf(
-                "RUN_STATUS_" + status.name());
+    public RunStatus toProtoRunStatus(tech.kayys.gamelan.engine.run.RunStatus status) {
+        return RunStatus.valueOf("RUN_STATUS_" + status.name());
     }
 
-    public NodeExecutionStatus toDomainTaskStatus(
-            TaskStatus status) {
-        return NodeExecutionStatus.valueOf(
-                status.name().replace("TASK_STATUS_", ""));
+    public NodeExecutionStatus toDomainTaskStatus(TaskStatus status) {
+        return NodeExecutionStatus.valueOf(status.name().replace("TASK_STATUS_", ""));
     }
 
     public Struct mapToStruct(Map<String, Object> map) {
@@ -309,8 +291,7 @@ public class GrpcMapper {
         }
     }
 
-    public tech.kayys.gamelan.engine.error.ErrorInfo toDomainErrorInfo(
-            tech.kayys.gamelan.grpc.v1.ErrorInfo error) {
+    public tech.kayys.gamelan.engine.error.ErrorInfo toDomainErrorInfo(ErrorInfo error) {
         return new tech.kayys.gamelan.engine.error.ErrorInfo(
                 error.getCode(),
                 error.getMessage(),

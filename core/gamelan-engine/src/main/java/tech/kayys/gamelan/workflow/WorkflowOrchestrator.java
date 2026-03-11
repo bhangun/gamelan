@@ -23,6 +23,7 @@ import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
 
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Core orchestrator that coordinates planning and dispatching
@@ -146,7 +147,7 @@ public class WorkflowOrchestrator {
 
         NodeDefinition node = nodeOpt.get();
 
-        return executorRegistry.getExecutorForNode(nodeId)
+        return resolveExecutor(node)
                 .flatMap(execOpt -> {
                     if (execOpt.isEmpty()) {
                         LOG.warn("No executor available for node: {}", nodeId.value());
@@ -168,7 +169,36 @@ public class WorkflowOrchestrator {
                                         node.retryPolicy());
 
                                 return taskDispatcher.dispatch(task, executor);
-                            });
+                                    });
                 });
+    }
+
+    private Uni<Optional<ExecutorInfo>> resolveExecutor(NodeDefinition node) {
+        String executorType = node.executorType();
+        if (executorType != null && !executorType.isBlank()) {
+            return executorRegistry.getExecutorsByType(executorType)
+                    .map(executors -> selectExecutor(executors, node.id()))
+                    .flatMap(selected -> {
+                        if (selected.isPresent()) {
+                            return Uni.createFrom().item(selected);
+                        }
+                        return executorRegistry.getExecutorForNode(node.id());
+                    });
+        }
+        return executorRegistry.getExecutorForNode(node.id());
+    }
+
+    private Optional<ExecutorInfo> selectExecutor(List<ExecutorInfo> executors, NodeId nodeId) {
+        if (executors == null || executors.isEmpty()) {
+            return Optional.empty();
+        }
+        // Prefer local transport in standalone runs to avoid mismatched remote adapters.
+        Optional<ExecutorInfo> local = executors.stream()
+                .filter(executor -> executor.communicationType() == tech.kayys.gamelan.engine.protocol.CommunicationType.LOCAL)
+                .findFirst();
+        if (local.isPresent()) {
+            return local;
+        }
+        return Optional.of(executors.get(Math.floorMod(nodeId.value().hashCode(), executors.size())));
     }
 }

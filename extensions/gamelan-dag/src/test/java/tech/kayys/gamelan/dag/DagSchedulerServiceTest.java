@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.node.NodeType;
-import tech.kayys.gamelan.tenant.TenantId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowMode;

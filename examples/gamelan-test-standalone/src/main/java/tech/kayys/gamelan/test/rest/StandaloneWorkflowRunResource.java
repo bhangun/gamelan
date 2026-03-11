@@ -4,9 +4,15 @@ import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import tech.kayys.gamelan.api.engine.WorkflowRunManager;
-import tech.kayys.gamelan.execution.ExecutionHistory;
-import tech.kayys.gamelan.model.*;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
+import tech.kayys.gamelan.engine.execution.ExecutionHistory;
+import tech.kayys.gamelan.engine.run.RunStatus;
+import tech.kayys.gamelan.engine.run.CreateRunRequest;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowRun;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.security.TenantSecurityContext;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +77,7 @@ public class StandaloneWorkflowRunResource {
     @Path("/{id}/resume")
     public Uni<WorkflowRun> resume(@PathParam("id") String id, Map<String, Object> resumeData) {
         TenantId tenantId = securityContext.getCurrentTenant();
-        return runManager.resumeRun(WorkflowRunId.of(id), tenantId, resumeData);
+        return runManager.resumeRun(WorkflowRunId.of(id), tenantId, resumeData, null);
     }
 
     @POST
@@ -89,7 +95,7 @@ public class StandaloneWorkflowRunResource {
             @QueryParam("page") @jakarta.ws.rs.DefaultValue("0") int page,
             @QueryParam("size") @jakarta.ws.rs.DefaultValue("10") int size) {
         TenantId tenantId = securityContext.getCurrentTenant();
-        WorkflowDefinitionId wfDefId = definitionId != null ? new WorkflowDefinitionId(definitionId) : null;
+        WorkflowDefinitionId wfDefId = definitionId != null ? WorkflowDefinitionId.of(definitionId) : null;
         return runManager.queryRuns(tenantId, wfDefId, status, page, size);
     }
 }

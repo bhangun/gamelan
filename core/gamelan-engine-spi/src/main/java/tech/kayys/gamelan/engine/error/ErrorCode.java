@@ -42,6 +42,9 @@ public enum ErrorCode {
     SCHEDULER_NO_EXECUTOR(ErrorCategory.SCHEDULER, 503, "SCHEDULER_001", "No executor available", true),
     SCHEDULER_CONCURRENCY_LIMIT(ErrorCategory.SCHEDULER, 429, "SCHEDULER_002", "Concurrency limit exceeded", true),
 
+    // ===== Search Errors =====
+    SEARCH_PROVIDER_UNAVAILABLE(ErrorCategory.SEARCH, 503, "SEARCH_001", "Search provider unavailable", true),
+
     // ===== Storage/Repository Errors =====
     STORAGE_READ_FAILED(ErrorCategory.STORAGE, 500, "STORAGE_001", "Failed to read from storage", true),
     STORAGE_WRITE_FAILED(ErrorCategory.STORAGE, 500, "STORAGE_002", "Failed to write to storage", true),
@@ -81,6 +84,7 @@ public enum ErrorCode {
         TASK("TASK"),
         DISPATCH("DISPATCH"),
         SCHEDULER("SCHEDULER"),
+        SEARCH("SEARCH"),
         STORAGE("STORAGE"),
         PLUGIN("PLUGIN"),
         SECURITY("SECURITY"),

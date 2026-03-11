@@ -42,7 +42,7 @@ Create a new Maven project:
     </dependencies>
 </project>
 Step 2: Implement Plugin Interface
-package com.example;
+packagetech.kayys;
 import tech.kayys.gamelan.engine.plugin.*;
 import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
 import io.smallrye.mutiny.Uni;

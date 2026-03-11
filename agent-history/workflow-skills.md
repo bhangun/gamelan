@@ -2710,7 +2710,7 @@ Let me check key documentation:
 20. ### 2. Create Your Plugin
 21. 
 22. ```java
-23. package com.example;
+23. packagetech.kayys;
 24. 
 25. import tech.kayys.gamelan.plugin.*;
 26. import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
@@ -2754,7 +2754,7 @@ Let me check key documentation:
 64. Create `src/main/resources/META-INF/services/tech.kayys.gamelan.plugin.Plugin`:
 65. 
 66. ```
-67. com.example.MyPlugin
+67.tech.kayys.MyPlugin
 68. ```
 69. 
 70. ### 4. Build Plugin JAR

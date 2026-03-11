@@ -26,6 +26,12 @@ public class RegistryMetricsService {
     private Timer selectionTimer;
     private AtomicInteger executorCount;
 
+    private static void safeIncrement(Counter counter) {
+        if (counter != null) {
+            counter.increment();
+        }
+    }
+
     public void initialize(Supplier<Integer> executorCountSupplier) {
         registrationCounter = Counter.builder("executor.registrations")
                 .description("Number of executor registrations")
@@ -55,36 +61,43 @@ public class RegistryMetricsService {
     }
 
     public void incrementRegistration() {
-        registrationCounter.increment();
+        safeIncrement(registrationCounter);
     }
 
     public void incrementUnregistration() {
-        unregistrationCounter.increment();
+        safeIncrement(unregistrationCounter);
     }
 
     public void incrementHeartbeat() {
-        heartbeatCounter.increment();
+        safeIncrement(heartbeatCounter);
     }
 
     public void incrementSelection() {
-        selectionCounter.increment();
+        safeIncrement(selectionCounter);
     }
 
     public Timer.Sample startSelectionTimer() {
+        if (meterRegistry == null) {
+            return null;
+        }
         return Timer.start(meterRegistry);
     }
 
     public void stopSelectionTimer(Timer.Sample sample) {
-        if (sample != null) {
+        if (sample != null && selectionTimer != null) {
             sample.stop(selectionTimer);
         }
     }
 
     public void incrementExecutorCount() {
-        executorCount.incrementAndGet();
+        if (executorCount != null) {
+            executorCount.incrementAndGet();
+        }
     }
 
     public void decrementExecutorCount() {
-        executorCount.decrementAndGet();
+        if (executorCount != null) {
+            executorCount.decrementAndGet();
+        }
     }
 }

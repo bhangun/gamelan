@@ -12,13 +12,13 @@ import tech.kayys.gamelan.plugin.impl.DefaultPluginService;
  * Standalone test to demonstrate the plugin system
  */
 public class PluginSystemTest {
-    
+
     public static void main(String[] args) {
         System.out.println("=".repeat(80));
         System.out.println("Gamelan Plugin System Test");
         System.out.println("=".repeat(80));
         System.out.println();
-        
+
         try {
             // Create unified plugin service
             PluginService pluginService = new DefaultPluginService();
@@ -34,7 +34,8 @@ public class PluginSystemTest {
             System.out.println("Test 1: Loading Example Plugin");
             System.out.println("-".repeat(80));
 
-            Path pluginJar = Paths.get("../examples/gamelan-plugin-example/target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar");
+            Path pluginJar = Paths
+                    .get("../examples/gamelan-plugin-example/target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar");
             if (!pluginJar.toFile().exists()) {
                 System.err.println("✗ Plugin JAR not found: " + pluginJar);
                 System.err.println("  Please build the example plugin first:");
@@ -75,9 +76,8 @@ public class PluginSystemTest {
             System.out.println("-".repeat(80));
 
             Plugin reloadedPlugin = pluginService.reloadPlugin(
-                plugin.getMetadata().id(),
-                pluginJar
-            ).await().indefinitely();
+                    plugin.getMetadata().id(),
+                    pluginJar).await().indefinitely();
             System.out.println("✓ Plugin hot-reloaded successfully");
             System.out.println("  - Plugin ID: " + reloadedPlugin.getMetadata().id());
             System.out.println();
@@ -92,7 +92,7 @@ public class PluginSystemTest {
             pluginService.unloadPlugin(plugin.getMetadata().id()).await().indefinitely();
             System.out.println("✓ Plugin unloaded");
             System.out.println();
-            
+
             // Summary
             System.out.println("=".repeat(80));
             System.out.println("✓ All Tests Passed!");
@@ -107,7 +107,7 @@ public class PluginSystemTest {
             System.out.println("  ✓ Plugin unloading and cleanup");
             System.out.println();
             System.out.println("The Gamelan Plugin System is working correctly!");
-            
+
         } catch (Exception e) {
             System.err.println();
             System.err.println("✗ Test Failed!");

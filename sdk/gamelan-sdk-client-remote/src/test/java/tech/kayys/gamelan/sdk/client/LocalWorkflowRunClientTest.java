@@ -8,7 +8,7 @@ import org.mockito.MockitoAnnotations;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
-import tech.kayys.gamelan.tenant.TenantId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.run.RunResponse;
 import tech.kayys.gamelan.engine.run.RunStatus;
 

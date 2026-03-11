@@ -66,7 +66,25 @@ public class DefaultWorkflowScheduler implements WorkflowScheduler {
                                 task.nodeId().value(),
                                 task.attempt());
 
-                return executorRegistry.getExecutorForNode(task.nodeId())
+        return executorRegistry.getExecutorForNode(task.nodeId())
+                                .flatMap(initial -> {
+                                        if (initial.isPresent()) {
+                                                return Uni.createFrom().item(initial);
+                                        }
+                                        String nodeType = task.context() != null
+                                                        ? String.valueOf(task.context().getOrDefault("__node_type__", ""))
+                                                        : "";
+                                        if (nodeType.isBlank()) {
+                                                return Uni.createFrom().item(initial);
+                                        }
+                                        return executorRegistry.getExecutorsByType(nodeType)
+                                                        .map(list -> {
+                                                                if (list == null || list.isEmpty()) {
+                                                                        return java.util.Optional.<tech.kayys.gamelan.engine.executor.ExecutorInfo>empty();
+                                                                }
+                                                                return java.util.Optional.of(list.get(0));
+                                                        });
+                                })
                                 .flatMap((java.util.Optional<tech.kayys.gamelan.engine.executor.ExecutorInfo> executorOpt) -> {
                                         if (executorOpt.isEmpty()) {
                                                 LOG.error("No executor found for node {}", task.nodeId().value());

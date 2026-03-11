@@ -4,10 +4,10 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.annotation.Priority;
-import tech.kayys.gamelan.repository.WorkflowDefinitionRepository;
-import tech.kayys.gamelan.model.TenantId;
-import tech.kayys.gamelan.model.WorkflowDefinition;
-import tech.kayys.gamelan.model.WorkflowDefinitionId;
+import tech.kayys.gamelan.engine.repository.WorkflowDefinitionRepository;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 
 import java.util.List;
 import java.util.Map;
@@ -46,5 +46,13 @@ public class InMemoryWorkflowDefinitionRepository implements WorkflowDefinitionR
     public Uni<Void> delete(WorkflowDefinitionId id, TenantId tenantId) {
         definitions.remove(key(id, tenantId));
         return Uni.createFrom().voidItem();
+    }
+
+    @Override
+    public Uni<WorkflowDefinition> findByName(String name, TenantId tenantId) {
+        return Uni.createFrom().item(definitions.values().stream()
+                .filter(d -> d.tenantId().equals(tenantId) && d.name().equals(name))
+                .findFirst()
+                .orElse(null));
     }
 }

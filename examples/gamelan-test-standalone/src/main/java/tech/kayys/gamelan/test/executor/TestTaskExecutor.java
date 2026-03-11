@@ -2,14 +2,15 @@ package tech.kayys.gamelan.test.executor;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import tech.kayys.gamelan.sdk.executor.AbstractWorkflowExecutor;
-import tech.kayys.gamelan.sdk.executor.SimpleNodeExecutionResult;
-import tech.kayys.gamelan.execution.NodeExecutionTask;
+import tech.kayys.gamelan.sdk.executor.core.AbstractWorkflowExecutor;
+import tech.kayys.gamelan.sdk.executor.core.SimpleNodeExecutionResult;
+import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 
 import java.util.Map;
 
-import tech.kayys.gamelan.sdk.executor.Executor;
-import tech.kayys.gamelan.model.CommunicationType;
+import tech.kayys.gamelan.sdk.executor.core.Executor;
+import tech.kayys.gamelan.engine.protocol.CommunicationType;
+import tech.kayys.gamelan.engine.error.ErrorInfo;
 
 @ApplicationScoped
 @Executor(executorType = "test-executor", maxConcurrentTasks = 10, supportedNodeTypes = {
@@ -18,7 +19,7 @@ import tech.kayys.gamelan.model.CommunicationType;
 public class TestTaskExecutor extends AbstractWorkflowExecutor {
 
     @Override
-    public Uni<tech.kayys.gamelan.execution.NodeExecutionResult> execute(NodeExecutionTask task) {
+    public Uni<tech.kayys.gamelan.engine.node.NodeExecutionResult> execute(NodeExecutionTask task) {
         String nodeType = extractNodeType(task);
         System.out.println("==================================================");
         System.out.println("EXECUTOR: Processing Node [" + task.nodeId() + "] of type [" + nodeType + "]");
@@ -45,10 +46,10 @@ public class TestTaskExecutor extends AbstractWorkflowExecutor {
                     task.runId(),
                     task.nodeId(),
                     task.attempt(),
-                    new tech.kayys.gamelan.model.ErrorInfo(
+                    new ErrorInfo(
                         "SIMULATED_ERROR", 
                         "Realistic simulation triggered a failure", 
-                        "TestTaskExecutor", 
+                        null, 
                         Map.of("latency", latency)
                     ),
                     task.token()

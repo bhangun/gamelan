@@ -11,15 +11,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.smallrye.mutiny.Uni;
-import tech.kayys.gamelan.execution.NodeExecutionResult;
-import tech.kayys.gamelan.execution.NodeExecutionTask;
-import tech.kayys.gamelan.model.ErrorInfo;
-import tech.kayys.gamelan.plugin.PluginContext;
-import tech.kayys.gamelan.plugin.PluginException;
-import tech.kayys.gamelan.plugin.PluginMetadata;
-import tech.kayys.gamelan.plugin.PluginMetadataBuilder;
+import tech.kayys.gamelan.engine.node.NodeExecutionResult;
+import tech.kayys.gamelan.engine.node.NodeExecutionTask;
+import tech.kayys.gamelan.engine.error.ErrorInfo;
+import tech.kayys.gamelan.engine.plugin.PluginContext;
+import tech.kayys.gamelan.engine.plugin.PluginException;
+import tech.kayys.gamelan.engine.plugin.PluginMetadata;
+import tech.kayys.gamelan.engine.plugin.PluginMetadataBuilder;
 import tech.kayys.gamelan.plugin.executor.ExecutorPlugin;
-import tech.kayys.gamelan.sdk.executor.SimpleNodeExecutionResult;
+import tech.kayys.gamelan.sdk.executor.core.SimpleNodeExecutionResult;
 
 /**
  * Example executor plugin for script execution

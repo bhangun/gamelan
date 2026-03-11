@@ -5,7 +5,15 @@ import tech.kayys.gamelan.engine.node.NodeExecutionResult;
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 
 /**
- * Base interface for all workflow executors
+ * Base interface for all workflow executors.
+ *
+ * Executors must implement {@link #execute(NodeExecutionTask)} and
+ * {@link #getExecutorType()}. Everything else has sensible defaults.
+ *
+ * Metadata ({@link #getVersion()}, {@link #getDescription()},
+ * {@link #getExecutorInfo()}) is surfaced at runtime so registries,
+ * health endpoints, and the UI catalog can introspect any executor
+ * without relying solely on annotations.
  */
 public interface WorkflowExecutor {
 
@@ -85,5 +93,36 @@ public interface WorkflowExecutor {
      */
     default Uni<Void> cleanup() {
         return Uni.createFrom().voidItem();
+    }
+
+    // ---- Metadata ----
+
+    /**
+     * Semantic version of this executor (e.g. "1.2.0").
+     * Override to return the version declared in {@code @Executor(version = ...)}.
+     */
+    default String getVersion() {
+        return "1.0.0";
+    }
+
+    /**
+     * Human-readable description of what this executor does.
+     * Exposed via the registry so UI / control-plane can display it.
+     */
+    default String getDescription() {
+        return "";
+    }
+
+    /**
+     * Returns a structured snapshot of all executor metadata.
+     * Convenient for registration payloads, health checks, and admin dashboards.
+     */
+    default ExecutorInfo getExecutorInfo() {
+        return new ExecutorInfo(
+                getExecutorType(),
+                getVersion(),
+                getDescription(),
+                getSupportedNodeTypes(),
+                getMaxConcurrentTasks());
     }
 }

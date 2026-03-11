@@ -11,7 +11,7 @@ public class DatabaseTestProfile implements QuarkusTestProfile {
             "quarkus.datasource.username", "sa",
             "quarkus.datasource.password", "",
             "quarkus.datasource.reactive.url", "postgresql://localhost:5432/testdb",
-            "quarkus.hibernate-orm.database.generation", "drop-and-create",
+            "quarkus.hibernate-orm.schema-management.strategy", "drop-and-create",
             "quarkus.flyway.migrate-at-start", "false"
         );
     }

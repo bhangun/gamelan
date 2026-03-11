@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 import io.smallrye.mutiny.Uni;
-import tech.kayys.gamelan.plugin.PluginContext;
-import tech.kayys.gamelan.plugin.PluginException;
-import tech.kayys.gamelan.plugin.PluginMetadata;
+import tech.kayys.gamelan.engine.plugin.PluginContext;
+import tech.kayys.gamelan.engine.plugin.PluginException;
+import tech.kayys.gamelan.engine.plugin.PluginMetadata;
 import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
 
 /**
@@ -46,7 +46,7 @@ public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
     }
     
     @Override
-    public Uni<Void> beforeExecution(TaskContext task) {
+    public Uni<Void> beforeExecution(ExecutionInterceptorPlugin.TaskContext task) {
         context.getLogger().info(
             "BEFORE EXECUTION: runId={}, nodeId={}, nodeType={}, attempt={}",
             task.runId(),
@@ -58,7 +58,7 @@ public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
     }
     
     @Override
-    public Uni<Void> afterExecution(TaskContext task, ExecutionResult result) {
+    public Uni<Void> afterExecution(ExecutionInterceptorPlugin.TaskContext task, ExecutionInterceptorPlugin.ExecutionResult result) {
         context.getLogger().info(
             "AFTER EXECUTION: runId={}, nodeId={}, success={}, outputs={}",
             task.runId(),
@@ -70,7 +70,7 @@ public class LoggingInterceptorPlugin implements ExecutionInterceptorPlugin {
     }
     
     @Override
-    public Uni<Void> onError(TaskContext task, Throwable error) {
+    public Uni<Void> onError(ExecutionInterceptorPlugin.TaskContext task, Throwable error) {
         context.getLogger().error(
             "EXECUTION ERROR: runId={}, nodeId={}, error={}",
             task.runId(),

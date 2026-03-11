@@ -8,9 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 import tech.kayys.gamelan.registry.ExecutorRegistry;
-import tech.kayys.gamelan.grpc.v1.*;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.grpc.v1.*;
 
 import com.google.protobuf.Empty;
 import java.time.Instant;
@@ -20,7 +20,7 @@ import java.time.Duration;
  * gRPC service for executor communication
  */
 @GrpcService
-public class ExecutorServiceImpl implements tech.kayys.gamelan.grpc.v1.ExecutorService {
+public class ExecutorServiceImpl implements ExecutorService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorServiceImpl.class);
 
@@ -81,7 +81,8 @@ public class ExecutorServiceImpl implements tech.kayys.gamelan.grpc.v1.ExecutorS
     // ==================== STREAM TASKS (SERVER STREAMING) ====================
 
     @Override
-    public Multi<ExecutionTask> streamTasks(StreamTasksRequest request) {
+    public Multi<ExecutionTask> streamTasks(
+            StreamTasksRequest request) {
 
         LOG.info("gRPC: Starting task stream for executor: {}",
                 request.getExecutorId());
@@ -120,7 +121,8 @@ public class ExecutorServiceImpl implements tech.kayys.gamelan.grpc.v1.ExecutorS
     // ==================== EXECUTE STREAM (BIDIRECTIONAL) ====================
 
     @Override
-    public Multi<EngineMessage> executeStream(Multi<ExecutorMessage> request) {
+    public Multi<EngineMessage> executeStream(
+            Multi<ExecutorMessage> request) {
 
         LOG.info("gRPC: Starting bidirectional stream");
 

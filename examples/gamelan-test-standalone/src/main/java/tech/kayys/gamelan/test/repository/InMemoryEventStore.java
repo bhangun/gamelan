@@ -4,9 +4,9 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.annotation.Priority;
-import tech.kayys.gamelan.model.EventStore;
-import tech.kayys.gamelan.model.WorkflowRunId;
-import tech.kayys.gamelan.model.event.ExecutionEvent;
+import tech.kayys.gamelan.engine.event.EventStore;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.engine.event.ExecutionEvent;
 
 import java.util.ArrayList;
 import java.util.List;
