@@ -314,6 +314,10 @@ quarkus:
 # ==================== GAMELAN-SPECIFIC CONFIGURATION ====================
 
 gamelan:
+  distributed:
+    mode: redis
+  scheduler:
+    mode: redis
   # Workflow Engine Configuration
   engine:
     # Maximum concurrent workflow executions

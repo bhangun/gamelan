@@ -53,6 +53,31 @@ public class DefaultWorkflowEngine implements WorkflowEngine {
         LOG.info("Dispatching node: {} (type: {})", nodeContext.nodeId().value(), nodeContext.nodeType());
         return performExecution(nodeContext, executionContext)
                 .chain(nodeResult -> {
+                    // Surgical update of node result in snapshot
+                    if (engineContext != null && engineContext.persistence() != null) {
+                        try {
+                            tech.kayys.gamelan.engine.node.NodeExecutionSnapshot snapshot = new tech.kayys.gamelan.engine.node.NodeExecutionSnapshot(
+                                    nodeContext.nodeId().value(),
+                                    nodeResult.isSuccess() ? "COMPLETED" : "FAILED",
+                                    executionContext.attempt(),
+                                    null,
+                                    null,
+                                    nodeResult.output(),
+                                    null);
+                            engineContext.persistence().updateNodeExecution(nodeContext.runId(), nodeContext.nodeId(),
+                                    snapshot);
+
+                            // If node has output, update context variables surgically too
+                            if (nodeResult.output() != null && !nodeResult.output().isEmpty()) {
+                                nodeResult.output().forEach((k, v) -> {
+                                    engineContext.persistence().updateContextVariable(nodeContext.runId(), k, v);
+                                });
+                            }
+                        } catch (Exception e) {
+                            LOG.error("Failed to perform surgical update", e);
+                        }
+                    }
+
                     // 3. Run afterNode
                     interceptors.forEach(i -> {
                         try {

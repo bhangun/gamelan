@@ -12,6 +12,8 @@
 # - Use execution tokens, not user JWTs for internal communication
 # This avoids: Double TLS termination, Certificate sprawl, Latency/CPU overhead, Operational complexity
 quarkus:
+  devservices:
+    enabled: false
   # ==================== CORE CONFIGURATION ====================
   index-dependency:
     gamelan-common:
@@ -61,36 +63,41 @@ quarkus:
   
   # ==================== DATABASE CONFIGURATION ====================
   datasource:
-    db-kind: postgresql
-    username: ${GAMELAN_DB_USER:gamelan}
-    password: ${GAMELAN_DB_PASSWORD:gamelan123}
-    
-    # Reactive datasource
-    reactive:
-      url: postgresql://${GAMELAN_DB_HOST:localhost}:${GAMELAN_DB_PORT:5432}/${GAMELAN_DB_NAME:gamelan_workflow}
-      max-size: 20
-      idle-timeout: PT10M
-      
-    # JDBC datasource (for migrations)
+    db-kind: h2
+    username: sa
+    password: ""
     jdbc:
-      url: jdbc:postgresql://${GAMELAN_DB_HOST:localhost}:${GAMELAN_DB_PORT:5432}/${GAMELAN_DB_NAME:gamelan_workflow}
-      max-size: 16
-      min-size: 2
+      enabled: true
+
+    # Reactive datasource (in-memory for standalone)
+    reactive:
+      url: vertx-reactive:h2:file:./data/gamelan;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      max-size: 10
+      idle-timeout: PT5M
+
+    # JDBC datasource (for optional migrations)
+    jdbc:
+      url: jdbc:h2:file:./data/gamelan;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+      max-size: 8
+      min-size: 1
       
   # Hibernate Configuration
   hibernate-orm:
     database:
-      generation: none  # Use Flyway for migrations
+      generation: drop-and-create
     log:
       sql: ${HIBERNATE_LOG_SQL:false}
       format-sql: true
-    dialect: org.hibernate.dialect.PostgreSQLDialect
+    dialect: org.hibernate.dialect.H2Dialect
+    mapping:
+      format:
+        global: ignore
+  hibernate-reactive:
+    enabled: false
     
   # Flyway Database Migrations
   flyway:
-    migrate-at-start: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
+    migrate-at-start: false
     
   # ==================== REDIS CONFIGURATION ====================
   redis:
@@ -108,6 +115,7 @@ quarkus:
     
     # Dev Services configuration
     devservices:
+      enabled: false
       image-name: docker.redpanda.com/redpandadata/redpanda:v24.1.2
     
     # Producer configuration
@@ -135,6 +143,7 @@ quarkus:
   # ==================== GRPC CONFIGURATION ====================
   grpc:
     server:
+      enable: false
       port: 3101
       host: 0.0.0.0
       enable-reflection-service: true
@@ -314,6 +323,10 @@ quarkus:
 # ==================== GAMELAN-SPECIFIC CONFIGURATION ====================
 
 gamelan:
+  distributed:
+    mode: local
+  scheduler:
+    mode: local
   # Workflow Engine Configuration
   engine:
     # Maximum concurrent workflow executions

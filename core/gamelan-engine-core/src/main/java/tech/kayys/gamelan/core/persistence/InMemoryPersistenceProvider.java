@@ -8,8 +8,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.enterprise.context.ApplicationScoped;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import tech.kayys.gamelan.engine.context.WorkflowContext;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.node.NodeResult;
@@ -24,25 +26,26 @@ public class InMemoryPersistenceProvider implements PersistenceProvider {
 
     private final Map<WorkflowRunId, WorkflowContext> workflows = new ConcurrentHashMap<>();
     private final Map<WorkflowRunId, List<StoredEvent>> events = new ConcurrentHashMap<>();
-    private final Map<WorkflowRunId, List<SignalContext>> signals = new ConcurrentHashMap<>();
     private final Map<WorkflowRunId, Map<NodeId, NodeResult>> nodeResults = new ConcurrentHashMap<>();
+    private final Map<WorkflowRunId, List<SignalContext>> signals = new ConcurrentHashMap<>();
 
     @Override
     public void saveWorkflow(WorkflowContext workflow) {
-        LOG.debug("Saving workflow run: {}", workflow.runId());
-        workflows.put(workflow.runId(), workflow);
+        LOG.debug("Saving workflow run: {}", workflow.getRunId().value());
+        workflows.put(workflow.getRunId(), workflow);
     }
 
     @Override
     public Optional<WorkflowContext> loadWorkflow(WorkflowRunId runId) {
+        LOG.debug("Loading workflow run: {}", runId.value());
         return Optional.ofNullable(workflows.get(runId));
     }
 
     @Override
     public void appendEvent(WorkflowRunId runId, String eventType, Object payload) {
-        LOG.debug("Appending event {} to run: {}", eventType, runId);
+        LOG.debug("Appending event {} to run: {}", eventType, runId.value());
         events.computeIfAbsent(runId, k -> Collections.synchronizedList(new ArrayList<>()))
-                .add(new StoredEvent(eventType, payload, java.time.Instant.now()));
+                .add(new StoredEvent(eventType, payload));
     }
 
     @Override
@@ -54,30 +57,29 @@ public class InMemoryPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void saveSignal(WorkflowRunId runId, SignalContext signal) {
-        LOG.debug("Saving signal for run: {}", runId);
+        LOG.debug("Saving signal for run: {}", runId.value());
         signals.computeIfAbsent(runId, k -> Collections.synchronizedList(new ArrayList<>()))
                 .add(signal);
     }
 
+    @Override
+    public void updateContextVariable(WorkflowRunId runId, String key, Object value) {
+        WorkflowContext workflow = workflows.get(runId);
+        if (workflow != null) {
+            workflow.getVariables().put(key, value);
+        }
+    }
+
+    @Override
+    public void updateNodeExecution(WorkflowRunId runId, NodeId nodeId,
+            tech.kayys.gamelan.engine.node.NodeExecutionSnapshot snapshot) {
+        LOG.debug("Updating node execution snapshot for node {} in run: {}", nodeId, runId);
+    }
+
     public List<StoredEvent> getEvents(WorkflowRunId runId) {
-        return List.copyOf(events.getOrDefault(runId, List.of()));
+        return events.getOrDefault(runId, Collections.emptyList());
     }
 
-    public List<SignalContext> getSignals(WorkflowRunId runId) {
-        return List.copyOf(signals.getOrDefault(runId, List.of()));
-    }
-
-    public Map<NodeId, NodeResult> getNodeResults(WorkflowRunId runId) {
-        return Map.copyOf(nodeResults.getOrDefault(runId, Map.of()));
-    }
-
-    public void clear() {
-        workflows.clear();
-        events.clear();
-        signals.clear();
-        nodeResults.clear();
-    }
-
-    public record StoredEvent(String type, Object payload, java.time.Instant timestamp) {
+    public static record StoredEvent(String type, Object payload) {
     }
 }

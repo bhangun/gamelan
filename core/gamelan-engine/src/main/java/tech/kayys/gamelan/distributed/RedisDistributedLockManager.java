@@ -15,6 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
+@io.quarkus.arc.properties.IfBuildProperty(name = "gamelan.distributed.mode", stringValue = "redis")
 public class RedisDistributedLockManager implements DistributedLockManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(RedisDistributedLockManager.class);

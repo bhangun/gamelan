@@ -27,4 +27,8 @@ public interface PersistenceProvider {
         void saveSignal(
                         WorkflowRunId runId,
                         SignalContext signal);
+
+        void updateContextVariable(WorkflowRunId runId, String key, Object value);
+
+        void updateNodeExecution(WorkflowRunId runId, NodeId nodeId, tech.kayys.gamelan.engine.node.NodeExecutionSnapshot snapshot);
 }

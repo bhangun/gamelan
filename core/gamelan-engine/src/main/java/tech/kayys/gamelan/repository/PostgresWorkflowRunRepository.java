@@ -233,6 +233,55 @@ public class PostgresWorkflowRunRepository implements WorkflowRunRepository,
                                 .map(iter -> iter.hasNext() && iter.next().getBoolean(0));
         }
 
+        @Override
+        public Uni<Void> updateContextVariable(WorkflowRunId runId, String key, Object value) {
+                String sql = """
+                                UPDATE workflow_runs
+                                SET context_variables = jsonb_set(
+                                    COALESCE(context_variables, '{}'::jsonb),
+                                    ARRAY[$1],
+                                    $2::jsonb,
+                                    true
+                                ),
+                                last_updated_at = NOW()
+                                WHERE run_id = $3
+                                """;
+
+                try {
+                        String jsonValue = objectMapper.writeValueAsString(value);
+                        return pgPool.preparedQuery(sql)
+                                        .execute(Tuple.of(key, jsonValue, runId.value()))
+                                        .replaceWithVoid();
+                } catch (Exception e) {
+                        return Uni.createFrom().failure(e);
+                }
+        }
+
+        @Override
+        public Uni<Void> updateNodeExecution(WorkflowRunId runId, tech.kayys.gamelan.engine.node.NodeId nodeId,
+                        NodeExecutionSnapshot snapshot) {
+                String sql = """
+                                UPDATE workflow_runs
+                                SET node_executions = jsonb_set(
+                                    COALESCE(node_executions, '{}'::jsonb),
+                                    ARRAY[$1],
+                                    $2::jsonb,
+                                    true
+                                ),
+                                last_updated_at = NOW()
+                                WHERE run_id = $3
+                                """;
+
+                try {
+                        String jsonValue = objectMapper.writeValueAsString(snapshot);
+                        return pgPool.preparedQuery(sql)
+                                        .execute(Tuple.of(nodeId.value(), jsonValue, runId.value()))
+                                        .replaceWithVoid();
+                } catch (Exception e) {
+                        return Uni.createFrom().failure(e);
+                }
+        }
+
         // Mapping methods
         private WorkflowRunEntity toEntity(WorkflowRun run) {
                 WorkflowRunEntity entity = new WorkflowRunEntity();

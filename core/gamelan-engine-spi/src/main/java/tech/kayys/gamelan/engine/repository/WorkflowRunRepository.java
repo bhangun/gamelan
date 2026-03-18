@@ -60,4 +60,14 @@ public interface WorkflowRunRepository {
     Uni<Void> storeCallback(CallbackRegistration callback);
 
     Uni<Boolean> validateCallback(WorkflowRunId runId, String token);
+
+    /**
+     * Surgical update of a single context variable (JSONB performance)
+     */
+    Uni<Void> updateContextVariable(WorkflowRunId runId, String key, Object value);
+
+    /**
+     * Surgical update of a node execution status/output
+     */
+    Uni<Void> updateNodeExecution(WorkflowRunId runId, tech.kayys.gamelan.engine.node.NodeId nodeId, tech.kayys.gamelan.engine.node.NodeExecutionSnapshot snapshot);
 }
