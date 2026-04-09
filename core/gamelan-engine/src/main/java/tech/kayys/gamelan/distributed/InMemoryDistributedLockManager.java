@@ -10,7 +10,7 @@ import io.smallrye.mutiny.Uni;
 import io.quarkus.arc.properties.IfBuildProperty;
 
 @ApplicationScoped
-@IfBuildProperty(name = "gamelan.distributed.mode", stringValue = "local", stringValueIfMissing = "local")
+@IfBuildProperty(name = "gamelan.distributed.mode", stringValue = "local", enableIfMissing = true)
 public class InMemoryDistributedLockManager implements DistributedLockManager {
 
     private final Map<String, String> locks = new ConcurrentHashMap<>();

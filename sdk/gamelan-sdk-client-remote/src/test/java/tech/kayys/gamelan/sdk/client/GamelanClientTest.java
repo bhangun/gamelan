@@ -32,25 +32,16 @@ public class GamelanClientTest {
 
         @Test
         void testTransportSwitching() {
-                // Local
+                // LOCAL and GRPC providers are not available in this module — verify they throw.
                 WorkflowRunManager runManager = mock(WorkflowRunManager.class);
                 WorkflowDefinitionService defService = mock(WorkflowDefinitionService.class);
-                GamelanClient localClient = GamelanClient.builder()
-                                .tenantId("test-tenant")
-                                .local(runManager, defService, "test-tenant")
-                                .build();
-                assertEquals(TransportType.LOCAL, localClient.config().transport());
-                localClient.close();
+                assertThrows(Exception.class, () ->
+                        GamelanClient.builder().tenantId("t").local(runManager, defService, "t").build());
 
-                // gRPC
-                GamelanClient grpcClient = GamelanClient.builder()
-                                .tenantId("test-tenant")
-                                .grpcEndpoint("localhost:9090")
-                                .build();
-                assertEquals(TransportType.GRPC, grpcClient.config().transport());
-                grpcClient.close();
+                assertThrows(Exception.class, () ->
+                        GamelanClient.builder().tenantId("t").grpcEndpoint("localhost:9090").build());
 
-                // REST
+                // REST is implemented in this module
                 GamelanClient restClient = GamelanClient.builder()
                                 .tenantId("test-tenant")
                                 .restEndpoint("http://localhost:8080")

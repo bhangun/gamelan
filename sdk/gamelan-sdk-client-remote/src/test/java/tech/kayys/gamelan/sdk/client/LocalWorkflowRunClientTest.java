@@ -35,8 +35,16 @@ class LocalWorkflowRunClientTest {
         MockitoAnnotations.openMocks(this);
         client = new LocalWorkflowRunClient(runManager, tenantId);
 
-        when(mockRun.id()).thenReturn(WorkflowRunId.of(UUID.randomUUID().toString()));
-        when(mockRun.status()).thenReturn(RunStatus.CREATED);
+        when(mockRun.getId()).thenReturn(WorkflowRunId.of(UUID.randomUUID().toString()));
+        when(mockRun.getStatus()).thenReturn(RunStatus.CREATED);
+        when(mockRun.getDefinitionId()).thenReturn(new tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId("wf-1"));
+        when(mockRun.getCreatedAt()).thenReturn(java.time.Instant.now());
+        when(mockRun.getStartedAt()).thenReturn(null);
+        when(mockRun.getCompletedAt()).thenReturn(null);
+        when(mockRun.getAllNodeExecutions()).thenReturn(java.util.Map.of());
+        tech.kayys.gamelan.engine.execution.ExecutionContext ctx = mock(tech.kayys.gamelan.engine.execution.ExecutionContext.class);
+        when(ctx.getVariables()).thenReturn(java.util.Map.of());
+        when(mockRun.getContext()).thenReturn(ctx);
     }
 
     @Test

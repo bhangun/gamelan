@@ -36,70 +36,86 @@ public class DefaultWorkflowEngine implements WorkflowEngine {
 
     @Override
     public Uni<NodeResult> executeNode(NodeContext nodeContext, NodeExecutionContext executionContext) {
-        Collection<WorkflowInterceptor> interceptors = extensionRegistry != null
-                ? extensionRegistry.interceptors()
-                : java.util.Collections.emptyList();
+        Collection<WorkflowInterceptor> interceptors = resolveInterceptors();
+        var execInterceptors = resolveExecutionInterceptors();
 
-        // 1. Run beforeNode
-        interceptors.forEach(i -> {
-            try {
-                i.beforeNode(nodeContext);
-            } catch (Exception e) {
-                LOG.error("Interceptor error in beforeNode", e);
-            }
-        });
+        tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin.TaskContext taskCtx =
+                new tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin.TaskContext() {
+                    public String runId() { return nodeContext.nodeId().value(); }
+                    public String nodeId() { return nodeContext.nodeId().value(); }
+                    public String nodeType() { return nodeContext.nodeType(); }
+                    public java.util.Map<String, Object> inputs() { return nodeContext.input(); }
+                    public int attempt() { return (int) nodeContext.metadata().getOrDefault("attempt", 1); }
+                };
 
-        // 2. Real Execution
+        // 1. beforeNode (WorkflowInterceptor) + beforeExecution (ExecutionInterceptorPlugin)
+        interceptors.forEach(i -> { try { i.beforeNode(nodeContext); } catch (Exception e) { LOG.error("beforeNode error", e); } });
+        for (var ei : execInterceptors) {
+            try { ei.beforeExecution(taskCtx).await().indefinitely(); } catch (Exception e) { LOG.error("beforeExecution error", e); }
+        }
+
+        // 2. Execute
         LOG.info("Dispatching node: {} (type: {})", nodeContext.nodeId().value(), nodeContext.nodeType());
         return performExecution(nodeContext, executionContext)
                 .chain(nodeResult -> {
-                    // Surgical update of node result in snapshot
                     if (engineContext != null && engineContext.persistence() != null) {
                         try {
                             tech.kayys.gamelan.engine.node.NodeExecutionSnapshot snapshot = new tech.kayys.gamelan.engine.node.NodeExecutionSnapshot(
                                     nodeContext.nodeId().value(),
-                                    nodeResult.isSuccess() ? "COMPLETED" : "FAILED",
-                                    executionContext.attempt(),
-                                    null,
-                                    null,
-                                    nodeResult.output(),
+                                    nodeResult.success() ? "COMPLETED" : "FAILED",
+                                    (int) nodeContext.metadata().getOrDefault("attempt", 1),
+                                    null, null,
+                                    nodeResult.output() instanceof java.util.Map ? (java.util.Map<String, Object>) nodeResult.output() : null,
                                     null);
-                            engineContext.persistence().updateNodeExecution(nodeContext.runId(), nodeContext.nodeId(),
-                                    snapshot);
-
-                            // If node has output, update context variables surgically too
-                            if (nodeResult.output() != null && !nodeResult.output().isEmpty()) {
-                                nodeResult.output().forEach((k, v) -> {
-                                    engineContext.persistence().updateContextVariable(nodeContext.runId(), k, v);
-                                });
+                            engineContext.persistence().updateNodeExecution(executionContext.workflow().runId(), nodeContext.nodeId(), snapshot);
+                            if (nodeResult.output() instanceof java.util.Map<?, ?> outputMap && !outputMap.isEmpty()) {
+                                ((java.util.Map<String, Object>) outputMap).forEach((k, v) ->
+                                        engineContext.persistence().updateContextVariable(executionContext.workflow().runId(), k, v));
                             }
-                        } catch (Exception e) {
-                            LOG.error("Failed to perform surgical update", e);
-                        }
+                        } catch (Exception e) { LOG.error("Failed surgical update", e); }
                     }
 
-                    // 3. Run afterNode
-                    interceptors.forEach(i -> {
-                        try {
-                            i.afterNode(nodeContext, nodeResult);
-                        } catch (Exception e) {
-                            LOG.error("Interceptor error in afterNode", e);
-                        }
-                    });
+                    // 3. afterExecution (reverse order) + afterNode
+                    tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin.ExecutionResult execResult =
+                            new tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin.ExecutionResult() {
+                                public boolean isSuccess() { return nodeResult.success(); }
+                                public java.util.Map<String, Object> outputs() { return nodeResult.output() instanceof java.util.Map ? (java.util.Map<String, Object>) nodeResult.output() : java.util.Map.of(); }
+                                public String errorMessage() { return nodeResult.success() ? null : String.valueOf(nodeResult.output()); }
+                            };
+                    var reversed = new java.util.ArrayList<>(execInterceptors);
+                    java.util.Collections.reverse(reversed);
+                    for (var ei : reversed) {
+                        try { ei.afterExecution(taskCtx, execResult).await().indefinitely(); } catch (Exception e) { LOG.error("afterExecution error", e); }
+                    }
+                    interceptors.forEach(i -> { try { i.afterNode(nodeContext, nodeResult); } catch (Exception e) { LOG.error("afterNode error", e); } });
                     return Uni.createFrom().item(nodeResult);
                 })
                 .onFailure().recoverWithUni(t -> {
-                    // 4. Handle onFailure
                     LOG.error("Error executing node: {}", nodeContext.nodeId().value(), t);
-                    interceptors.forEach(i -> {
-                        try {
-                            i.onFailure(nodeContext, t);
-                        } catch (Exception e) {
-                            LOG.error("Interceptor error in onFailure", e);
-                        }
-                    });
+                    interceptors.forEach(i -> { try { i.onFailure(nodeContext, t); } catch (Exception e) { LOG.error("onFailure error", e); } });
                     return Uni.createFrom().item(NodeResult.failure(t.getMessage()));
                 });
+    }
+
+    private Collection<WorkflowInterceptor> resolveInterceptors() {
+        if (extensionRegistry != null) {
+            return extensionRegistry.interceptors();
+        }
+        return java.util.Collections.emptyList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private java.util.List<tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin> resolveExecutionInterceptors() {
+        if (engineContext == null || engineContext.pluginRegistry() == null) {
+            return java.util.Collections.emptyList();
+        }
+        return engineContext.pluginRegistry().getAllPlugins().values().stream()
+                .map(lp -> lp.getPlugin())
+                .filter(p -> p instanceof tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin)
+                .map(p -> (tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin) p)
+                .sorted(java.util.Comparator.comparingInt(
+                        tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin::getOrder))
+                .toList();
     }
 
     private Uni<NodeResult> performExecution(NodeContext nodeContext, NodeExecutionContext executionContext) {

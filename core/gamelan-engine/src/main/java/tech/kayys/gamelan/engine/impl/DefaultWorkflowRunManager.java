@@ -45,7 +45,7 @@ public class DefaultWorkflowRunManager implements tech.kayys.gamelan.engine.work
         @Inject
         tech.kayys.gamelan.engine.repository.WorkflowRunRepository runRepository;
         @Inject
-        InMemoryExecutionHistoryRepository historyRepository;
+        tech.kayys.gamelan.engine.execution.ExecutionHistoryRepository historyRepository;
         @Inject
         DefaultExecutionTokenService tokenService;
         @Inject
@@ -62,7 +62,9 @@ public class DefaultWorkflowRunManager implements tech.kayys.gamelan.engine.work
         // ==================== LIFECYCLE ====================
 
         @Override
-        public Uni<WorkflowRun> createRun(CreateRunRequest request, TenantId tenantId) {
+        public Uni<WorkflowRun> createRun(CreateRunRequest request) {
+                TenantId tenantId = java.util.Objects.requireNonNull(request.getTenantId(),
+                                "TenantId must be set on CreateRunRequest before calling createRun");
                 return definitionRegistry.getDefinition(new WorkflowDefinitionId(request.getWorkflowId()), tenantId)
                                 .flatMap(definition -> {
                                         WorkflowRun run = WorkflowRun.create(tenantId, definition, request.getInputs());

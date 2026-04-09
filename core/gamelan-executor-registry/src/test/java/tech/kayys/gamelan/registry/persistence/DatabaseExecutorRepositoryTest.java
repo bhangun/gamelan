@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @QuarkusTest
+@io.quarkus.test.junit.TestProfile(DatabaseTestProfile.class)
 class DatabaseExecutorRepositoryTest {
 
     @InjectMock

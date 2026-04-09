@@ -31,8 +31,8 @@ public class InMemoryPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void saveWorkflow(WorkflowContext workflow) {
-        LOG.debug("Saving workflow run: {}", workflow.getRunId().value());
-        workflows.put(workflow.getRunId(), workflow);
+        LOG.debug("Saving workflow run: {}", workflow.runId().value());
+        workflows.put(workflow.runId(), workflow);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class InMemoryPersistenceProvider implements PersistenceProvider {
     public void updateContextVariable(WorkflowRunId runId, String key, Object value) {
         WorkflowContext workflow = workflows.get(runId);
         if (workflow != null) {
-            workflow.getVariables().put(key, value);
+            workflow.variables().put(key, value);
         }
     }
 

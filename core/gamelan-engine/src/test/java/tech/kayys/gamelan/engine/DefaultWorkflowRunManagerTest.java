@@ -60,6 +60,9 @@ public class DefaultWorkflowRunManagerTest {
         @Mock
         Clock clock;
 
+        @Mock
+        io.vertx.mutiny.core.eventbus.EventBus eventBus;
+
         private WorkflowRun mockRun;
         private WorkflowRunId runId;
         private TenantId tenantId;
@@ -93,7 +96,11 @@ public class DefaultWorkflowRunManagerTest {
                                 .inputs(Map.of())
                                 .correlationId("cor-id")
                                 .autoStart(true)
+                                .tenantId(tenantId)
                                 .build();
+
+                when(definitionRegistry.getDefinition(any(), any()))
+                                .thenReturn(Uni.createFrom().failure(new UnsupportedOperationException("not supported")));
 
                 assertThrows(UnsupportedOperationException.class,
                                 () -> runManager.createRun(request, tenantId).await().indefinitely());

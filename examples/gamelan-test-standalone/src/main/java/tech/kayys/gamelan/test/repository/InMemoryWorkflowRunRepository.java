@@ -14,6 +14,8 @@ import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.callback.CallbackRegistration;
 
+import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.node.NodeExecutionSnapshot;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,5 +104,15 @@ public class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
     @Override
     public Uni<Boolean> validateCallback(WorkflowRunId runId, String token) {
         return Uni.createFrom().item(callbacks.containsKey(token));
+    }
+
+    @Override
+    public Uni<Void> updateNodeExecution(WorkflowRunId runId, NodeId nodeId, NodeExecutionSnapshot snapshot) {
+        return Uni.createFrom().voidItem();
+    }
+
+    @Override
+    public Uni<Void> updateContextVariable(WorkflowRunId runId, String key, Object value) {
+        return Uni.createFrom().voidItem();
     }
 }

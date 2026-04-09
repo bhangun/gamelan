@@ -52,6 +52,10 @@
                 </exclusion>
                 <exclusion>
                     <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-reactive-pg-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-grpc</artifactId>
                 </exclusion>
             </exclusions>
@@ -113,10 +117,6 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-reactive-pg-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-flyway</artifactId>
         </dependency>
         <dependency>
@@ -139,7 +139,15 @@
         <!-- Test Dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5</artifactId>
+            <artifactId>quarkus-junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Needed at test augmentation time: gamelan-engine includes Postgres repos
+             that implement PanacheRepositoryBase; they are @Vetoed via @IfBuildProperty
+             but the class must be loadable. Excluded from runtime via exclusions above. -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-reactive-panache</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -5,6 +5,7 @@ import java.util.Set;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import tech.kayys.gamelan.engine.context.RequestContext;
 import tech.kayys.gamelan.engine.context.SecurityContext;
 
 @ApplicationScoped
@@ -13,86 +14,44 @@ public class DefaultSecurityContext implements SecurityContext {
     @Inject
     jakarta.enterprise.inject.Instance<JsonWebToken> jwtInstance;
 
-    private JsonWebToken getJwt() {
-        if (jwtInstance.isResolvable()) {
-            return jwtInstance.get();
-        }
-        return new JsonWebToken() {
-            @Override
-            public String getName() {
-                return "anonymous";
-            }
+    @Inject
+    RequestContext requestContext;
 
-            @Override
-            public Set<String> getClaimNames() {
-                return Set.of();
-            }
-
-            @Override
-            public <T> T getClaim(String claimName) {
-                return null;
-            }
-
-            @Override
-            public Set<String> getGroups() {
-                return Set.of();
-            }
-
-            @Override
-            public long getExpirationTime() {
-                return 0;
-            }
-
-            @Override
-            public long getIssuedAtTime() {
-                return 0;
-            }
-
-            @Override
-            public String getRawToken() {
-                return null;
-            }
-
-            @Override
-            public String getIssuer() {
-                return null;
-            }
-
-            @Override
-            public Set<String> getAudience() {
-                return Set.of();
-            }
-
-            @Override
-            public String getSubject() {
-                return "anonymous";
-            }
-
-            @Override
-            public String getTokenID() {
-                return null;
-            }
-        };
+    private JsonWebToken jwt() {
+        return jwtInstance.isResolvable() ? jwtInstance.get() : null;
     }
 
     @Override
     public String subject() {
-        return getJwt().getSubject();
+        // Prefer RequestContext (already resolved by filter), fall back to JWT
+        return requestContext.getUserId()
+                .orElseGet(() -> {
+                    JsonWebToken jwt = jwt();
+                    return jwt != null ? jwt.getSubject() : "anonymous";
+                });
     }
 
     @Override
     public String tenantId() {
-        return getJwt().getClaim("tenant_id");
+        return requestContext.getTenantId()
+                .map(t -> t.value())
+                .orElseGet(() -> {
+                    JsonWebToken jwt = jwt();
+                    return jwt != null ? jwt.getClaim("tenant_id") : null;
+                });
     }
 
     @Override
     public Set<String> roles() {
-        return getJwt().getGroups();
+        JsonWebToken jwt = jwt();
+        return jwt != null ? jwt.getGroups() : Set.of();
     }
 
     @Override
     public Set<String> scopes() {
-        String scope = getJwt().getClaim("scope");
+        JsonWebToken jwt = jwt();
+        if (jwt == null) return Set.of();
+        String scope = jwt.getClaim("scope");
         return scope == null ? Set.of() : Set.of(scope.split(" "));
     }
 
@@ -108,7 +67,8 @@ public class DefaultSecurityContext implements SecurityContext {
 
     @Override
     public boolean isServiceAccount() {
-        return getJwt().getClaim("client_id") != null;
+        JsonWebToken jwt = jwt();
+        return jwt != null && jwt.getClaim("client_id") != null;
     }
 
     @Override

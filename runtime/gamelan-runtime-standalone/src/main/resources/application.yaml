@@ -68,18 +68,11 @@ quarkus:
     password: ""
     jdbc:
       enabled: true
-
-    # Reactive datasource (in-memory for standalone)
-    reactive:
-      url: vertx-reactive:h2:file:./data/gamelan;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-      max-size: 10
-      idle-timeout: PT5M
-
-    # JDBC datasource (for optional migrations)
-    jdbc:
-      url: jdbc:h2:file:./data/gamelan;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
       max-size: 8
       min-size: 1
+    reactive:
+      max-size: 10
+      idle-timeout: PT5M
       
   # Hibernate Configuration
   hibernate-orm:
@@ -439,17 +432,30 @@ gamelan:
 # Test profile  
 "%test":
   quarkus:
+    devservices:
+      enabled: true
     kafka:
       devservices:
         enabled: false
     datasource:
       db-kind: postgresql
+      username: quarkus
+      password: quarkus
       devservices:
         enabled: true
+        username: quarkus
+        password: quarkus
+        db-name: quarkus
     hibernate-orm:
-      database.generation: drop-and-create
-      
-# Production profile
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      database:
+        generation: drop-and-create
+      mapping:
+        format:
+          global: ignore
+    hibernate-reactive:
+      schema-management:
+        strategy: none
 "%prod":
   quarkus:
     log:
@@ -460,6 +466,11 @@ gamelan:
     http:
       limits:
         max-connections: 1000
+    datasource:
+      jdbc:
+        url: "${JDBC_URL:jdbc:h2:file:./data/gamelan;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}"
+      reactive:
+        url: "${REACTIVE_URL:vertx-reactive:h2:file:./data/gamelan;MODE=PostgreSQL;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}"
         
   gamelan:
     engine:

@@ -10,7 +10,6 @@ import io.quarkus.redis.datasource.ReactiveRedisDataSource;
 import io.quarkus.redis.datasource.sortedset.ScoreRange;
 import io.quarkus.redis.datasource.sortedset.ZRangeArgs;
 import io.quarkus.scheduler.Scheduled;
-import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,7 +20,8 @@ import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.scheduler.RetryManager;
 
 @ApplicationScoped
-@IfBuildProperty(name = "gamelan.scheduler.mode", stringValue = "redis")
+@jakarta.enterprise.inject.Alternative
+@jakarta.annotation.Priority(1)
 public class RedisRetryManager implements RetryManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(RedisRetryManager.class);

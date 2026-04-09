@@ -11,36 +11,31 @@ import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.ext.Provider;
+import tech.kayys.gamelan.engine.context.RequestContext;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 
-/**
- * Filter to extract tenant from X-Tenant-ID header if not already set by JWT
- */
 @Provider
 @Priority(Priorities.AUTHENTICATION + 2)
 public class TenantHeaderFilter implements ContainerRequestFilter {
 
     private static final Logger LOG = LoggerFactory.getLogger(TenantHeaderFilter.class);
     private static final String TENANT_HEADER = "X-Tenant-ID";
+    private static final String REQUEST_ID_HEADER = "X-Request-ID";
 
     @Inject
-    TenantSecurityContext tenantSecurityContext;
+    RequestContext requestContext;
 
     @Override
-    public void filter(ContainerRequestContext requestContext) throws IOException {
-        String tenantIdStr = requestContext.getHeaderString(TENANT_HEADER);
+    public void filter(ContainerRequestContext ctx) throws IOException {
+        String requestId = ctx.getHeaderString(REQUEST_ID_HEADER);
+        if (requestId != null && !requestId.isBlank()) {
+            requestContext.setRequestId(requestId);
+        }
 
-        if (tenantIdStr != null && !tenantIdStr.isEmpty()) {
-            try {
-                // If already set by JWT, this will just overwrite with same value or header
-                // value
-                // Header takes precedence for testing/internal purposes if allowed by policy
-                TenantId tenantId = new TenantId(tenantIdStr);
-                tenantSecurityContext.setCurrentTenant(tenantId);
-                LOG.debug("Set tenant {} from header {}", tenantId.value(), TENANT_HEADER);
-            } catch (Exception e) {
-                LOG.warn("Failed to set tenant from header: {}", e.getMessage());
-            }
+        String tenantIdStr = ctx.getHeaderString(TENANT_HEADER);
+        if (tenantIdStr != null && !tenantIdStr.isBlank()) {
+            requestContext.setTenantId(new TenantId(tenantIdStr));
+            LOG.debug("Tenant {} set from header", tenantIdStr);
         }
     }
 }

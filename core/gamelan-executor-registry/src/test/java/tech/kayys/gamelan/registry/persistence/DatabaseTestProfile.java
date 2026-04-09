@@ -1,18 +1,17 @@
 package tech.kayys.gamelan.registry.persistence;
 
-import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
 
+import io.quarkus.test.junit.QuarkusTestProfile;
+
+/**
+ * Test profile that activates the database persistence type at build time,
+ * so @IfBuildProperty on DatabaseExecutorRepository is satisfied.
+ */
 public class DatabaseTestProfile implements QuarkusTestProfile {
+
     @Override
     public Map<String, String> getConfigOverrides() {
-        return Map.of(
-            "quarkus.datasource.db-kind", "postgresql",
-            "quarkus.datasource.username", "sa",
-            "quarkus.datasource.password", "",
-            "quarkus.datasource.reactive.url", "postgresql://localhost:5432/testdb",
-            "quarkus.hibernate-orm.schema-management.strategy", "drop-and-create",
-            "quarkus.flyway.migrate-at-start", "false"
-        );
+        return Map.of("gamelan.registry.persistence.type", "database");
     }
 }

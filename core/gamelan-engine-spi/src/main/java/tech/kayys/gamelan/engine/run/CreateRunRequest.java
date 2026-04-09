@@ -14,6 +14,9 @@ public class CreateRunRequest {
     private String correlationId;
     private boolean autoStart = true;
 
+    // Resolved at the API boundary (REST/gRPC layer) — not set by callers directly
+    private tech.kayys.gamelan.engine.tenant.TenantId tenantId;
+
     public CreateRunRequest() {
     }
 
@@ -24,6 +27,14 @@ public class CreateRunRequest {
         this.inputs = inputs;
         this.correlationId = correlationId;
         this.autoStart = autoStart;
+    }
+
+    public tech.kayys.gamelan.engine.tenant.TenantId getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(tech.kayys.gamelan.engine.tenant.TenantId tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getWorkflowId() {
@@ -76,6 +87,7 @@ public class CreateRunRequest {
         private Map<String, Object> inputs;
         private String correlationId;
         private boolean autoStart = true;
+        private tech.kayys.gamelan.engine.tenant.TenantId tenantId;
 
         public Builder workflowId(String workflowId) {
             this.workflowId = workflowId;
@@ -102,8 +114,15 @@ public class CreateRunRequest {
             return this;
         }
 
+        public Builder tenantId(tech.kayys.gamelan.engine.tenant.TenantId tenantId) {
+            this.tenantId = tenantId;
+            return this;
+        }
+
         public CreateRunRequest build() {
-            return new CreateRunRequest(workflowId, workflowVersion, inputs, correlationId, autoStart);
+            CreateRunRequest r = new CreateRunRequest(workflowId, workflowVersion, inputs, correlationId, autoStart);
+            r.setTenantId(tenantId);
+            return r;
         }
     }
 

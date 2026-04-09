@@ -60,6 +60,16 @@ public class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
     }
 
     @Override
+    public Uni<Void> updateContextVariable(WorkflowRunId runId, String key, Object value) {
+        return Uni.createFrom().voidItem();
+    }
+
+    @Override
+    public Uni<Void> updateNodeExecution(WorkflowRunId runId, tech.kayys.gamelan.engine.node.NodeId nodeId, tech.kayys.gamelan.engine.node.NodeExecutionSnapshot snapshot) {
+        return Uni.createFrom().voidItem();
+    }
+
+    @Override
     public Uni<WorkflowRunSnapshot> snapshot(WorkflowRunId runId, TenantId tenantId) {
         return Uni.createFrom().nullItem();
     }

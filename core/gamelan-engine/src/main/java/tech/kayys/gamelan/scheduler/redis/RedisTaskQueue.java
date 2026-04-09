@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
 import io.quarkus.redis.datasource.stream.XGroupCreateArgs;
 import io.quarkus.redis.datasource.stream.XReadGroupArgs;
-import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.PostConstruct;
@@ -23,7 +22,8 @@ import tech.kayys.gamelan.scheduler.TaskQueue;
  * High-performance Task Queue using Redis Streams
  */
 @ApplicationScoped
-@IfBuildProperty(name = "gamelan.scheduler.mode", stringValue = "redis")
+@jakarta.enterprise.inject.Alternative
+@jakarta.annotation.Priority(1)
 public class RedisTaskQueue implements TaskQueue {
 
     private static final Logger LOG = LoggerFactory.getLogger(RedisTaskQueue.class);
@@ -67,7 +67,11 @@ public class RedisTaskQueue implements TaskQueue {
             )
             .whilst(tasks -> true)
             .onItem().disjoint()
-            .map(message -> new QueuedTask(message.id(), message.payload().get("payload")));
+            .map(m -> {
+                @SuppressWarnings("unchecked")
+                var message = (io.quarkus.redis.datasource.stream.StreamMessage<String, String, NodeExecutionTask>) m;
+                return new QueuedTask(message.id(), message.payload().get("payload"));
+            });
     }
 
     @Override

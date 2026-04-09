@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.quarkus.scheduler.Scheduled;
-import io.quarkus.arc.properties.IfBuildProperty;
+import io.quarkus.arc.DefaultBean;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,7 +19,7 @@ import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 @ApplicationScoped
-@IfBuildProperty(name = "gamelan.scheduler.mode", stringValue = "local", stringValueIfMissing = "local")
+@DefaultBean
 public class InMemoryRetryManager implements RetryManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryRetryManager.class);

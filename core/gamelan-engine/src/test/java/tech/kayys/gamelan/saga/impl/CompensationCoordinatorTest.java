@@ -101,78 +101,54 @@ class CompensationCoordinatorTest {
 
         @Test
         void compensate_withSequentialStrategy_compensatesInReverseOrder() {
-                // Given: Sequential compensation policy
-                CompensationPolicy policy = new CompensationPolicy(
-                                true,
-                                CompensationStrategy.SEQUENTIAL,
-                                Duration.ofMinutes(5),
-                                true,
-                                3);
-
+                CompensationPolicy policy = new CompensationPolicy(true, CompensationStrategy.SEQUENTIAL,
+                                Duration.ofMinutes(5), true, 3);
+                NodeDefinition nodeDef = createNodeDefinition();
                 WorkflowDefinition defWithPolicy = mock(WorkflowDefinition.class);
                 when(defWithPolicy.compensationPolicy()).thenReturn(policy);
-                when(defWithPolicy.findNode(any())).thenReturn(Optional.of(createNodeDefinition()));
-
+                when(defWithPolicy.findNode(any())).thenReturn(Optional.of(nodeDef));
                 when(definitionRegistry.getDefinition(any(), any()))
                                 .thenReturn(io.smallrye.mutiny.Uni.createFrom().item(defWithPolicy));
 
-                // When
                 CompensationResult result = coordinator.compensate(failedRun)
                                 .await().atMost(Duration.ofSeconds(5));
 
-                // Then
                 assertTrue(result.success());
                 assertEquals("Sequential compensation completed", result.message());
         }
 
         @Test
         void compensate_withParallelStrategy_compensatesAllAtOnce() {
-                // Given: Parallel compensation policy
-                CompensationPolicy policy = new CompensationPolicy(
-                                true,
-                                CompensationStrategy.PARALLEL,
-                                Duration.ofMinutes(5),
-                                false,
-                                3);
-
+                CompensationPolicy policy = new CompensationPolicy(true, CompensationStrategy.PARALLEL,
+                                Duration.ofMinutes(5), false, 3);
+                NodeDefinition nodeDef = createNodeDefinition();
                 WorkflowDefinition defWithPolicy = mock(WorkflowDefinition.class);
                 when(defWithPolicy.compensationPolicy()).thenReturn(policy);
-                when(defWithPolicy.findNode(any())).thenReturn(Optional.of(createNodeDefinition()));
-
+                when(defWithPolicy.findNode(any())).thenReturn(Optional.of(nodeDef));
                 when(definitionRegistry.getDefinition(any(), any()))
                                 .thenReturn(io.smallrye.mutiny.Uni.createFrom().item(defWithPolicy));
 
-                // When
                 CompensationResult result = coordinator.compensate(failedRun)
                                 .await().atMost(Duration.ofSeconds(5));
 
-                // Then
                 assertTrue(result.success());
                 assertEquals("Parallel compensation completed", result.message());
         }
 
         @Test
         void compensate_withCustomStrategy_fallsBackToSequential() {
-                // Given: Custom compensation policy
-                CompensationPolicy policy = new CompensationPolicy(
-                                true,
-                                CompensationStrategy.CUSTOM,
-                                Duration.ofMinutes(10),
-                                true,
-                                3);
-
+                CompensationPolicy policy = new CompensationPolicy(true, CompensationStrategy.CUSTOM,
+                                Duration.ofMinutes(10), true, 3);
+                NodeDefinition nodeDef = createNodeDefinition();
                 WorkflowDefinition defWithPolicy = mock(WorkflowDefinition.class);
                 when(defWithPolicy.compensationPolicy()).thenReturn(policy);
-                when(defWithPolicy.findNode(any())).thenReturn(Optional.of(createNodeDefinition()));
-
+                when(defWithPolicy.findNode(any())).thenReturn(Optional.of(nodeDef));
                 when(definitionRegistry.getDefinition(any(), any()))
                                 .thenReturn(io.smallrye.mutiny.Uni.createFrom().item(defWithPolicy));
 
-                // When
                 CompensationResult result = coordinator.compensate(failedRun)
                                 .await().atMost(Duration.ofSeconds(5));
 
-                // Then
                 assertTrue(result.success());
                 assertEquals("Sequential compensation completed", result.message());
         }

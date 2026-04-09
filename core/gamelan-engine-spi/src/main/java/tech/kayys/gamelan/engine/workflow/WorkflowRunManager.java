@@ -31,7 +31,19 @@ public interface WorkflowRunManager {
 
         // ==================== LIFECYCLE OPERATIONS ====================
 
-        Uni<WorkflowRun> createRun(CreateRunRequest request, TenantId tenantId);
+        /**
+         * Primary entry point — tenantId is embedded in the request (set at API boundary).
+         */
+        Uni<WorkflowRun> createRun(CreateRunRequest request);
+
+        /**
+         * @deprecated Prefer {@link #createRun(CreateRunRequest)} with tenantId embedded in request.
+         */
+        @Deprecated
+        default Uni<WorkflowRun> createRun(CreateRunRequest request, TenantId tenantId) {
+                request.setTenantId(tenantId);
+                return createRun(request);
+        }
 
         Uni<WorkflowRun> startRun(WorkflowRunId runId, TenantId tenantId);
 

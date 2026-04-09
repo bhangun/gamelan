@@ -36,6 +36,7 @@ import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
 import tech.kayys.gamelan.engine.repository.WorkflowRunRepository;
 
 @ApplicationScoped
+@jakarta.enterprise.inject.Alternative
 @io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
 public class PostgresWorkflowRunRepository implements WorkflowRunRepository,
                 PanacheRepositoryBase<WorkflowRunEntity, String> {

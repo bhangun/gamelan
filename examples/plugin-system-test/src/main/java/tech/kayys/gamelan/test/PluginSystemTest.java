@@ -4,8 +4,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import tech.kayys.gamelan.plugin.Plugin;
-import tech.kayys.gamelan.plugin.PluginService;
+import tech.kayys.gamelan.engine.plugin.GamelanPlugin;
+import tech.kayys.gamelan.engine.plugin.PluginService;
 import tech.kayys.gamelan.plugin.impl.DefaultPluginService;
 
 /**
@@ -43,7 +43,7 @@ public class PluginSystemTest {
                 System.exit(1);
             }
 
-            Plugin plugin = pluginService.loadPlugin(pluginJar).await().indefinitely();
+            GamelanPlugin plugin = pluginService.loadPlugin(pluginJar).await().indefinitely();
             System.out.println("✓ Plugin loaded: " + plugin.getMetadata().name());
             System.out.println("  - ID: " + plugin.getMetadata().id());
             System.out.println("  - Version: " + plugin.getMetadata().version());
@@ -63,7 +63,7 @@ public class PluginSystemTest {
             System.out.println("Test 3: Query Plugins by Type");
             System.out.println("-".repeat(80));
 
-            List<Plugin> allPlugins = pluginService.getAllPlugins();
+            List<GamelanPlugin> allPlugins = pluginService.getAllPlugins();
             System.out.println("✓ Total plugins loaded: " + allPlugins.size());
 
             allPlugins.forEach(p -> {
@@ -75,7 +75,7 @@ public class PluginSystemTest {
             System.out.println("Test 4: Hot Reload Plugin");
             System.out.println("-".repeat(80));
 
-            Plugin reloadedPlugin = pluginService.reloadPlugin(
+            GamelanPlugin reloadedPlugin = pluginService.reloadPlugin(
                     plugin.getMetadata().id(),
                     pluginJar).await().indefinitely();
             System.out.println("✓ Plugin hot-reloaded successfully");

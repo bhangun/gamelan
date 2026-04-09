@@ -41,7 +41,14 @@ public class WorkflowServiceImpl implements WorkflowService {
         GrpcMapper mapper;
 
         @Inject
-        GrpcTenantInterceptor tenantInterceptor;
+        tech.kayys.gamelan.engine.context.RequestContext requestContext;
+
+        @Inject
+        tech.kayys.gamelan.engine.config.GamelanConfig config;
+
+        private TenantId tenant() {
+                return requestContext.getTenantId().orElseGet(config::getDefaultTenant);
+        }
 
         // ==================== CREATE RUN ====================
 
@@ -49,7 +56,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<RunResponse> createRun(CreateRunRequest request) {
                 LOG.info("gRPC: Creating workflow run for definition: {}", request.getWorkflowDefinitionId());
 
-                TenantId tenantId = tenantInterceptor.getCurrentTenantId();
+                TenantId tenantId = tenant();
 
                 tech.kayys.gamelan.engine.run.CreateRunRequest domainRequest = new tech.kayys.gamelan.engine.run.CreateRunRequest(
                                 request.getWorkflowDefinitionId(),
@@ -69,7 +76,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<RunResponse> getRun(GetRunRequest request) {
                 LOG.debug("gRPC: Getting workflow run: {}", request.getRunId());
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
 
                 return runManager.getRun(runId, tenantId)
@@ -83,7 +90,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<RunResponse> startRun(StartRunRequest request) {
                 LOG.info("gRPC: Starting workflow run: {}", request.getRunId());
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
 
                 return runManager.startRun(runId, tenantId)
@@ -97,7 +104,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<RunResponse> suspendRun(SuspendRunRequest request) {
                 LOG.info("gRPC: Suspending workflow run: {}", request.getRunId());
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
                 NodeId nodeId = !request.getWaitingOnNodeId().isEmpty() ? NodeId.of(request.getWaitingOnNodeId())
                                 : null;
@@ -113,7 +120,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<RunResponse> resumeRun(ResumeRunRequest request) {
                 LOG.info("gRPC: Resuming workflow run: {}", request.getRunId());
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
                 Map<String, Object> resumeData = mapper.structToMap(request.getResumeData());
                 String humanTaskId = request.getHumanTaskId();
@@ -129,7 +136,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<Empty> cancelRun(CancelRunRequest request) {
                 LOG.info("gRPC: Cancelling workflow run: {}", request.getRunId());
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
 
                 return runManager.cancelRun(runId, tenantId, request.getReason())
@@ -162,7 +169,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         public Uni<ExecutionHistoryResponse> getExecutionHistory(GetExecutionHistoryRequest request) {
                 LOG.debug("gRPC: Getting execution history for run: {}", request.getRunId());
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
 
                 return runManager.getExecutionHistory(runId, tenantId)
@@ -174,9 +181,9 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         @Override
         public Uni<QueryRunsResponse> queryRuns(QueryRunsRequest request) {
-                LOG.debug("gRPC: Querying runs for tenant: {}", request.getTenantId());
+                LOG.debug("gRPC: Querying runs");
 
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
                 WorkflowDefinitionId definitionId = !request.getWorkflowDefinitionId().isEmpty()
                                 ? WorkflowDefinitionId.of(request.getWorkflowDefinitionId())
                                 : null;
@@ -208,7 +215,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         @Override
         public Uni<CountResponse> getActiveRunsCount(GetActiveRunsCountRequest request) {
-                TenantId tenantId = TenantId.of(request.getTenantId());
+                TenantId tenantId = tenant();
 
                 return runManager.getActiveRunsCount(tenantId)
                                 .map(count -> CountResponse.newBuilder()

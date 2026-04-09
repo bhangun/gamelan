@@ -14,13 +14,14 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import tech.kayys.gamelan.engine.config.GamelanConfig;
+import tech.kayys.gamelan.engine.context.RequestContext;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
 import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
 import tech.kayys.gamelan.engine.workflow.dto.UpdateWorkflowDefinitionRequest;
-import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
-import tech.kayys.gamelan.security.TenantSecurityContext;
 
 @Path("/api/v1/workflow-definitions")
 @Produces(MediaType.APPLICATION_JSON)
@@ -31,38 +32,40 @@ public class WorkflowDefinitionResource {
     WorkflowDefinitionService service;
 
     @Inject
-    TenantSecurityContext securityContext;
+    RequestContext requestContext;
+
+    @Inject
+    GamelanConfig config;
+
+    private TenantId tenant() {
+        return requestContext.getTenantId().orElseGet(config::getDefaultTenant);
+    }
 
     @POST
     public Uni<WorkflowDefinition> create(CreateWorkflowDefinitionRequest request) {
-        TenantId tenantId = securityContext.getCurrentTenant();
-        return service.create(request, tenantId);
+        return service.create(request, tenant());
     }
 
     @GET
     @Path("/{id}")
     public Uni<WorkflowDefinition> get(@PathParam("id") String id) {
-        TenantId tenantId = securityContext.getCurrentTenant();
-        return service.get(new WorkflowDefinitionId(id), tenantId);
+        return service.get(new WorkflowDefinitionId(id), tenant());
     }
 
     @GET
     public Uni<List<WorkflowDefinition>> list(@QueryParam("activeOnly") boolean activeOnly) {
-        TenantId tenantId = securityContext.getCurrentTenant();
-        return service.list(tenantId, activeOnly);
+        return service.list(tenant(), activeOnly);
     }
 
     @PUT
     @Path("/{id}")
     public Uni<WorkflowDefinition> update(@PathParam("id") String id, UpdateWorkflowDefinitionRequest request) {
-        TenantId tenantId = securityContext.getCurrentTenant();
-        return service.update(new WorkflowDefinitionId(id), request, tenantId);
+        return service.update(new WorkflowDefinitionId(id), request, tenant());
     }
 
     @DELETE
     @Path("/{id}")
     public Uni<Void> delete(@PathParam("id") String id) {
-        TenantId tenantId = securityContext.getCurrentTenant();
-        return service.delete(new WorkflowDefinitionId(id), tenantId);
+        return service.delete(new WorkflowDefinitionId(id), tenant());
     }
 }

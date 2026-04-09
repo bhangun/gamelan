@@ -16,10 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @DefaultBean
 public class InMemoryWorkflowDefinitionRepository implements WorkflowDefinitionRepository {
 
-    private final Map<String, WorkflowDefinition> definitions = new ConcurrentHashMap<>();
+    private record DefinitionKey(String tenantId, String definitionId) {}
 
-    private String key(WorkflowDefinitionId id, TenantId tenantId) {
-        return tenantId.value() + ":" + id.value();
+    private final Map<DefinitionKey, WorkflowDefinition> definitions = new ConcurrentHashMap<>();
+
+    private DefinitionKey key(WorkflowDefinitionId id, TenantId tenantId) {
+        return new DefinitionKey(tenantId.value(), id.value());
     }
 
     @Override

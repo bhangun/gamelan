@@ -229,6 +229,7 @@ public class PluginResource {
 
     @POST
     @Path("/refresh")
+    @Consumes(MediaType.WILDCARD)
     public Uni<Response> refreshPlugins() {
         return pluginManager.discoverAndLoadPlugins()
                 .map(plugins -> Response.ok()

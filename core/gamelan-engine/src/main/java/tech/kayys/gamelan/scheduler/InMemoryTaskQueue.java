@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.quarkus.arc.properties.IfBuildProperty;
+import io.quarkus.arc.DefaultBean;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.operators.multi.processors.UnicastProcessor;
@@ -14,10 +14,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 
 /**
- * In-memory Task Queue for standalone/local mode
+ * In-memory Task Queue for standalone/local mode.
+ * Active by default; replaced by RedisTaskQueue in distributed deployments.
  */
 @ApplicationScoped
-@IfBuildProperty(name = "gamelan.scheduler.mode", stringValue = "local", stringValueIfMissing = "local")
+@DefaultBean
 public class InMemoryTaskQueue implements TaskQueue {
 
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryTaskQueue.class);
