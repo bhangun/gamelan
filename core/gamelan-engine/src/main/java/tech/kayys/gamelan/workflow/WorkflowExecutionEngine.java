@@ -71,7 +71,8 @@ public class WorkflowExecutionEngine {
 
             // Check if workflow is stuck
             boolean isStuck = readyNodes.isEmpty() && !isComplete &&
-                    run.getStatus() == RunStatus.RUNNING;
+                    run.getStatus() == RunStatus.RUNNING &&
+                    !hasActiveNodeExecutions(run);
 
             return new ExecutionPlan(
                     readyNodes,
@@ -149,6 +150,14 @@ public class WorkflowExecutionEngine {
         }
 
         return true;
+    }
+
+    private boolean hasActiveNodeExecutions(WorkflowRun run) {
+        return run.getAllNodeExecutions().values().stream()
+                .map(NodeExecution::getStatus)
+                .anyMatch(status -> status == NodeExecutionStatus.RUNNING ||
+                        status == NodeExecutionStatus.EXECUTING ||
+                        status == NodeExecutionStatus.WAITING);
     }
 
     /**

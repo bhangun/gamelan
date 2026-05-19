@@ -6,11 +6,24 @@
 
     <groupId>tech.kayys.gamelan</groupId>
     <artifactId>gamelan-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>pom</packaging>
 
     <name>Gamelan Workflow Engine</name>
     <description>Enterprise-grade workflow engine for agentic AI and business automation</description>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/bhangun/gamelan</url>
+        </repository>
+        <snapshotRepository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/bhangun/gamelan</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
@@ -31,18 +44,86 @@
     <modules>
         <module>core</module>
         <module>sdk</module>
-        <module>protocol/gamelan-protocol-grpc</module>
-        <module>protocol/gamelan-protocol-kafka</module>
-        <module>runtime/gamelan-runtime-distributed</module>
-        <module>runtime/gamelan-runtime-standalone</module>
-        <module>plugins</module>
-        <module>extensions/gamelan-dag</module>
-        <module>examples/gamelan-test-client</module>
-        <module>examples/gamelan-test-executor</module>
-        <module>examples/gamelan-test-standalone</module>
-        <module>examples/gamelan-plugin-example</module>
-        <module>examples/plugin-system-test</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>core</id>
+        </profile>
+
+        <profile>
+            <id>all</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>protocol/gamelan-protocol-grpc</module>
+                <module>protocol/gamelan-protocol-kafka</module>
+                <module>runtime/gamelan-runtime-distributed</module>
+                <module>runtime/gamelan-runtime-standalone</module>
+                <module>plugins</module>
+                <module>extensions/gamelan-dag</module>
+                <module>examples/gamelan-test-client</module>
+                <module>examples/gamelan-test-executor</module>
+                <module>examples/gamelan-test-standalone</module>
+                <module>examples/gamelan-plugin-example</module>
+                <module>examples/plugin-system-test</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>protocols</id>
+            <modules>
+                <module>protocol/gamelan-protocol-grpc</module>
+                <module>protocol/gamelan-protocol-kafka</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>runtimes</id>
+            <modules>
+                <module>runtime/gamelan-runtime-distributed</module>
+                <module>runtime/gamelan-runtime-standalone</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>plugins</id>
+            <modules>
+                <module>plugins</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>extensions</id>
+            <modules>
+                <module>extensions/gamelan-dag</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>server</id>
+        </profile>
+
+        <profile>
+            <id>executor</id>
+        </profile>
+
+        <profile>
+            <id>client</id>
+        </profile>
+
+        <profile>
+            <id>examples</id>
+            <modules>
+                <module>examples/gamelan-test-client</module>
+                <module>examples/gamelan-test-executor</module>
+                <module>examples/gamelan-test-standalone</module>
+                <module>examples/gamelan-plugin-example</module>
+                <module>examples/plugin-system-test</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <dependencyManagement>
         <dependencies>

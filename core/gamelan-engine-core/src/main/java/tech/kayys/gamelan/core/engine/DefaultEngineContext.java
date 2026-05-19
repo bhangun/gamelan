@@ -8,6 +8,7 @@ import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import jakarta.annotation.PostConstruct;
@@ -24,6 +25,8 @@ import tech.kayys.gamelan.engine.event.EventBus;
 import tech.kayys.gamelan.engine.event.EventPublisher;
 import tech.kayys.gamelan.engine.executor.ExecutorClientFactory;
 import tech.kayys.gamelan.engine.executor.ExecutorDispatcher;
+import tech.kayys.gamelan.engine.extension.ExtensionRegistry;
+import tech.kayys.gamelan.engine.node.NodeTypeHandler;
 import tech.kayys.gamelan.engine.persistence.PersistenceProvider;
 import tech.kayys.gamelan.engine.plugin.PluginRegistry;
 import tech.kayys.gamelan.engine.plugin.PluginRegistry.LoadedPlugin;
@@ -48,6 +51,10 @@ public class DefaultEngineContext implements EngineContext {
     @Inject
     Configuration configuration;
     @Inject
+    ExtensionRegistry extensionRegistry;
+    @Inject
+    Instance<NodeTypeHandler> nodeTypeHandlers;
+    @Inject
     ExecutorClientFactory clientFactory;
     @Inject
     PluginConfig pluginConfig;
@@ -61,7 +68,18 @@ public class DefaultEngineContext implements EngineContext {
 
     void onStart(@Observes Startup event) {
         LOG.info("Gamelan Engine starting up...");
+        registerBuiltInNodeTypes();
         loadPlugins();
+    }
+
+    private void registerBuiltInNodeTypes() {
+        if (nodeTypeHandlers == null || nodeTypeHandlers.isUnsatisfied()) {
+            return;
+        }
+        for (NodeTypeHandler handler : nodeTypeHandlers) {
+            extensionRegistry.registerNodeType(handler);
+            LOG.info("Registered node type handler: {}", handler.nodeType());
+        }
     }
 
     private void loadPlugins() {

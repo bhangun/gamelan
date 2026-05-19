@@ -2,6 +2,7 @@ package tech.kayys.gamelan.core.execution;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -15,10 +16,14 @@ import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.helpers.test.UniAssertSubscriber;
 import tech.kayys.gamelan.engine.context.EngineContext;
 import tech.kayys.gamelan.engine.executor.ExecutorDispatcher;
+import tech.kayys.gamelan.engine.extension.ExtensionRegistry;
 import tech.kayys.gamelan.engine.node.NodeContext;
 import tech.kayys.gamelan.engine.node.NodeExecutionContext;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.node.NodeResult;
+import tech.kayys.gamelan.engine.node.NodeTypeHandler;
+import tech.kayys.gamelan.engine.signal.SignalHandler;
+import tech.kayys.gamelan.engine.workflow.WorkflowInterceptor;
 import tech.kayys.gamelan.engine.plugin.PluginRegistry;
 import tech.kayys.gamelan.engine.plugin.PluginRegistry.LoadedPlugin;
 import tech.kayys.gamelan.plugin.interceptor.ExecutionInterceptorPlugin;
@@ -95,6 +100,36 @@ public class DefaultWorkflowEngineTest {
         Assertions.assertEquals(expected, executionOrder);
     }
 
+    @Test
+    void executeNode_prefersRegisteredNodeTypeHandlerOverExecutorDispatcher() {
+        NodeContext nodeContext = new NodeContext(NodeId.of("node-1"), "INLINE", Map.of(), Map.of());
+        NodeExecutionContext nodeExecutionContext = Mockito.mock(NodeExecutionContext.class);
+        NodeResult handled = NodeResult.success(Map.of("handled", true));
+
+        engine.extensionRegistry = new SingleHandlerRegistry(new NodeTypeHandler() {
+            @Override
+            public String nodeType() {
+                return "INLINE";
+            }
+
+            @Override
+            public NodeResult execute(NodeExecutionContext ctx) {
+                executionOrder.add("HANDLER");
+                return handled;
+            }
+        });
+        Mockito.when(pluginRegistry.getAllPlugins()).thenReturn(Map.of());
+
+        NodeResult result = engine.executeNode(nodeContext, nodeExecutionContext)
+                .subscribe().withSubscriber(UniAssertSubscriber.create())
+                .awaitItem(Duration.ofSeconds(5))
+                .getItem();
+
+        Assertions.assertEquals(handled, result);
+        Assertions.assertEquals(List.of("HANDLER"), executionOrder);
+        Mockito.verifyNoInteractions(executorDispatcher);
+    }
+
     // Mock Interceptor Class
     static class MockInterceptor implements ExecutionInterceptorPlugin {
         private final String name;
@@ -139,6 +174,41 @@ public class DefaultWorkflowEngineTest {
         @Override
         public tech.kayys.gamelan.engine.plugin.PluginMetadata getMetadata() {
             return null;
+        }
+    }
+
+    static class SingleHandlerRegistry implements ExtensionRegistry {
+        private final NodeTypeHandler handler;
+
+        SingleHandlerRegistry(NodeTypeHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public void registerInterceptor(WorkflowInterceptor interceptor) {
+        }
+
+        @Override
+        public void registerNodeType(NodeTypeHandler handler) {
+        }
+
+        @Override
+        public void registerSignalHandler(SignalHandler handler) {
+        }
+
+        @Override
+        public Collection<WorkflowInterceptor> interceptors() {
+            return List.of();
+        }
+
+        @Override
+        public NodeTypeHandler nodeType(String type) {
+            return handler.nodeType().equals(type) ? handler : null;
+        }
+
+        @Override
+        public Collection<SignalHandler> signalHandlers(String signalType) {
+            return List.of();
         }
     }
 }

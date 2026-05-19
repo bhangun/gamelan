@@ -106,8 +106,10 @@ public class WorkflowRun {
         this.definitionId = definition.id();
         this.definition = Objects.requireNonNull(definition, "WorkflowDefinition cannot be null");
 
+        Map<String, Object> normalizedInputs = validateAndNormalizeInputs(inputs);
+
         this.status = RunStatus.CREATED;
-        this.context = new ExecutionContext(id, tenantId, inputs);
+        this.context = new ExecutionContext(id, tenantId, normalizedInputs);
 
         this.nodeExecutions = new HashMap<>();
         this.executionPath = new ArrayList<>();
@@ -120,8 +122,6 @@ public class WorkflowRun {
         this.uncommittedEvents = new ArrayList<>();
         this.version = 0;
 
-        // Validate inputs against definition
-        validateInputs(inputs);
     }
 
     // ==================== FACTORY METHODS ====================
@@ -143,7 +143,7 @@ public class WorkflowRun {
                 runId,
                 definition.id(),
                 tenantId,
-                inputs,
+                new HashMap<>(run.context.getVariables()),
                 Instant.now()));
 
         return run;
@@ -278,11 +278,12 @@ public class WorkflowRun {
                             " but got " + attempt);
         }
 
-        execution.complete(output);
+        Map<String, Object> safeOutput = output != null ? output : Map.of();
+        execution.complete(safeOutput);
         executionPath.add(nodeId.value());
 
         // Store output in context
-        output.forEach((key, value) -> context.setVariable(nodeId.value() + "." + key, value));
+        safeOutput.forEach((key, value) -> context.setVariable(nodeId.value() + "." + key, value));
 
         updateTimestamp();
 
@@ -291,7 +292,7 @@ public class WorkflowRun {
                 id,
                 nodeId,
                 attempt,
-                output,
+                safeOutput,
                 Instant.now()));
 
         // Evaluate next steps
@@ -304,6 +305,13 @@ public class WorkflowRun {
     public void failNode(NodeId nodeId, int attempt, ErrorInfo error) {
         NodeExecution execution = getNodeExecution(nodeId);
 
+        if (execution.getAttempt() != attempt) {
+            throw new GamelanException(
+                    ErrorCode.TASK_VALIDATION_FAILED,
+                    "Attempt mismatch: expected " + execution.getAttempt() +
+                            " but got " + attempt);
+        }
+
         NodeDefinition nodeDef = definition.findNode(nodeId)
                 .orElseThrow(() -> new GamelanException(
                         ErrorCode.TASK_NOT_FOUND,
@@ -312,7 +320,7 @@ public class WorkflowRun {
         RetryPolicy retryPolicy = nodeDef.retryPolicy() != null ? nodeDef.retryPolicy()
                 : definition.defaultRetryPolicy();
 
-        boolean willRetry = retryPolicy.shouldRetry(attempt + 1);
+        boolean willRetry = retryPolicy.shouldRetry(attempt);
 
         if (willRetry) {
             execution.scheduleRetry(error);
@@ -442,7 +450,7 @@ public class WorkflowRun {
                 Instant.now()));
 
         // Check if compensation is needed
-        if (definition.compensationPolicy() != null) {
+        if (definition.isCompensationEnabled()) {
             initiateCompensation();
         }
     }
@@ -468,7 +476,7 @@ public class WorkflowRun {
                 Instant.now()));
 
         // Initiate compensation for already executed nodes
-        if (definition.compensationPolicy() != null) {
+        if (definition.isCompensationEnabled()) {
             initiateCompensation();
         }
     }
@@ -694,11 +702,13 @@ public class WorkflowRun {
 
     // ==================== VALIDATION ====================
 
-    private void validateInputs(Map<String, Object> inputs) {
+    private Map<String, Object> validateAndNormalizeInputs(Map<String, Object> inputs) {
+        Map<String, Object> normalizedInputs = new HashMap<>(inputs != null ? inputs : Map.of());
+
         definition.inputs().forEach((name, inputDef) -> {
-            if (inputDef.required() && !inputs.containsKey(name)) {
+            if (inputDef.required() && !normalizedInputs.containsKey(name)) {
                 if (inputDef.defaultValue() != null) {
-                    inputs.put(name, inputDef.defaultValue());
+                    normalizedInputs.put(name, inputDef.defaultValue());
                 } else {
                     throw new GamelanException(
                             ErrorCode.MISSING_REQUIRED_FIELD,
@@ -706,6 +716,8 @@ public class WorkflowRun {
                 }
             }
         });
+
+        return normalizedInputs;
     }
 
     private void validateTransition(RunStatus targetStatus) {

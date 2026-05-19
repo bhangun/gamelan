@@ -16,12 +16,40 @@
     </properties>
 
     <modules>
-
-        <module>gamelan-sdk-client-remote</module>
-        <module>gamelan-sdk-executor-local</module>
-        <module>gamelan-sdk-executor-remote</module>
         <module>gamelan-sdk-client-local</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>core</id>
+        </profile>
+
+        <profile>
+            <id>all</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>gamelan-sdk-client-remote</module>
+                <module>gamelan-sdk-executor-local</module>
+                <module>gamelan-sdk-executor-remote</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>client</id>
+            <modules>
+                <module>gamelan-sdk-client-remote</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>executor</id>
+            <modules>
+                <module>gamelan-sdk-executor-local</module>
+                <module>gamelan-sdk-executor-remote</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

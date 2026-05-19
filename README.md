@@ -68,6 +68,27 @@ GAMELAN WORKFLOW ENGINE - PROJECT STRUCTURE
   ./scripts/generate-error-codes.sh
   ```
 
+  Build Profiles
+  ==============
+
+  Gamelan can build either the full reactor or focused module sets:
+
+  ```bash
+  # Core engine and SDK only
+  mvn -Pcore test
+
+  # Core plus runtimes
+  mvn -Pcore,runtimes test
+
+  # Core plus server app
+  mvn -Pcore,server test
+
+  # Historical full build
+  mvn test
+  ```
+
+  See `docs/BUILD_PROFILES.md` for the profile matrix.
+
   Usage
   =====
 

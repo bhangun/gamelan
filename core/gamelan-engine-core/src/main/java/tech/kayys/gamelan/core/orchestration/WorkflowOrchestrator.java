@@ -3,6 +3,7 @@ package tech.kayys.gamelan.core.orchestration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -129,14 +130,17 @@ public class WorkflowOrchestrator {
                                                         pendingNodes.size(), runIdValue);
 
                                         // Get max parallel nodes from configuration (default: 10)
-                                        int maxParallelNodes = engineContext.configuration()
-                                                        .get("gamelan.orchestration.max-parallel-nodes", Integer.class)
-                                                        .orElse(10);
+                                        int maxParallelNodes = resolveMaxParallelNodes();
 
+                                        List<NodeId> nodesToExecute = pendingNodes;
                                         if (pendingNodes.size() > maxParallelNodes) {
                                                 LOG.info("Throttling {} pending nodes to max parallel limit of {}",
                                                                 pendingNodes.size(), maxParallelNodes);
+                                                nodesToExecute = pendingNodes.stream()
+                                                                .limit(maxParallelNodes)
+                                                                .toList();
                                         }
+                                        final List<NodeId> selectedNodes = nodesToExecute;
 
                                         // Execute pending nodes with bounded parallelism
                                         return definitionService.get(run.getDefinitionId(), run.getTenantId())
@@ -145,7 +149,7 @@ public class WorkflowOrchestrator {
                                                                 // transformToUniAndMerge default concurrency is 128,
                                                                 // but we want to control it via configuration
                                                                 return io.smallrye.mutiny.Multi.createFrom()
-                                                                                .iterable(pendingNodes)
+                                                                                .iterable(selectedNodes)
                                                                                 .map(nodeId -> new Object() {
                                                                                         final NodeDefinition def = definition
                                                                                                         .findNode(nodeId)
@@ -179,24 +183,29 @@ public class WorkflowOrchestrator {
                                 nodeId.value(), nodeDef.type(), run.getId().value());
 
                 // Atomic node start with idempotency check
-                return runManager.getRun(run.getId(), run.getTenantId())
-                                .chain(freshRun -> {
-                                        // Check if node is already started or completed (idempotency)
-                                        NodeExecution freshExec = freshRun.getNodeExecution(nodeId);
-                                        if (freshExec.getStatus() != NodeExecutionStatus.PENDING
-                                                        || freshExec.isCompleted()) {
-                                                LOG.debug("Node {} already started or completed (status: {}), skipping execution",
-                                                                nodeId.value(), freshExec.getStatus());
+                return runRepository.withLock(run.getId(), freshRun -> {
+                        NodeExecution freshExec = freshRun.getNodeExecution(nodeId);
+                        if (freshExec.getStatus() != NodeExecutionStatus.PENDING
+                                        || freshExec.isCompleted()) {
+                                LOG.debug("Node {} already started or completed (status: {}), skipping execution",
+                                                nodeId.value(), freshExec.getStatus());
+                                return Uni.createFrom().item(Optional.<WorkflowRun>empty());
+                        }
+
+                        // Persist RUNNING before dispatch so another orchestrator instance cannot pick this node again.
+                        freshRun.startNode(nodeId, freshExec.getAttempt());
+                        return runRepository.update(freshRun).map(Optional::of);
+                })
+                                .chain(startedRun -> {
+                                        if (startedRun.isEmpty()) {
                                                 return Uni.createFrom().voidItem();
                                         }
 
-                                        // Mark node as started atomically
-                                        freshRun.startNode(nodeId, nodeExec.getAttempt());
-                                        return Uni.createFrom().item(freshRun);
-                                })
-                                .chain(() -> {
+                                        WorkflowRun activeRun = startedRun.get();
+                                        NodeExecution activeExec = activeRun.getNodeExecution(nodeId);
+
                                         // Prepare node inputs from workflow context
-                                        Map<String, Object> nodeInputs = prepareNodeInputs(run, nodeDef);
+                                        Map<String, Object> nodeInputs = prepareNodeInputs(activeRun, nodeDef);
 
                                         // Create NodeContext
                                         NodeContext nodeContext = new NodeContext(
@@ -204,18 +213,20 @@ public class WorkflowOrchestrator {
                                                         nodeDef.type().name(),
                                                         nodeInputs,
                                                         Map.of(
-                                                                        "runId", run.getId().value(),
-                                                                        "attempt", nodeExec.getAttempt()));
+                                                                        "runId", activeRun.getId().value(),
+                                                                        "attempt", activeExec.getAttempt(),
+                                                                        "configuration", nodeDef.configuration()));
 
                                         // Create NodeExecutionContext
                                         DefaultNodeExecutionContext executionContext = new DefaultNodeExecutionContext(
                                                         engineContext,
-                                                        new WorkflowContextAdapter(run));
+                                                        new WorkflowContextAdapter(activeRun),
+                                                        nodeContext);
 
                                         // Execute via WorkflowEngine (applies interceptors)
                                         return workflowEngine.executeNode(nodeContext, executionContext)
-                                                        .chain(result -> handleNodeResult(run, nodeId,
-                                                                        nodeExec.getAttempt(), result,
+                                                        .chain(result -> handleNodeResult(activeRun, nodeId,
+                                                                        activeExec.getAttempt(), result,
                                                                         executionContext.getAddedVariables()));
                                 })
                                 .onFailure()
@@ -333,6 +344,17 @@ public class WorkflowOrchestrator {
                 java.io.StringWriter sw = new java.io.StringWriter();
                 error.printStackTrace(new java.io.PrintWriter(sw));
                 return sw.toString();
+        }
+
+        private int resolveMaxParallelNodes() {
+                if (engineContext == null || engineContext.configuration() == null) {
+                        return 10;
+                }
+
+                int configured = engineContext.configuration()
+                                .get("gamelan.orchestration.max-parallel-nodes", Integer.class)
+                                .orElse(10);
+                return Math.max(1, configured);
         }
 
         private static class WorkflowContextAdapter implements WorkflowContext {

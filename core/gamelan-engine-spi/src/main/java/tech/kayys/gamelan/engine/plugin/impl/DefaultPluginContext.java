@@ -3,6 +3,8 @@ package tech.kayys.gamelan.engine.plugin.impl;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 
@@ -13,12 +15,17 @@ import tech.kayys.gamelan.engine.extension.ExtensionRegistry;
 import tech.kayys.gamelan.engine.plugin.PluginContext;
 import tech.kayys.gamelan.engine.plugin.PluginMetadata;
 import tech.kayys.gamelan.engine.plugin.PluginRuntimeInfo;
+import tech.kayys.gamelan.engine.plugin.SemVer;
 import tech.kayys.gamelan.engine.plugin.ServiceRegistry;
 
 /**
  * Default implementation of PluginContext
  */
 public class DefaultPluginContext implements PluginContext {
+
+    private static final Pattern SEMVER_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+).*$");
+    private static final String DEFAULT_RUNTIME_MODE = "standalone";
+    private static final SemVer DEFAULT_ENGINE_VERSION = new SemVer(0, 0, 0);
 
     private final PluginMetadata metadata;
     private final Logger logger;
@@ -115,8 +122,13 @@ public class DefaultPluginContext implements PluginContext {
 
     @Override
     public PluginRuntimeInfo runtimeInfo() {
-        // TODO: Factory or pass in constructor
-        throw new UnsupportedOperationException("Unimplemented method 'runtimeInfo'");
+        String runtimeMode = getProperty("gamelan.runtime.mode")
+                .or(() -> getProperty("gamelan.deployment-mode").map(DefaultPluginContext::mapDeploymentMode))
+                .orElse(DEFAULT_RUNTIME_MODE);
+        SemVer engineVersion = getProperty("gamelan.engine.version")
+                .flatMap(DefaultPluginContext::parseSemVer)
+                .orElse(DEFAULT_ENGINE_VERSION);
+        return new PluginRuntimeInfo(runtimeMode, engineVersion);
     }
 
     @Override
@@ -132,5 +144,24 @@ public class DefaultPluginContext implements PluginContext {
     @Override
     public ExtensionRegistry extensions() {
         return extensionRegistry;
+    }
+
+    private static String mapDeploymentMode(String deploymentMode) {
+        return switch (deploymentMode.trim().toUpperCase()) {
+            case "SERVER", "ENTERPRISE" -> "distributed";
+            case "EXECUTOR" -> "executor";
+            default -> "standalone";
+        };
+    }
+
+    private static Optional<SemVer> parseSemVer(String value) {
+        Matcher matcher = SEMVER_PATTERN.matcher(value.trim());
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+        return Optional.of(new SemVer(
+                Integer.parseInt(matcher.group(1)),
+                Integer.parseInt(matcher.group(2)),
+                Integer.parseInt(matcher.group(3))));
     }
 }

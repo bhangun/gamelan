@@ -12,12 +12,21 @@ public class DefaultNodeExecutionContext implements NodeExecutionContext {
 
     private final EngineContext engine;
     private final WorkflowContext workflow;
+    private final tech.kayys.gamelan.engine.node.NodeContext node;
     private final Map<String, Object> addedVariables = new HashMap<>();
     private String suspendReason;
 
     public DefaultNodeExecutionContext(EngineContext engine, WorkflowContext workflow) {
+        this(engine, workflow, null);
+    }
+
+    public DefaultNodeExecutionContext(
+            EngineContext engine,
+            WorkflowContext workflow,
+            tech.kayys.gamelan.engine.node.NodeContext node) {
         this.engine = engine;
         this.workflow = workflow;
+        this.node = node;
     }
 
     @Override
@@ -28,6 +37,14 @@ public class DefaultNodeExecutionContext implements NodeExecutionContext {
     @Override
     public WorkflowContext workflow() {
         return workflow;
+    }
+
+    @Override
+    public tech.kayys.gamelan.engine.node.NodeContext node() {
+        if (node == null) {
+            return NodeExecutionContext.super.node();
+        }
+        return node;
     }
 
     @Override

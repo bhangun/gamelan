@@ -17,6 +17,7 @@ import tech.kayys.gamelan.engine.extension.ExtensionRegistry;
 import tech.kayys.gamelan.engine.node.NodeContext;
 import tech.kayys.gamelan.engine.node.NodeExecutionContext;
 import tech.kayys.gamelan.engine.node.NodeResult;
+import tech.kayys.gamelan.engine.node.NodeTypeHandler;
 import tech.kayys.gamelan.engine.workflow.WorkflowInterceptor;
 
 @ApplicationScoped
@@ -119,6 +120,11 @@ public class DefaultWorkflowEngine implements WorkflowEngine {
     }
 
     private Uni<NodeResult> performExecution(NodeContext nodeContext, NodeExecutionContext executionContext) {
+        NodeTypeHandler handler = extensionRegistry != null ? extensionRegistry.nodeType(nodeContext.nodeType()) : null;
+        if (handler != null) {
+            return Uni.createFrom().item(() -> handler.execute(executionContext));
+        }
+
         ExecutorDispatcher dispatcher = engineContext != null ? engineContext.executorDispatcher() : null;
         if (dispatcher == null) {
             return Uni.createFrom().failure(new IllegalStateException("ExecutorDispatcher is not available"));

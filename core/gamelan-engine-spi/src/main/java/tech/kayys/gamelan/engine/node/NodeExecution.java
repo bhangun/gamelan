@@ -96,7 +96,7 @@ public class NodeExecution {
 
     public void complete(Map<String, Object> output) {
         this.status = NodeExecutionStatus.COMPLETED;
-        this.output = new HashMap<>(output);
+        this.output = output != null ? new HashMap<>(output) : new HashMap<>();
         this.completedAt = Instant.now();
     }
 
