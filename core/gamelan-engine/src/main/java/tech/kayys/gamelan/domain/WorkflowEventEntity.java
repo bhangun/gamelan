@@ -18,7 +18,8 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "workflow_events", indexes = {
-        @Index(name = "idx_run_id_sequence", columnList = "run_id, sequence_number", unique = true),
+        @Index(name = "idx_tenant_run_sequence", columnList = "tenant_id, run_id, sequence_number", unique = true),
+        @Index(name = "idx_run_tenant_sequence", columnList = "run_id, tenant_id, sequence_number"),
         @Index(name = "idx_event_type", columnList = "event_type"),
         @Index(name = "idx_occurred_at", columnList = "occurred_at")
 })

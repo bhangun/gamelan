@@ -33,8 +33,9 @@ public class KafkaTaskProducer {
                                 task.runId().value(), task.nodeId().value(), targetExecutor);
 
                 TaskMessage message = new TaskMessage(
-                                generateTaskId(task),
+                                task.taskId(),
                                 task.runId().value(),
+                                tenantId(task),
                                 task.nodeId().value(),
                                 task.attempt(),
                                 task.token().value(),
@@ -47,10 +48,21 @@ public class KafkaTaskProducer {
                                 .invoke(throwable -> LOG.error("Failed to send task to Kafka", throwable));
         }
 
-        private String generateTaskId(NodeExecutionTask task) {
-                return String.format("%s:%s:%d",
-                                task.runId().value(),
-                                task.nodeId().value(),
-                                task.attempt());
+        private String tenantId(NodeExecutionTask task) {
+                if (task == null) {
+                        return null;
+                }
+                if (task.context() != null) {
+                        Object value = task.context().get(NodeExecutionTask.TENANT_ID_KEY);
+                        if (value != null) {
+                                String tenantId = String.valueOf(value);
+                                if (!tenantId.isBlank()) {
+                                        return tenantId;
+                                }
+                        }
+                }
+                return task.token() != null && task.token().tenantId() != null
+                                ? task.token().tenantId().value()
+                                : null;
         }
 }

@@ -10,6 +10,8 @@ import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionMapper;
 import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -111,7 +113,8 @@ public class RestWorkflowDefinitionClient implements WorkflowDefinitionClient {
     @Override
     public Uni<WorkflowDefinition> getWorkflowByName(String name) {
         checkClosed();
-        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-definitions/name/" + name)
+        return createRequest(io.vertx.core.http.HttpMethod.GET,
+                "/api/v1/workflow-definitions/name/" + encodePathSegment(name))
                 .send()
                 .onItem().transformToUni(response -> {
                     if (response.statusCode() >= 400) {
@@ -124,8 +127,14 @@ public class RestWorkflowDefinitionClient implements WorkflowDefinitionClient {
 
     @Override
     public Uni<List<WorkflowDefinition>> listWorkflows() {
+        return listWorkflows(true);
+    }
+
+    @Override
+    public Uni<List<WorkflowDefinition>> listWorkflows(boolean activeOnly) {
         checkClosed();
-        return createRequest(io.vertx.core.http.HttpMethod.GET, "/api/v1/workflow-definitions")
+        return createRequest(io.vertx.core.http.HttpMethod.GET,
+                "/api/v1/workflow-definitions?activeOnly=" + activeOnly)
                 .send()
                 .onItem().transformToUni(response -> {
                     if (response.statusCode() >= 400) {
@@ -181,6 +190,10 @@ public class RestWorkflowDefinitionClient implements WorkflowDefinitionClient {
         if (closed.get()) {
             throw new IllegalStateException("Client is closed");
         }
+    }
+
+    private String encodePathSegment(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     @Override

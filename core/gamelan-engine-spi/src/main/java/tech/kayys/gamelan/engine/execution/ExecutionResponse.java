@@ -1,5 +1,6 @@
 package tech.kayys.gamelan.engine.execution;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
@@ -8,4 +9,7 @@ public record ExecutionResponse(
         RunStatus status,
         Object output,
         String message) {
+    public ExecutionResponse {
+        output = ExecutionPayloads.immutableValue(output);
+    }
 }

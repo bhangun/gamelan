@@ -1,5 +1,7 @@
 package tech.kayys.gamelan.engine.run;
 
+import java.util.List;
+
 /**
  * Workflow Run Status - State machine states
  */
@@ -19,7 +21,15 @@ public enum RunStatus {
     }
 
     public boolean isActive() {
-        return this == RUNNING || this == PENDING || this == COMPENSATING;
+        return this == PENDING || this == RUNNING || this == SUSPENDED || this == COMPENSATING;
+    }
+
+    public static List<String> activeNames() {
+        return List.of(PENDING.name(), RUNNING.name(), SUSPENDED.name(), COMPENSATING.name());
+    }
+
+    public static List<RunStatus> activeStatuses() {
+        return List.of(PENDING, RUNNING, SUSPENDED, COMPENSATING);
     }
 
     public boolean canTransitionTo(RunStatus target) {

@@ -3,9 +3,28 @@ package tech.kayys.gamelan.engine.execution;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import tech.kayys.gamelan.engine.error.ErrorInfo;
+import tech.kayys.gamelan.engine.event.CompensationCompletedEvent;
+import tech.kayys.gamelan.engine.event.CompensationFailedEvent;
+import tech.kayys.gamelan.engine.event.CompensationStartedEvent;
 import tech.kayys.gamelan.engine.event.ExecutionEvent;
+import tech.kayys.gamelan.engine.event.GenericExecutionEvent;
+import tech.kayys.gamelan.engine.event.NodeCompletedEvent;
+import tech.kayys.gamelan.engine.event.NodeFailedEvent;
+import tech.kayys.gamelan.engine.event.NodeScheduledEvent;
+import tech.kayys.gamelan.engine.event.NodeStartedEvent;
+import tech.kayys.gamelan.engine.event.WorkflowCancelledEvent;
+import tech.kayys.gamelan.engine.event.WorkflowCompletedEvent;
+import tech.kayys.gamelan.engine.event.WorkflowFailedEvent;
+import tech.kayys.gamelan.engine.event.WorkflowResumedEvent;
+import tech.kayys.gamelan.engine.event.WorkflowStartedEvent;
+import tech.kayys.gamelan.engine.event.WorkflowSuspendedEvent;
 import tech.kayys.gamelan.engine.node.NodeExecutionRecord;
 import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
+import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
@@ -21,6 +40,8 @@ import java.util.*;
  * Used for debugging, auditing, and replay capabilities.
  */
 public class ExecutionHistory {
+
+    public static final String DOMAIN_EVENT_PAYLOAD_METADATA_KEY = "domainEventPayload";
 
     private final WorkflowRunId runId;
     private final WorkflowId workflowId;
@@ -61,13 +82,13 @@ public class ExecutionHistory {
         this.tenantId = tenantId;
         this.created = created != null ? created : Instant.now();
         this.lastUpdated = lastUpdated != null ? lastUpdated : Instant.now();
-        this.events = events != null ? Collections.unmodifiableList(events) : List.of();
-        this.nodeExecutions = nodeExecutions != null ? Collections.unmodifiableList(nodeExecutions) : List.of();
-        this.stateTransitions = stateTransitions != null ? Collections.unmodifiableList(stateTransitions) : List.of();
-        this.inputSnapshots = inputSnapshots != null ? Collections.unmodifiableMap(inputSnapshots) : Map.of();
-        this.outputSnapshots = outputSnapshots != null ? Collections.unmodifiableMap(outputSnapshots) : Map.of();
+        this.events = events != null ? List.copyOf(events) : List.of();
+        this.nodeExecutions = nodeExecutions != null ? List.copyOf(nodeExecutions) : List.of();
+        this.stateTransitions = stateTransitions != null ? List.copyOf(stateTransitions) : List.of();
+        this.inputSnapshots = payloadSnapshots(inputSnapshots);
+        this.outputSnapshots = payloadSnapshots(outputSnapshots);
         this.statistics = statistics != null ? statistics : ExecutionStatistics.empty();
-        this.metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();
+        this.metadata = ExecutionPayloads.immutableMap(metadata);
     }
 
     public WorkflowRunId getRunId() {
@@ -143,48 +164,367 @@ public class ExecutionHistory {
             WorkflowRunId runId,
             List<ExecutionEvent> domainEvents) {
 
-        List<ExecutionEventHistory> historyEvents = domainEvents.stream()
+        List<ExecutionEvent> safeDomainEvents = ExecutionEventEnvelopes.validateForRun(runId, domainEvents);
+        List<ExecutionEventHistory> historyEvents = safeDomainEvents.stream()
                 .map(domainEvent -> ExecutionEventHistory.builder()
                         .eventId(domainEvent.eventId())
-                        .eventType(mapEventType(domainEvent.eventType()))
-                        .timestamp(domainEvent.occurredAt())
+                        .eventType(mapEventType(safeEventType(domainEvent)))
+                        .timestamp(domainEvent.occurredAt() != null ? domainEvent.occurredAt() : Instant.now())
                         .source("event-store")
-                        .payload(Map.of())
-                        .metadata(Map.of("domainEventType", domainEvent.eventType()))
+                        .payload(domainEventPayload(domainEvent))
+                        .metadata(domainEventMetadata(domainEvent))
                         .build())
                 .toList();
+        Instant created = historyEvents.isEmpty() ? Instant.now() : historyEvents.get(0).getTimestamp();
+        Instant lastUpdated = historyEvents.isEmpty() ? created : historyEvents.get(historyEvents.size() - 1)
+                .getTimestamp();
+        WorkflowIdentity workflowIdentity = inferWorkflowIdentity(safeDomainEvents, historyEvents);
+        String tenantId = inferTenantId(safeDomainEvents, historyEvents);
 
         return ExecutionHistory.builder()
                 .runId(runId)
-                .workflowId(WorkflowId.of("unknown"))
-                .workflowVersion("unknown")
-                .tenantId("unknown")
-                .created(historyEvents.isEmpty() ? Instant.now() : historyEvents.get(0).getTimestamp())
-                .lastUpdated(Instant.now())
+                .workflowId(WorkflowId.of(workflowIdentity.workflowId()))
+                .workflowVersion(workflowIdentity.workflowVersion())
+                .tenantId(tenantId)
+                .created(created)
+                .lastUpdated(lastUpdated)
                 .events(historyEvents)
                 .nodeExecutions(new ArrayList<>())
                 .stateTransitions(new ArrayList<>())
                 .inputSnapshots(new LinkedHashMap<>())
                 .outputSnapshots(new LinkedHashMap<>())
-                .statistics(ExecutionStatistics.empty())
+                .statistics(ExecutionStatistics.builder().totalEvents(historyEvents.size()).build())
                 .metadata(Map.of("source", "domain-events"))
                 .build();
     }
 
+    private static WorkflowIdentity inferWorkflowIdentity(
+            List<ExecutionEvent> domainEvents,
+            List<ExecutionEventHistory> historyEvents) {
+
+        String workflowId = null;
+        String workflowVersion = null;
+        for (ExecutionEvent event : domainEvents) {
+            workflowId = firstPresent(workflowId, workflowIdFromEvent(event));
+            workflowVersion = firstPresent(workflowVersion, workflowVersionFromEvent(event));
+            if (workflowId != null && workflowVersion != null) {
+                return new WorkflowIdentity(workflowId, workflowVersion);
+            }
+        }
+        for (ExecutionEventHistory event : historyEvents) {
+            workflowId = firstPresent(workflowId, workflowIdFromMetadata(event.getMetadata()));
+            workflowVersion = firstPresent(workflowVersion, workflowVersionFromMetadata(event.getMetadata()));
+            if (workflowId != null && workflowVersion != null) {
+                return new WorkflowIdentity(workflowId, workflowVersion);
+            }
+        }
+        return new WorkflowIdentity(
+                workflowId != null ? workflowId : "unknown",
+                workflowVersion != null ? workflowVersion : "unknown");
+    }
+
+    private static String workflowIdFromEvent(ExecutionEvent event) {
+        if (event instanceof WorkflowStartedEvent started) {
+            return stringValue(started.definitionId());
+        }
+        if (event instanceof GenericExecutionEvent generic) {
+            return workflowIdFromMetadata(generic.metadata());
+        }
+        return null;
+    }
+
+    private static String workflowVersionFromEvent(ExecutionEvent event) {
+        if (event instanceof WorkflowStartedEvent started) {
+            return stringValue(started.workflowVersion());
+        }
+        if (event instanceof GenericExecutionEvent generic) {
+            return workflowVersionFromMetadata(generic.metadata());
+        }
+        return null;
+    }
+
+    private static String workflowIdFromMetadata(Map<String, Object> metadata) {
+        return firstPresent(
+                metadataValue(metadata, "workflowId"),
+                metadataValue(metadata, "definitionId"),
+                metadataValue(metadata, "workflowDefinitionId"));
+    }
+
+    private static String workflowVersionFromMetadata(Map<String, Object> metadata) {
+        return firstPresent(
+                metadataValue(metadata, "workflowVersion"),
+                metadataValue(metadata, "definitionVersion"));
+    }
+
+    private static String inferTenantId(
+            List<ExecutionEvent> domainEvents,
+            List<ExecutionEventHistory> historyEvents) {
+
+        for (ExecutionEvent event : domainEvents) {
+            String tenantId = tenantIdFromEvent(event);
+            if (tenantId != null) {
+                return tenantId;
+            }
+        }
+        for (ExecutionEventHistory event : historyEvents) {
+            String tenantId = tenantIdFromMetadata(event.getMetadata());
+            if (tenantId != null) {
+                return tenantId;
+            }
+        }
+        return "unknown";
+    }
+
+    private static String tenantIdFromEvent(ExecutionEvent event) {
+        if (event instanceof WorkflowStartedEvent started) {
+            return stringValue(started.tenantId());
+        }
+        if (event instanceof CompensationStartedEvent started) {
+            return stringValue(started.tenantId());
+        }
+        if (event instanceof CompensationCompletedEvent completed) {
+            return stringValue(completed.tenantId());
+        }
+        if (event instanceof CompensationFailedEvent failed) {
+            return stringValue(failed.tenantId());
+        }
+        if (event instanceof GenericExecutionEvent generic) {
+            return tenantIdFromMetadata(generic.metadata());
+        }
+        return null;
+    }
+
+    private static String tenantIdFromMetadata(Map<String, Object> metadata) {
+        if (metadata == null) {
+            return null;
+        }
+        return metadataValue(metadata, "tenantId");
+    }
+
+    private static String metadataValue(Map<String, Object> metadata, String key) {
+        if (metadata == null) {
+            return null;
+        }
+        return stringValue(metadata.get(key));
+    }
+
+    private static String firstPresent(String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate != null) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static String stringValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof WorkflowDefinitionId id) {
+            return id.value();
+        }
+        if (value instanceof WorkflowId id) {
+            return id.getId();
+        }
+        if (value instanceof WorkflowRunId id) {
+            return id.value();
+        }
+        if (value instanceof TenantId id) {
+            return id.value();
+        }
+        if (value instanceof NodeId id) {
+            return id.value();
+        }
+        if (value instanceof Map<?, ?> map) {
+            String byValue = stringValue(map.get("value"));
+            return byValue != null ? byValue : stringValue(map.get("id"));
+        }
+        String text = String.valueOf(value);
+        return text.isBlank() ? null : text;
+    }
+
     private static ExecutionEventHistory.ExecutionEventType mapEventType(String eventType) {
         return switch (eventType) {
-            case "WorkflowStartedEvent" -> ExecutionEventHistory.ExecutionEventType.RUN_STARTED;
-            case "NodeScheduledEvent" -> ExecutionEventHistory.ExecutionEventType.NODE_STARTED;
-            case "NodeStartedEvent" -> ExecutionEventHistory.ExecutionEventType.NODE_STARTED;
-            case "NodeCompletedEvent" -> ExecutionEventHistory.ExecutionEventType.NODE_COMPLETED;
-            case "NodeFailedEvent" -> ExecutionEventHistory.ExecutionEventType.NODE_FAILED;
-            case "WorkflowSuspendedEvent" -> ExecutionEventHistory.ExecutionEventType.RUN_WAITING;
-            case "WorkflowResumedEvent" -> ExecutionEventHistory.ExecutionEventType.RUN_RESUMED;
-            case "WorkflowCompletedEvent" -> ExecutionEventHistory.ExecutionEventType.RUN_COMPLETED;
-            case "WorkflowFailedEvent" -> ExecutionEventHistory.ExecutionEventType.RUN_FAILED;
-            case "WorkflowCancelledEvent" -> ExecutionEventHistory.ExecutionEventType.RUN_CANCELLED;
+            case "WorkflowStartedEvent", "WorkflowStarted" -> ExecutionEventHistory.ExecutionEventType.RUN_STARTED;
+            case "NodeScheduledEvent", "NodeScheduled" -> ExecutionEventHistory.ExecutionEventType.NODE_STARTED;
+            case "NodeStartedEvent", "NodeStarted" -> ExecutionEventHistory.ExecutionEventType.NODE_STARTED;
+            case "NodeCompletedEvent", "NodeCompleted" -> ExecutionEventHistory.ExecutionEventType.NODE_COMPLETED;
+            case "NodeFailedEvent", "NodeFailed" -> ExecutionEventHistory.ExecutionEventType.NODE_FAILED;
+            case "WorkflowSuspendedEvent", "WorkflowSuspended" -> ExecutionEventHistory.ExecutionEventType.RUN_WAITING;
+            case "WorkflowResumedEvent", "WorkflowResumed" -> ExecutionEventHistory.ExecutionEventType.RUN_RESUMED;
+            case "WorkflowCompletedEvent", "WorkflowCompleted" -> ExecutionEventHistory.ExecutionEventType.RUN_COMPLETED;
+            case "WorkflowFailedEvent", "WorkflowFailed" -> ExecutionEventHistory.ExecutionEventType.RUN_FAILED;
+            case "WorkflowCancelledEvent", "WorkflowCancelled" -> ExecutionEventHistory.ExecutionEventType.RUN_CANCELLED;
+            case "CompensationStartedEvent", "CompensationStarted" ->
+                ExecutionEventHistory.ExecutionEventType.COMPENSATION_STARTED;
+            case "CompensationCompletedEvent", "CompensationCompleted" ->
+                ExecutionEventHistory.ExecutionEventType.COMPENSATION_COMPLETED;
+            case "CompensationFailedEvent", "CompensationFailed" ->
+                ExecutionEventHistory.ExecutionEventType.ERROR_OCCURRED;
+            case "SIGNAL_RECEIVED", "SignalReceived", "SignalReceivedEvent" ->
+                ExecutionEventHistory.ExecutionEventType.SIGNAL_RECEIVED;
+            case "SIGNAL_IGNORED", "SignalIgnored", "SignalIgnoredEvent" ->
+                ExecutionEventHistory.ExecutionEventType.SIGNAL_IGNORED;
             default -> ExecutionEventHistory.ExecutionEventType.STATE_UPDATED;
         };
+    }
+
+    private static Map<String, Object> domainEventPayload(ExecutionEvent event) {
+        if (event instanceof GenericExecutionEvent generic) {
+            Map<String, Object> payload = metadataMap(generic.metadata().get(DOMAIN_EVENT_PAYLOAD_METADATA_KEY));
+            if (!payload.isEmpty()) {
+                return payload;
+            }
+            return generic.message() != null ? Map.of("message", generic.message()) : Map.of();
+        }
+        if (event instanceof WorkflowStartedEvent started) {
+            return started.inputs();
+        }
+        if (event instanceof NodeCompletedEvent completed) {
+            return completed.output();
+        }
+        if (event instanceof NodeFailedEvent failed) {
+            return errorPayload(failed.error());
+        }
+        if (event instanceof WorkflowResumedEvent resumed) {
+            return resumed.resumeData();
+        }
+        if (event instanceof WorkflowCompletedEvent completed) {
+            return completed.outputs();
+        }
+        if (event instanceof WorkflowFailedEvent failed) {
+            return errorPayload(failed.error());
+        }
+        if (event instanceof CompensationFailedEvent failed) {
+            return errorPayload(failed.error());
+        }
+        return Map.of();
+    }
+
+    private static Map<String, Object> domainEventMetadata(ExecutionEvent event) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("domainEventType", safeEventType(event));
+        metadata.put("domainEventClass", event.getClass().getSimpleName());
+        if (event.runId() != null) {
+            metadata.put("runId", event.runId().value());
+        }
+        if (event instanceof GenericExecutionEvent generic) {
+            copyGenericMetadata(metadata, generic.metadata());
+        } else if (event instanceof WorkflowStartedEvent started) {
+            putValue(metadata, "definitionId", started.definitionId());
+            putValue(metadata, "workflowVersion", started.workflowVersion());
+            putValue(metadata, "tenantId", started.tenantId());
+        } else if (event instanceof NodeScheduledEvent scheduled) {
+            putNode(metadata, scheduled.nodeId());
+            metadata.put("attempt", scheduled.attempt());
+        } else if (event instanceof NodeStartedEvent started) {
+            putNode(metadata, started.nodeId());
+            metadata.put("attempt", started.attempt());
+        } else if (event instanceof NodeCompletedEvent completed) {
+            putNode(metadata, completed.nodeId());
+            metadata.put("attempt", completed.attempt());
+        } else if (event instanceof NodeFailedEvent failed) {
+            putNode(metadata, failed.nodeId());
+            metadata.put("attempt", failed.attempt());
+            metadata.put("willRetry", failed.willRetry());
+            putValue(metadata, "retryAt", failed.retryAt());
+        } else if (event instanceof WorkflowSuspendedEvent suspended) {
+            putValue(metadata, "reason", suspended.reason());
+            putNode(metadata, "waitingOnNodeId", suspended.waitingOnNodeId());
+        } else if (event instanceof WorkflowResumedEvent resumed) {
+            putValue(metadata, "humanTaskId", resumed.humanTaskId());
+        } else if (event instanceof WorkflowCancelledEvent cancelled) {
+            putValue(metadata, "reason", cancelled.reason());
+        } else if (event instanceof CompensationStartedEvent started) {
+            putValue(metadata, "tenantId", started.tenantId());
+            metadata.put("nodesToCompensate", nodeValues(started.nodesToCompensate()));
+        } else if (event instanceof CompensationCompletedEvent completed) {
+            putValue(metadata, "tenantId", completed.tenantId());
+            metadata.put("compensatedNodes", nodeValues(completed.compensatedNodes()));
+        } else if (event instanceof CompensationFailedEvent failed) {
+            putValue(metadata, "tenantId", failed.tenantId());
+        }
+        return metadata;
+    }
+
+    private static void copyGenericMetadata(Map<String, Object> target, Map<String, Object> source) {
+        if (source == null || source.isEmpty()) {
+            return;
+        }
+        source.forEach((key, value) -> {
+            if (!DOMAIN_EVENT_PAYLOAD_METADATA_KEY.equals(key)) {
+                target.put(key, value);
+            }
+        });
+    }
+
+    private static Map<String, Object> metadataMap(Object value) {
+        if (!(value instanceof Map<?, ?> source) || source.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> copy = new LinkedHashMap<>();
+        source.forEach((key, mapValue) -> {
+            if (key != null) {
+                copy.put(String.valueOf(key), mapValue);
+            }
+        });
+        return copy;
+    }
+
+    private static String safeEventType(ExecutionEvent event) {
+        return event.eventType() != null && !event.eventType().isBlank() ? event.eventType() : "Unknown";
+    }
+
+    private static Map<String, Object> errorPayload(ErrorInfo error) {
+        if (error == null) {
+            return Map.of();
+        }
+        Map<String, Object> payload = new LinkedHashMap<>();
+        putValue(payload, "code", error.code());
+        putValue(payload, "message", error.message());
+        putValue(payload, "stackTrace", error.stackTrace());
+        payload.put("context", error.context());
+        return payload;
+    }
+
+    private static List<String> nodeValues(List<NodeId> nodeIds) {
+        if (nodeIds == null || nodeIds.isEmpty()) {
+            return List.of();
+        }
+        return nodeIds.stream().map(NodeId::value).toList();
+    }
+
+    private static void putNode(Map<String, Object> metadata, NodeId nodeId) {
+        putNode(metadata, "nodeId", nodeId);
+    }
+
+    private static void putNode(Map<String, Object> metadata, String key, NodeId nodeId) {
+        if (nodeId != null) {
+            metadata.put(key, nodeId.value());
+        }
+    }
+
+    private static void putValue(Map<String, Object> metadata, String key, Object value) {
+        String text = stringValue(value);
+        if (text != null) {
+            metadata.put(key, text);
+        }
+    }
+
+    private record WorkflowIdentity(String workflowId, String workflowVersion) {
+    }
+
+    private static Map<Instant, Map<String, Object>> payloadSnapshots(
+            Map<Instant, Map<String, Object>> snapshots) {
+
+        if (snapshots == null || snapshots.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Instant, Map<String, Object>> copy = new LinkedHashMap<>();
+        snapshots.forEach((instant, payload) -> copy.put(instant, ExecutionPayloads.immutableMap(payload)));
+        return Collections.unmodifiableMap(copy);
     }
 
     public static ExecutionHistory fromSnapshot(
@@ -195,7 +535,7 @@ public class ExecutionHistory {
         return ExecutionHistory.builder()
                 .runId(snapshot.id())
                 .workflowId(WorkflowId.of(snapshot.definitionId().value()))
-                .workflowVersion("1.0.0")
+                .workflowVersion(snapshot.definitionVersion())
                 .tenantId(snapshot.tenantId().value())
                 .created(snapshot.createdAt())
                 .lastUpdated(Instant.now())
@@ -275,7 +615,7 @@ public class ExecutionHistory {
     public static class ExecutionEventHistory {
         public enum ExecutionEventType {
             RUN_STARTED, RUN_COMPLETED, RUN_FAILED, RUN_CANCELLED, RUN_WAITING, RUN_RESUMED,
-            NODE_STARTED, NODE_COMPLETED, NODE_FAILED, NODE_WAITING, STATE_UPDATED, SIGNAL_RECEIVED,
+            NODE_STARTED, NODE_COMPLETED, NODE_FAILED, NODE_WAITING, STATE_UPDATED, SIGNAL_RECEIVED, SIGNAL_IGNORED,
             ERROR_OCCURRED, COMPENSATION_STARTED, COMPENSATION_COMPLETED, RETRY_SCHEDULED,
             TIMER_EXPIRED, EXTERNAL_CALLBACK_RECEIVED, HUMAN_INTERVENTION_REQUIRED, HUMAN_INTERVENTION_COMPLETED
         }
@@ -295,8 +635,8 @@ public class ExecutionHistory {
             this.eventType = eventType;
             this.timestamp = timestamp;
             this.source = source;
-            this.payload = payload != null ? Collections.unmodifiableMap(payload) : Map.of();
-            this.metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();
+            this.payload = ExecutionPayloads.immutableMap(payload);
+            this.metadata = ExecutionPayloads.immutableMap(metadata);
             this.error = error;
         }
 
@@ -397,7 +737,7 @@ public class ExecutionHistory {
             this.timestamp = timestamp;
             this.reason = reason;
             this.initiatedBy = initiatedBy;
-            this.metadata = metadata != null ? Collections.unmodifiableMap(metadata) : Map.of();
+            this.metadata = ExecutionPayloads.immutableMap(metadata);
         }
 
         public WorkflowRunState getFromState() {
@@ -498,10 +838,9 @@ public class ExecutionHistory {
             this.retriedNodes = retriedNodes;
             this.totalExecutionTime = totalExecutionTime != null ? totalExecutionTime : Duration.ZERO;
             this.averageNodeExecutionTime = averageNodeExecutionTime != null ? averageNodeExecutionTime : Duration.ZERO;
-            this.nodeTypeCounts = nodeTypeCounts != null ? Collections.unmodifiableMap(nodeTypeCounts) : Map.of();
-            this.nodeTypeDurations = nodeTypeDurations != null ? Collections.unmodifiableMap(nodeTypeDurations)
-                    : Map.of();
-            this.metrics = metrics != null ? Collections.unmodifiableMap(metrics) : Map.of();
+            this.nodeTypeCounts = nodeTypeCounts != null ? Map.copyOf(nodeTypeCounts) : Map.of();
+            this.nodeTypeDurations = nodeTypeDurations != null ? Map.copyOf(nodeTypeDurations) : Map.of();
+            this.metrics = ExecutionPayloads.immutableMap(metrics);
         }
 
         public int getTotalEvents() {

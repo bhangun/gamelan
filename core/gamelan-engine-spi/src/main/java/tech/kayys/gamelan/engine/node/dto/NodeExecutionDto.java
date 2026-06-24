@@ -8,6 +8,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import tech.kayys.gamelan.engine.error.dto.ErrorDto;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 /**
  * Node execution DTO
@@ -32,4 +33,7 @@ public record NodeExecutionDto(
         @Schema(description = "Output data") Map<String, Object> output,
 
         @Schema(description = "Error information") ErrorDto error) {
+    public NodeExecutionDto {
+        output = ExecutionPayloads.immutableMap(output);
+    }
 }

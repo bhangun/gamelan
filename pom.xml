@@ -82,6 +82,8 @@
         <profile>
             <id>runtimes</id>
             <modules>
+                <module>protocol/gamelan-protocol-grpc</module>
+                <module>protocol/gamelan-protocol-kafka</module>
                 <module>runtime/gamelan-runtime-distributed</module>
                 <module>runtime/gamelan-runtime-standalone</module>
             </modules>
@@ -103,14 +105,24 @@
 
         <profile>
             <id>server</id>
+            <modules>
+                <module>protocol/gamelan-protocol-grpc</module>
+                <module>protocol/gamelan-protocol-kafka</module>
+            </modules>
         </profile>
 
         <profile>
             <id>executor</id>
+            <modules>
+                <module>protocol/gamelan-protocol-grpc</module>
+            </modules>
         </profile>
 
         <profile>
             <id>client</id>
+            <modules>
+                <module>protocol/gamelan-protocol-grpc</module>
+            </modules>
         </profile>
 
         <profile>
@@ -201,10 +213,20 @@
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire-plugin.version}</version>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        </systemPropertyVariables>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${surefire-plugin.version}</version>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        </systemPropertyVariables>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

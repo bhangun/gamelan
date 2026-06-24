@@ -47,6 +47,12 @@ public class WorkflowDefinitionResource {
     }
 
     @GET
+    @Path("/name/{name}")
+    public Uni<WorkflowDefinition> getByName(@PathParam("name") String name) {
+        return service.getByName(name, tenant());
+    }
+
+    @GET
     @Path("/{id}")
     public Uni<WorkflowDefinition> get(@PathParam("id") String id) {
         return service.get(new WorkflowDefinitionId(id), tenant());

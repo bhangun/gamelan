@@ -95,7 +95,7 @@ public class LoadBalancingAgent {
         registry.getStatistics()
             .subscribe().with(stats -> {
                 if (hasHighLoadVariation(stats)) {
-                    // Switch to weighted strategy for better load distribution
+                    // Switch to weighted least-connections for heterogeneous worker pools
                     registry.setSelectionStrategy(new WeightedSelectionStrategy());
                 } else {
                     // Use round-robin for even distribution
@@ -191,7 +191,7 @@ agents:
   
   loadBalancer:
     enabled: true
-    strategy: "weighted" # round-robin, random, weighted
+    strategy: "weighted" # round-robin, random, weighted, least-loaded
     optimizationInterval: "60s"
 ```
 

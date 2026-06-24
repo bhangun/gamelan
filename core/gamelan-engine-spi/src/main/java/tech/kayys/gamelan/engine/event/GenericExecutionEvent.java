@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 /**
@@ -18,6 +19,9 @@ public record GenericExecutionEvent(
         String message,
         Instant occurredAt,
         Map<String, Object> metadata) implements ExecutionEvent {
+    public GenericExecutionEvent {
+        metadata = ExecutionPayloads.immutableMap(metadata);
+    }
 
     public GenericExecutionEvent(
             String eventType,

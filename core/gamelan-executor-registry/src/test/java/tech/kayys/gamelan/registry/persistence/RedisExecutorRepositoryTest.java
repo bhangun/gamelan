@@ -1,7 +1,8 @@
 package tech.kayys.gamelan.registry.persistence;
 
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
 
@@ -11,7 +12,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@QuarkusTest
 class RedisExecutorRepositoryTest {
 
     @Test
@@ -120,16 +120,17 @@ class RedisExecutorRepositoryTest {
 
     @Test
     void save_WithNullExecutorId_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new ExecutorInfo(
-                    null,
-                    "test-type",
-                    CommunicationType.GRPC,
-                    "http://localhost:8086",
-                    Duration.ofSeconds(120),
-                    Map.of("error", "expected"));
-            // In a real test, the repository would throw this
-            throw new IllegalArgumentException("Executor ID cannot be null");
-        });
+        GamelanException exception = assertThrows(
+                GamelanException.class,
+                () -> new ExecutorInfo(
+                        null,
+                        "test-type",
+                        CommunicationType.GRPC,
+                        "http://localhost:8086",
+                        Duration.ofSeconds(120),
+                        Map.of("error", "expected")));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, exception.getErrorCode());
+        assertTrue(exception.getSafeMessage().contains("executorId"));
     }
 }

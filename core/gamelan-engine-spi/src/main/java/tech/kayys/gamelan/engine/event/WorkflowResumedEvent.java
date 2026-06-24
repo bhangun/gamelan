@@ -3,6 +3,7 @@ package tech.kayys.gamelan.engine.event;
 import java.time.Instant;
 import java.util.Map;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 public record WorkflowResumedEvent(
@@ -11,6 +12,10 @@ public record WorkflowResumedEvent(
         Map<String, Object> resumeData,
         String humanTaskId,
         Instant occurredAt) implements ExecutionEvent {
+    public WorkflowResumedEvent {
+        resumeData = ExecutionPayloads.immutableMap(resumeData);
+    }
+
     @Override
     public String eventType() {
         return "WorkflowResumed";

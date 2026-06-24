@@ -98,6 +98,8 @@ jspm_packages/
 local/
 config.local
 *.local
+gradle/gamelan-profiles.local.properties
+gradle/gamelan-modules.local.properties
 
 # Compiled class file
 *.class
@@ -137,4 +139,4 @@ apidocs/
 # Gamelan specific (if any config/cache files)
 **/gamelan-config/
 **/gamelan-cache/
-**/certs/    
+**/certs/

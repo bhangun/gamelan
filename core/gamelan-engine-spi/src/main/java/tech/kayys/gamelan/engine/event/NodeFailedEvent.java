@@ -13,7 +13,20 @@ public record NodeFailedEvent(
         int attempt,
         ErrorInfo error,
         boolean willRetry,
-        Instant occurredAt) implements ExecutionEvent {
+        Instant occurredAt,
+        Instant retryAt) implements ExecutionEvent {
+
+    public NodeFailedEvent(
+            String eventId,
+            WorkflowRunId runId,
+            NodeId nodeId,
+            int attempt,
+            ErrorInfo error,
+            boolean willRetry,
+            Instant occurredAt) {
+        this(eventId, runId, nodeId, attempt, error, willRetry, occurredAt, null);
+    }
+
     @Override
     public String eventType() {
         return "NodeFailed";

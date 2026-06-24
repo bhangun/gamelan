@@ -6,6 +6,7 @@
 
 plugins {
     id("buildlogic.java-conventions")
+    `java-test-fixtures`
 }
 
 dependencies {
@@ -24,6 +25,7 @@ dependencies {
     testImplementation(libs.org.junit.jupiter.junit.jupiter.engine)
     testImplementation(libs.org.junit.platform.junit.platform.commons)
     testImplementation(libs.org.junit.platform.junit.platform.engine)
+    testFixturesImplementation(libs.org.junit.jupiter.junit.jupiter.api)
 }
 
 description = "Gamelan Engine API"

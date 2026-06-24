@@ -3,6 +3,7 @@ package tech.kayys.gamelan.engine.run.dto;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import jakarta.validation.constraints.NotBlank;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 import java.util.Map;
 
@@ -10,7 +11,7 @@ import java.util.Map;
  * ============================================================================
  * API DATA TRANSFER OBJECTS (DTOs)
  * ============================================================================
- * 
+ *
  * Request and response objects for REST API.
  * Separated from domain models for API stability.
  */
@@ -30,7 +31,7 @@ public record CreateRunRequest(
 
         @Schema(description = "Trigger information") TriggerInfo trigger) {
     public CreateRunRequest {
-        inputs = inputs != null ? inputs : Map.of();
-        labels = labels != null ? labels : Map.of();
+        inputs = ExecutionPayloads.immutableMap(inputs);
+        labels = ExecutionPayloads.immutableMapCopy(labels);
     }
 }

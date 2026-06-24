@@ -9,7 +9,7 @@ plugins {
 }
 
 dependencies {
-    providedCompile(project(":gamelan-plugin-spi"))
+    compileOnly(project(":gamelan-plugin-spi"))
     compileOnly(libs.org.slf4j.slf4j.api.x1)
 }
 

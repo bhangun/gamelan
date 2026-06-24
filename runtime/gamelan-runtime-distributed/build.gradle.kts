@@ -19,6 +19,7 @@ dependencies {
     api(libs.io.quarkus.quarkus.reactive.pg.client)
     api(libs.io.quarkus.quarkus.hibernate.reactive.panache)
     api(libs.io.quarkus.quarkus.jdbc.postgresql)
+    api(libs.io.quarkus.quarkus.flyway)
     api(project(":gamelan-runtime-core"))
     api(libs.io.quarkus.quarkus.hibernate.reactive)
     api(libs.io.quarkus.quarkus.redis.client)

@@ -18,7 +18,7 @@ public class WorkflowDefinitionOperations {
 
     /**
      * Initiates the creation of a new workflow definition.
-     * 
+     *
      * @param name the name of the workflow
      * @return a builder to configure and execute the definition creation
      */
@@ -28,7 +28,7 @@ public class WorkflowDefinitionOperations {
 
     /**
      * Retrieves a workflow definition by its unique identifier.
-     * 
+     *
      * @param definitionId the unique ID of the workflow definition
      * @return a Uni containing the definition details
      */
@@ -38,7 +38,7 @@ public class WorkflowDefinitionOperations {
 
     /**
      * Retrieves a workflow definition by its name.
-     * 
+     *
      * @param name the name of the workflow
      * @return a Uni containing the definition details
      */
@@ -47,8 +47,8 @@ public class WorkflowDefinitionOperations {
     }
 
     /**
-     * Lists all workflow definitions for the current tenant.
-     * 
+     * Lists active workflow definitions for the current tenant.
+     *
      * @return a Uni containing a list of definitions
      */
     public Uni<List<WorkflowDefinition>> list() {
@@ -56,8 +56,27 @@ public class WorkflowDefinitionOperations {
     }
 
     /**
+     * Lists workflow definitions for the current tenant.
+     *
+     * @param activeOnly whether inactive/soft-deleted definitions should be hidden
+     * @return a Uni containing a list of definitions
+     */
+    public Uni<List<WorkflowDefinition>> list(boolean activeOnly) {
+        return client.listWorkflows(activeOnly);
+    }
+
+    /**
+     * Lists active and inactive workflow definitions for lifecycle administration.
+     *
+     * @return a Uni containing a list of definitions
+     */
+    public Uni<List<WorkflowDefinition>> listAll() {
+        return client.listWorkflows(false);
+    }
+
+    /**
      * Deletes a workflow definition.
-     * 
+     *
      * @param definitionId the unique ID of the workflow definition
      * @return a Uni representing the completion of the deletion
      */

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import tech.kayys.gamelan.engine.run.ValidationResult;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
@@ -64,6 +65,25 @@ public class WorkflowDefinitionRegistry {
     }
 
     /**
+     * Load a definition regardless of active state. This is intentionally not
+     * cached because public execution paths should only resolve active definitions.
+     */
+    public Uni<WorkflowDefinition> getDefinitionIncludingInactive(
+            WorkflowDefinitionId id,
+            TenantId tenantId) {
+
+        return repository.findByIdIncludingInactive(id, tenantId)
+                .map(definition -> {
+                    if (definition == null) {
+                        throw new GamelanException(
+                                ErrorCode.WORKFLOW_NOT_FOUND,
+                                "Workflow definition not found: " + id.value());
+                    }
+                    return definition;
+                });
+    }
+
+    /**
      * Register a new workflow definition
      */
     public Uni<WorkflowDefinition> register(
@@ -73,10 +93,12 @@ public class WorkflowDefinitionRegistry {
         LOG.info("Registering workflow definition: {} v{}",
                 definition.name(), definition.version());
 
-        // Validate definition
-        if (!definition.isValid()) {
+        ValidationResult validation = definition.validate();
+        if (!validation.isValid()) {
             return Uni.createFrom().failure(
-                    new GamelanException(ErrorCode.WORKFLOW_INVALID_DEFINITION, "Invalid workflow definition"));
+                    new GamelanException(
+                            ErrorCode.WORKFLOW_INVALID_DEFINITION,
+                            validation.message() + ": " + String.join("; ", validation.errors())));
         }
 
         // Save to repository
@@ -87,6 +109,38 @@ public class WorkflowDefinitionRegistry {
                     cache.put(cacheKey, saved);
 
                     LOG.info("Registered workflow definition: {}", saved.id().value());
+                    return saved;
+                });
+    }
+
+    /**
+     * Update an existing workflow definition and synchronize its active state.
+     */
+    public Uni<WorkflowDefinition> update(
+            WorkflowDefinition definition,
+            TenantId tenantId,
+            boolean active) {
+
+        LOG.info("Updating workflow definition: {} v{} active={}",
+                definition.name(), definition.version(), active);
+
+        ValidationResult validation = definition.validate();
+        if (!validation.isValid()) {
+            return Uni.createFrom().failure(
+                    new GamelanException(
+                            ErrorCode.WORKFLOW_INVALID_DEFINITION,
+                            validation.message() + ": " + String.join("; ", validation.errors())));
+        }
+
+        return repository.save(definition, tenantId)
+                .call(saved -> repository.setActive(saved.id(), tenantId, active))
+                .map(saved -> {
+                    String cacheKey = tenantId.value() + ":" + saved.id().value();
+                    if (active) {
+                        cache.put(cacheKey, saved);
+                    } else {
+                        cache.remove(cacheKey);
+                    }
                     return saved;
                 });
     }
@@ -117,6 +171,14 @@ public class WorkflowDefinitionRegistry {
         String cacheKey = tenantId.value() + ":" + id.value();
         cache.remove(cacheKey);
         LOG.debug("Invalidated cache for: {}", id.value());
+    }
+
+    /**
+     * Deactivate a definition and remove it from active-definition cache.
+     */
+    public Uni<Void> deleteDefinition(WorkflowDefinitionId id, TenantId tenantId) {
+        return repository.delete(id, tenantId)
+                .invoke(() -> invalidateCache(id, tenantId));
     }
 
     /**

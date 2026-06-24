@@ -5,6 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Duration;
 import java.util.Map;
 
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+
 /**
  * Configuration for external callbacks.
  * Used when workflow needs to wait for external signals.
@@ -36,16 +40,28 @@ public class CallbackConfig {
             @JsonProperty("awaitResponse") boolean awaitResponse,
             @JsonProperty("metadata") Map<String, Object> metadata) {
         this.timeout = timeout != null ? timeout : Duration.ofHours(24);
+        if (this.timeout.isZero() || this.timeout.isNegative()) {
+            throw new GamelanException(ErrorCode.VALIDATION_FAILED, "Callback timeout must be positive");
+        }
+        if (maxRetries < 0) {
+            throw new GamelanException(ErrorCode.VALIDATION_FAILED, "Callback maxRetries cannot be negative");
+        }
         this.maxRetries = maxRetries;
         this.retryDelay = retryDelay != null ? retryDelay : Duration.ofMinutes(5);
+        if (this.retryDelay.isNegative()) {
+            throw new GamelanException(ErrorCode.VALIDATION_FAILED, "Callback retryDelay cannot be negative");
+        }
+        if (callbackUrl == null || callbackUrl.isBlank()) {
+            throw new GamelanException(ErrorCode.VALIDATION_FAILED, "Callback URL is required");
+        }
         this.callbackUrl = callbackUrl;
         this.headers = headers != null ? Map.copyOf(headers) : Map.of();
-        this.expectedPayload = expectedPayload != null ? Map.copyOf(expectedPayload) : Map.of();
+        this.expectedPayload = ExecutionPayloads.immutableMap(expectedPayload);
         this.validationSchema = validationSchema;
         this.method = method != null ? method : CallbackMethod.POST;
         this.contentType = contentType != null ? contentType : "application/json";
         this.awaitResponse = awaitResponse;
-        this.metadata = metadata != null ? Map.copyOf(metadata) : Map.of();
+        this.metadata = ExecutionPayloads.immutableMap(metadata);
     }
 
     public enum CallbackMethod {

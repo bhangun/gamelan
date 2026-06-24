@@ -11,6 +11,8 @@ plugins {
 dependencies {
     api(project(":gamelan-sdk-client-core"))
     api(project(":gamelan-engine-spi"))
+    testImplementation(libs.org.junit.jupiter.junit.jupiter)
+    testImplementation(libs.org.mockito.mockito.junit.jupiter.x1)
     compileOnly(libs.org.projectlombok.lombok)
 }
 

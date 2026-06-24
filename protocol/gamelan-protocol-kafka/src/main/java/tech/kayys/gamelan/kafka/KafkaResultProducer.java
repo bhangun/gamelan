@@ -35,6 +35,7 @@ public class KafkaResultProducer {
 
                 TaskResultMessage message = new TaskResultMessage(
                                 result.runId().value(),
+                                tenantId(result),
                                 result.nodeId().value(),
                                 result.attempt(),
                                 result.status().name(),
@@ -46,7 +47,34 @@ public class KafkaResultProducer {
                                 Instant.now());
 
                 return Uni.createFrom().completionStage(
-                                resultEmitter.send(Record.of(result.runId().value(), message))).onFailure()
+                                resultEmitter.send(Record.of(recordKey(message), message))).onFailure()
                                 .invoke(throwable -> LOG.error("Failed to send result to Kafka", throwable));
+        }
+
+        private String recordKey(TaskResultMessage message) {
+                return message.tenantId() != null && !message.tenantId().isBlank()
+                                ? message.tenantId() + ":" + message.runId()
+                                : message.runId();
+        }
+
+        private String tenantId(NodeExecutionResult result) {
+                if (result == null) {
+                        return null;
+                }
+                if (result.executionToken() != null && result.executionToken().tenantId() != null) {
+                        return result.executionToken().tenantId().value();
+                }
+                if (result.getMetadata() == null) {
+                        return null;
+                }
+                Object value = result.getMetadata().get(tech.kayys.gamelan.engine.node.NodeExecutionTask.TENANT_ID_KEY);
+                if (value == null) {
+                        value = result.getMetadata().get("tenantId");
+                }
+                if (value == null) {
+                        return null;
+                }
+                String tenantId = String.valueOf(value);
+                return tenantId.isBlank() ? null : tenantId;
         }
 }

@@ -16,14 +16,14 @@ public class RemoteGamelanClient implements GamelanClient {
 
     public RemoteGamelanClient(GamelanClientConfig config) {
         this.config = config;
-        this.vertx = config.vertx() != null ? config.vertx() : Vertx.vertx();
+        this.vertx = config.vertx();
 
         if (config.transport() == TransportType.REST) {
             this.runClient = new RestWorkflowRunClient(config, vertx);
             this.definitionClient = new RestWorkflowDefinitionClient(config, vertx);
         } else if (config.transport() == TransportType.GRPC) {
-            // Placeholder for gRPC
-            throw new UnsupportedOperationException("gRPC transport not implemented yet");
+            this.runClient = new GrpcWorkflowRunClient(config);
+            this.definitionClient = new GrpcWorkflowDefinitionClient(config);
         } else {
             throw new IllegalArgumentException("Unsupported transport for RemoteGamelanClient: " + config.transport());
         }
@@ -61,7 +61,7 @@ public class RemoteGamelanClient implements GamelanClient {
             if (definitionClient != null) {
                 definitionClient.close();
             }
-            if (config.vertx() == null && vertx != null) {
+            if (config.managedVertx() && vertx != null) {
                 vertx.close();
             }
         }

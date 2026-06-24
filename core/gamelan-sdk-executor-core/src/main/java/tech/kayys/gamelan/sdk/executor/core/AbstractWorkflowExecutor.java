@@ -106,6 +106,10 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
     /**
      * Check if the executor is ready to accept new tasks
      */
+    @Override
+    public boolean isReady() {
+        return activeTaskCount.get() < getMaxConcurrentTasks();
+    }
 
     /**
      * Execute with comprehensive lifecycle hooks and error handling
@@ -115,7 +119,7 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
                 task.runId().value(), task.nodeId().value(), task.attempt(), executorType);
 
         // Check if executor is ready to handle the task
-        if (!isReady()) {
+        if (!tryReserveTaskSlot()) {
             LOG.warn("Executor {} is not ready, active tasks: {}, max: {}",
                     executorType, activeTaskCount.get(), getMaxConcurrentTasks());
             return Uni.createFrom().item(SimpleNodeExecutionResult.failure(
@@ -127,7 +131,6 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
         }
 
         Instant startTime = Instant.now();
-        activeTaskCount.incrementAndGet();
         metrics.recordTaskStarted();
 
         return beforeExecute(task)
@@ -136,17 +139,13 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
                 .invoke(throwable -> LOG.error("Before execute failed for task: {}", task.nodeId(), throwable))
                 .flatMap(v -> execute(task))
                 .onItem().invoke(result -> {
-                    Duration duration = Duration.between(startTime, Instant.now());
-                    activeTaskCount.decrementAndGet();
-                    metrics.recordTaskCompleted(duration);
+                    Duration duration = releaseTaskSlot(startTime, false);
                     LOG.info("Task completed: run={}, node={}, status={}, duration={}ms, attempt={}",
                             task.runId().value(), task.nodeId().value(),
                             result.status(), duration.toMillis(), task.attempt());
                 })
                 .onFailure().invoke(throwable -> {
-                    Duration duration = Duration.between(startTime, Instant.now());
-                    activeTaskCount.decrementAndGet();
-                    metrics.recordTaskFailed(duration);
+                    releaseTaskSlot(startTime, true);
                     LOG.error("Task failed: run={}, node={}, attempt={}",
                             task.runId().value(), task.nodeId().value(), task.attempt(), throwable);
 
@@ -157,9 +156,6 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
                                     error -> LOG.warn("onError hook failed for task: {}", task.nodeId(), error));
                 })
                 .onFailure().recoverWithItem(throwable -> {
-                    Duration duration = Duration.between(startTime, Instant.now());
-                    activeTaskCount.decrementAndGet();
-                    metrics.recordTaskFailed(duration);
                     LOG.warn("Recovering from execution failure for task: {}", task.nodeId(), throwable);
                     return SimpleNodeExecutionResult.failure(
                             task.runId(),
@@ -201,10 +197,8 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
      * task structure)
      */
     protected String extractNodeType(NodeExecutionTask task) {
-        // Look for the special __node_type__ key in the context, which is the system
-        // convention
-        if (task.context() != null && task.context().containsKey("__node_type__")) {
-            return String.valueOf(task.context().get("__node_type__"));
+        if (task.context() != null && task.context().containsKey(NodeExecutionTask.NODE_TYPE_KEY)) {
+            return String.valueOf(task.context().get(NodeExecutionTask.NODE_TYPE_KEY));
         }
 
         // Fallback to node ID value if not found
@@ -230,6 +224,34 @@ public abstract class AbstractWorkflowExecutor implements WorkflowExecutor {
      */
     public ExecutorMetrics getMetrics() {
         return metrics;
+    }
+
+    private boolean tryReserveTaskSlot() {
+        int maxConcurrentTasks = getMaxConcurrentTasks();
+        if (maxConcurrentTasks <= 0) {
+            return false;
+        }
+
+        while (true) {
+            int activeTasks = activeTaskCount.get();
+            if (activeTasks >= maxConcurrentTasks) {
+                return false;
+            }
+            if (activeTaskCount.compareAndSet(activeTasks, activeTasks + 1)) {
+                return true;
+            }
+        }
+    }
+
+    private Duration releaseTaskSlot(Instant startTime, boolean failed) {
+        Duration duration = Duration.between(startTime, Instant.now());
+        activeTaskCount.decrementAndGet();
+        if (failed) {
+            metrics.recordTaskFailed(duration);
+        } else {
+            metrics.recordTaskCompleted(duration);
+        }
+        return duration;
     }
 
     private Executor findExecutorAnnotation(Class<?> clazz) {

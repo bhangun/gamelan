@@ -2,6 +2,7 @@ package tech.kayys.gamelan.engine.run;
 
 import java.util.Map;
 import jakarta.validation.constraints.NotNull;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 public class CreateRunRequest {
     @NotNull
@@ -10,7 +11,7 @@ public class CreateRunRequest {
     @NotNull
     private String workflowVersion;
 
-    private Map<String, Object> inputs;
+    private Map<String, Object> inputs = Map.of();
     private String correlationId;
     private boolean autoStart = true;
 
@@ -24,7 +25,7 @@ public class CreateRunRequest {
             String correlationId, boolean autoStart) {
         this.workflowId = workflowId;
         this.workflowVersion = workflowVersion;
-        this.inputs = inputs;
+        setInputs(inputs);
         this.correlationId = correlationId;
         this.autoStart = autoStart;
     }
@@ -58,7 +59,7 @@ public class CreateRunRequest {
     }
 
     public void setInputs(Map<String, Object> inputs) {
-        this.inputs = inputs;
+        this.inputs = ExecutionPayloads.immutableMap(inputs);
     }
 
     public String getCorrelationId() {
@@ -100,7 +101,7 @@ public class CreateRunRequest {
         }
 
         public Builder inputs(Map<String, Object> inputs) {
-            this.inputs = inputs;
+            this.inputs = ExecutionPayloads.immutableMap(inputs);
             return this;
         }
 

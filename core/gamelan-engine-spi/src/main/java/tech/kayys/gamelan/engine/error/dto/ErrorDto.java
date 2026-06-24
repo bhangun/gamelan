@@ -6,6 +6,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+
 /**
  * Error DTO
  */
@@ -19,4 +21,7 @@ public record ErrorDto(
         @Schema(description = "Stack trace") String stackTrace,
 
         @Schema(description = "Additional context") Map<String, Object> context) {
+    public ErrorDto {
+        context = ExecutionPayloads.immutableMap(context);
+    }
 }

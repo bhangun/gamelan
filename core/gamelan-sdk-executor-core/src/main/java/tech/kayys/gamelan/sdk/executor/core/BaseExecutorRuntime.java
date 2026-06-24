@@ -2,6 +2,9 @@ package tech.kayys.gamelan.sdk.executor.core;
 
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -13,8 +16,15 @@ import org.slf4j.LoggerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
+import tech.kayys.gamelan.engine.execution.ExecutionContext;
+import tech.kayys.gamelan.engine.execution.ExecutionError;
+import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.node.NodeExecutionResult;
+import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
+import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
+import tech.kayys.gamelan.engine.run.WaitInfo;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 /**
  * Base runtime for all executor implementations
@@ -109,15 +119,11 @@ public abstract class BaseExecutorRuntime {
         LOG.debug("Received task: run={}, node={}",
                 task.runId().value(), task.nodeId().value());
 
-        // Find appropriate executor
-        WorkflowExecutor executor = executors.values().stream()
-                .filter(e -> e.canHandle(task))
-                .findFirst()
-                .orElse(null);
+        WorkflowExecutor executor = selectExecutor(task);
 
         if (executor == null) {
             LOG.warn("No executor found for task: {}", task.nodeId().value());
-            sendResult(SimpleNodeExecutionResult.failure(
+            sendResult(task, SimpleNodeExecutionResult.failure(
                     task.runId(),
                     task.nodeId(),
                     task.attempt(),
@@ -131,15 +137,51 @@ public abstract class BaseExecutorRuntime {
             if (executor instanceof AbstractWorkflowExecutor abstractExecutor) {
                 abstractExecutor.executeWithLifecycle(task)
                         .subscribe().with(
-                                result -> sendResult(result),
+                                result -> sendResult(task, result),
                                 error -> LOG.error("Execution failed", error));
             } else {
                 executor.execute(task)
                         .subscribe().with(
-                                result -> sendResult(result),
+                                result -> sendResult(task, result),
                                 error -> LOG.error("Execution failed", error));
             }
         });
+    }
+
+    protected void sendResult(NodeExecutionTask task, NodeExecutionResult result) {
+        sendResult(enrichResultWithTaskContext(task, result));
+    }
+
+    protected WorkflowExecutor selectExecutor(NodeExecutionTask task) {
+        String requestedExecutorType = requestedExecutorType(task);
+        if (requestedExecutorType != null) {
+            WorkflowExecutor exactExecutor = executors.get(requestedExecutorType);
+            if (exactExecutor != null && exactExecutor.canHandle(task)) {
+                return exactExecutor;
+            }
+        }
+
+        return executors.values().stream()
+                .filter(e -> e.isReady() && e.canHandle(task))
+                .findFirst()
+                .or(() -> executors.values().stream()
+                        .filter(e -> e.canHandle(task))
+                        .findFirst())
+                .orElse(null);
+    }
+
+    private String requestedExecutorType(NodeExecutionTask task) {
+        if (task == null || task.context() == null) {
+            return null;
+        }
+
+        Object value = task.context().get(NodeExecutionTask.NODE_TYPE_KEY);
+        if (value == null) {
+            return null;
+        }
+
+        String executorType = String.valueOf(value).trim();
+        return executorType.isBlank() ? null : executorType;
     }
 
     /**
@@ -155,6 +197,33 @@ public abstract class BaseExecutorRuntime {
                         error -> LOG.error("Failed to send result", error));
     }
 
+    private NodeExecutionResult enrichResultWithTaskContext(NodeExecutionTask task, NodeExecutionResult result) {
+        if (task == null || result == null || task.context() == null) {
+            return result;
+        }
+
+        String tenantId = contextText(task.context().get(NodeExecutionTask.TENANT_ID_KEY));
+        if (tenantId == null) {
+            return result;
+        }
+
+        Map<String, Object> metadata = new HashMap<>();
+        if (result.getMetadata() != null) {
+            metadata.putAll(result.getMetadata());
+        }
+        metadata.put(NodeExecutionTask.TENANT_ID_KEY, tenantId);
+        metadata.put("tenantId", tenantId);
+        return new TaskContextNodeExecutionResult(result, Map.copyOf(metadata));
+    }
+
+    private String contextText(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value);
+        return text.isBlank() ? null : text;
+    }
+
     /**
      * Get all registered executors
      */
@@ -167,5 +236,90 @@ public abstract class BaseExecutorRuntime {
      */
     public boolean isRunning() {
         return running;
+    }
+
+    private static final class TaskContextNodeExecutionResult implements NodeExecutionResult {
+        private final NodeExecutionResult delegate;
+        private final Map<String, Object> metadata;
+
+        private TaskContextNodeExecutionResult(NodeExecutionResult delegate, Map<String, Object> metadata) {
+            this.delegate = delegate;
+            this.metadata = metadata;
+        }
+
+        @Override
+        public WorkflowRunId runId() {
+            return delegate.runId();
+        }
+
+        @Override
+        public NodeId nodeId() {
+            return delegate.nodeId();
+        }
+
+        @Override
+        public int attempt() {
+            return delegate.attempt();
+        }
+
+        @Override
+        public NodeExecutionStatus status() {
+            return delegate.status();
+        }
+
+        @Override
+        public Map<String, Object> output() {
+            return delegate.output();
+        }
+
+        @Override
+        public ErrorInfo error() {
+            return delegate.error();
+        }
+
+        @Override
+        public ExecutionToken executionToken() {
+            return delegate.executionToken();
+        }
+
+        @Override
+        public NodeExecutionStatus getStatus() {
+            return delegate.getStatus();
+        }
+
+        @Override
+        public String getNodeId() {
+            return delegate.getNodeId();
+        }
+
+        @Override
+        public Instant getExecutedAt() {
+            return delegate.getExecutedAt();
+        }
+
+        @Override
+        public Duration getDuration() {
+            return delegate.getDuration();
+        }
+
+        @Override
+        public ExecutionContext getUpdatedContext() {
+            return delegate.getUpdatedContext();
+        }
+
+        @Override
+        public ExecutionError getError() {
+            return delegate.getError();
+        }
+
+        @Override
+        public WaitInfo getWaitInfo() {
+            return delegate.getWaitInfo();
+        }
+
+        @Override
+        public Map<String, Object> getMetadata() {
+            return metadata;
+        }
     }
 }

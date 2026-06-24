@@ -14,20 +14,21 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.smallrye.common.annotation.Identifier;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.operators.multi.processors.BroadcastProcessor;
 import tech.kayys.gamelan.engine.node.NodeExecutionResult;
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
-import tech.kayys.gamelan.sdk.executor.core.ExecutorTransport;
 import tech.kayys.gamelan.sdk.executor.core.WorkflowExecutor;
 
 /**
  * Kafka-based executor transport
  */
 @ApplicationScoped
-public class KafkaExecutorTransport implements ExecutorTransport {
+@Identifier("kafka")
+public class KafkaExecutorTransport implements RemoteExecutorTransport {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaExecutorTransport.class);
 

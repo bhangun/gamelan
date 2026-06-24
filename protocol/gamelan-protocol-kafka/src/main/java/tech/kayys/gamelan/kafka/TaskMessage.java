@@ -9,6 +9,7 @@ import java.util.Map;
 public record TaskMessage(
         String taskId,
         String runId,
+        String tenantId,
         String nodeId,
         int attempt,
         String executionToken,

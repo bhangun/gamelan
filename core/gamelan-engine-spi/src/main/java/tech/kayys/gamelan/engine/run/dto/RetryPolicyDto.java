@@ -8,6 +8,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.run.RetryPolicy;
 
 /**
@@ -24,6 +25,10 @@ public record RetryPolicyDto(
         @DecimalMin("1.0") @DecimalMax("10.0") @Schema(description = "Backoff multiplier") double backoffMultiplier,
 
         @Schema(description = "Retryable exceptions") List<String> retryableExceptions) {
+    public RetryPolicyDto {
+        retryableExceptions = ExecutionPayloads.immutableListCopy(retryableExceptions);
+    }
+
     public static RetryPolicyDto from(RetryPolicy policy) {
         return new RetryPolicyDto(
                 policy.maxAttempts(),

@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+
 /**
  * Paged response wrapper
  */
@@ -18,4 +20,7 @@ public record PagedResponse<T>(
         @Schema(description = "Total elements in page") int totalElements,
 
         @Schema(description = "Has more pages") boolean hasMore) {
+    public PagedResponse {
+        content = ExecutionPayloads.immutableListCopy(content);
+    }
 }

@@ -6,6 +6,8 @@
 
 plugins {
     id("buildlogic.java-conventions")
+    id("io.quarkus")
+    `java-test-fixtures`
 }
 
 dependencies {
@@ -15,7 +17,6 @@ dependencies {
     api(project(":gamelan-protocol-kafka"))
     api(project(":gamelan-executor-registry"))
     api(project(":gamelan-plugin-spi"))
-    api(project(":gamelan-plugin-consul"))
     api(libs.io.quarkus.quarkus.mutiny)
     api(libs.io.quarkus.quarkus.reactive.pg.client)
     api(libs.io.quarkus.quarkus.hibernate.reactive.panache)
@@ -60,6 +61,8 @@ dependencies {
         exclude(mapOf("group" to "commons-logging", "module" to "commons-logging"))
     }
     testImplementation(libs.io.quarkus.quarkus.test.security)
+    testImplementation(testFixtures(project(":gamelan-engine-spi")))
+    testFixturesImplementation(libs.org.junit.jupiter.junit.jupiter.api)
     compileOnly(libs.org.projectlombok.lombok)
 }
 

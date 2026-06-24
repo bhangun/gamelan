@@ -256,6 +256,7 @@ public class NodeExecution {
     private int attempts;
     private Instant startedAt;
     private Instant completedAt;
+    private Instant retryAt;
     private Map<String, Object> output;
     private ErrorInfo error;
     
@@ -266,10 +267,14 @@ public class NodeExecution {
     }
     
     public void markFailure(ErrorInfo error, boolean retryable) {
-        this.status = NodeExecutionStatus.FAILURE;
         this.error = error;
-        this.completedAt = Instant.now();
-        // Schedule retry if retryable
+        if (retryable) {
+            this.status = NodeExecutionStatus.RETRYING;
+            this.retryAt = Instant.now().plus(retryPolicy.calculateDelay(attempts));
+        } else {
+            this.status = NodeExecutionStatus.FAILURE;
+            this.completedAt = Instant.now();
+        }
     }
 }
 ```
@@ -322,6 +327,11 @@ gamelan.saga.compensation-timeout=600
 # Plugin System
 gamelan.plugin.auto-discovery=true
 gamelan.plugin.scan-classpath=true
+
+# Execution Interceptor Policy
+# Default false keeps interceptor failures isolated; set true for strict
+# profiles where beforeExecution hooks enforce auth, quota, or policy gates.
+gamelan.engine.execution.interceptors.before.fail-on-error=false
 
 # Metrics
 gamelan.metrics.enabled=true
@@ -408,22 +418,45 @@ public class NotificationPlugin implements EngineExtension {
    workflowRun.startExecution();  // Appends RUN_STARTED event
    ```
 
-2. **Implement Compensation**: For multi-step workflows, define compensation
+2. **Keep Event Publication Durable And Validated**: Persist workflow/retry events before notifying interceptors. Interceptor failures must be isolated so audit and retry wake-up still happen. At orchestration ingress, validate run update IDs and decode executor result events into concrete, versioned payload types before mutating run state. Distributed executor callbacks should carry tenant context and call the tenant-aware workflow feedback APIs so colliding run IDs cannot cross tenant boundaries. Lifecycle, retry, recovery, and orchestrator self-wake paths should emit the tenant-aware `WorkflowRunUpdateEvent` payload through `WorkflowRunWakeupPublisher`; legacy string run IDs remain supported for backward compatibility. The default publisher records workflow, system, batch, retry, interceptor, persistence, and wake-up diagnostics; it falls back to the local event bus when a configured wake-up publisher fails and keeps the persisted event as the source of truth. The default Vert.x publisher coalesces failed wake-ups by tenant/run, keeps the latest reason, guards in-flight redelivery, clears stale buffered entries after successful direct delivery, exposes pending snapshots plus low-cardinality delivery diagnostics, and retries using `gamelan.workflow.wakeup.*` limits; durable profiles can replace the publisher with a persistent outbox. All persisted lifecycle status changes should publish a run update after storage/history writes. Idempotent lifecycle retries, including repeated active `startRun`/`resumeRun` calls and same-terminal `cancelRun`/`completeRun` calls, should still emit a wake-up without mutating storage, so API retries can recover missed drive events.
+   ```java
+   eventPublisher.publishRetry(runId, tenantId, nodeId);  // Appends retry event and tenant-aware wake-up
+   ```
+
+3. **Honor Retry Due Time**: Delayed retries stay in `RETRYING` with `retryAt`; planners must not dispatch them until the retry manager wakes the run at or after that time. Retry managers keep due entries until the wake-up event is published successfully, giving retry wake-ups at-least-once delivery. Retry entry encoding carries tenant id and retry attempt when available, and remains backward-compatible with legacy run/node entries already stored in local memory or Redis. Use `gamelan.retry.scan-interval`, `gamelan.retry.redis.batch-size`, and `gamelan.retry.redis.claim-ttl` to tune retry queue pressure; Redis retry atomically preserves the earliest scheduled score per encoded retry attempt, skips duplicate scheduling while an entry is already claimed in the processing set, drains due entries into that processing set, acks after publish, requeues on publish failure, and restores expired claims after runtime crashes.
+   ```java
+   nodeExecution.isRetryDue(clock.instant());
+   ```
+
+4. **Run Recovery Sweeps**: Enable `gamelan.recovery.*` in production profiles so running runs are scanned through the configured persistence strategy. The sweeper snapshots active-run pages before mutating any run, de-duplicates overlapping page results by tenant and run id, wakes due retries if a retry event was missed, backfills future delayed retry wake-ups that may have been lost, treats wake-up publication failures as repairable sweep warnings, reaps only in-flight nodes whose explicit node timeout plus grace has elapsed, isolates per-run failures, and recovers runs in bounded chunks controlled by `gamelan.recovery.max-concurrent-runs`.
+   ```properties
+   gamelan.recovery.enabled=true
+   gamelan.recovery.scan-interval=30s
+   gamelan.recovery.page-size=100
+   gamelan.recovery.max-concurrent-runs=4
+   gamelan.recovery.timeout-grace=30s
+   ```
+
+5. **Keep Planner Outputs Immutable And Normalized**: `ExecutionPlan` defensively snapshots ready nodes and outputs. The default planner also de-duplicates scheduler output, ignores nodes that were not computed as ready, and appends omitted ready nodes so DAG scheduler extensions cannot accidentally stall ready work.
+
+6. **Coalesce And Batch Run Drive Events**: Treat run update events as level-triggered signals, not a one-event-one-drive contract. Only one drive cycle should be active per run; duplicate events should collapse into a single follow-up cycle, planner ready nodes should be de-duplicated and validated against the workflow definition before dispatch, large fan-outs should be capped with `gamelan.orchestrator.max-ready-nodes-per-cycle`, and in-flight dispatches should be bounded with `gamelan.orchestrator.max-concurrent-dispatches` to reduce redundant planning, locking, and dispatch bursts. The default fail-fast executor policy reserves a node before executor selection so stale planner output skips registry and token work; `gamelan.orchestrator.no-executor-policy=wait` resolves first so ready nodes remain pending while executors are unavailable.
+
+7. **Implement Compensation**: For multi-step workflows, define compensation
    ```java
    node.setCompensation(() -> refundPayment());
    ```
 
-3. **Configure Appropriate Timeouts**: Balance responsiveness with reliability
+8. **Configure Appropriate Timeouts**: Balance responsiveness with reliability
    ```properties
    gamelan.dispatcher.default-timeout=300  # 5 minutes for long operations
    ```
 
-4. **Monitor Metrics**: Export metrics for observability
+9. **Monitor Metrics**: Export metrics for observability
    ```properties
    gamelan.metrics.enabled=true
    ```
 
-5. **Test with Plugin System**: Use extensions for testing
+10. **Test with Plugin System**: Use extensions for testing
    ```java
    @Test
    public void testWorkflowWithMocks() {
@@ -439,17 +472,19 @@ public class NotificationPlugin implements EngineExtension {
    gamelan.event-store.snapshot-frequency=100  # Every 100 events
    ```
 
-2. **Thread Pool Sizing**: Configure scheduler thread pool based on concurrency needs
+2. **Definition Hot Paths**: Keep workflow definitions immutable and index node lookups inside runtime aggregates so wide DAGs do not repeatedly scan node lists during scheduling, retry, replay, restore, and compensation.
+
+3. **Thread Pool Sizing**: Configure scheduler thread pool based on concurrency needs
    ```properties
    gamelan.scheduler.thread-pool-size=20  # For 20 concurrent workflows
    ```
 
-3. **Queue Size**: Prevent memory exhaustion with bounded queue
+4. **Queue Size**: Prevent memory exhaustion with bounded queue
    ```properties
    gamelan.scheduler.queue-size=5000
    ```
 
-4. **Connection Pooling**: Ensure DB connection pool is appropriately sized
+5. **Connection Pooling**: Ensure DB connection pool is appropriately sized
    ```properties
    quarkus.datasource.max-size=20
    ```

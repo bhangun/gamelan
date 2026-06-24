@@ -14,4 +14,6 @@ public interface ExecutionHistoryRepository {
     Uni<ExecutionHistory> load(WorkflowRunId runId);
 
     Uni<Boolean> isNodeResultProcessed(WorkflowRunId runId, NodeId nodeId, int attempt);
+
+    Uni<Boolean> markNodeResultProcessed(WorkflowRunId runId, NodeId nodeId, int attempt);
 }

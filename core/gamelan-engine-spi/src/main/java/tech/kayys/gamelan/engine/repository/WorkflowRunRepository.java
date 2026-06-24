@@ -1,6 +1,9 @@
 package tech.kayys.gamelan.engine.repository;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.Function;
 
 import io.smallrye.mutiny.Uni;
 import tech.kayys.gamelan.engine.callback.CallbackRegistration;
@@ -40,7 +43,21 @@ public interface WorkflowRunRepository {
 
     Uni<WorkflowRun> findById(WorkflowRunId id, TenantId tenantId);
 
-    <T> Uni<T> withLock(WorkflowRunId runId, java.util.function.Function<WorkflowRun, Uni<T>> action);
+    <T> Uni<T> withLock(WorkflowRunId runId, Function<WorkflowRun, Uni<T>> action);
+
+    default <T> Uni<T> withLock(WorkflowRunId runId, TenantId tenantId, Function<WorkflowRun, Uni<T>> action) {
+        Objects.requireNonNull(runId, "WorkflowRunId cannot be null");
+        Objects.requireNonNull(tenantId, "TenantId cannot be null");
+        Objects.requireNonNull(action, "Lock action cannot be null");
+
+        return withLock(runId, run -> {
+            if (run == null || !tenantId.equals(run.getTenantId())) {
+                return Uni.createFrom().failure(
+                        new NoSuchElementException("WorkflowRun not found: " + runId.value()));
+            }
+            return action.apply(run);
+        });
+    }
 
     Uni<WorkflowRunSnapshot> snapshot(WorkflowRunId runId, TenantId tenantId);
 
@@ -51,6 +68,31 @@ public interface WorkflowRunRepository {
             int page,
             int size);
 
+    /**
+     * Paged running-run scan used by recovery sweepers.
+     *
+     * Implementations should prefer indexed status scans and stable paging. The
+     * default keeps legacy/custom repositories source-compatible but means they
+     * opt out of automatic recovery until implemented.
+     */
+    default Uni<List<WorkflowRun>> queryActiveRunsForRecovery(int page, int size) {
+        return Uni.createFrom().item(List.of());
+    }
+
+    /**
+     * Cursor-based active-run scan used by recovery sweepers.
+     *
+     * Implementations should prefer deterministic keyset scans over offset paging.
+     * The default delegates to {@link #queryActiveRunsForRecovery(int, int)} so
+     * existing repository implementations remain source-compatible.
+     */
+    default Uni<WorkflowRunRecoveryPage> scanActiveRunsForRecovery(WorkflowRunRecoveryCursor cursor, int size) {
+        WorkflowRunRecoveryCursor safeCursor = cursor != null ? cursor : WorkflowRunRecoveryCursor.start();
+        int safeSize = size > 0 ? size : 100;
+        return queryActiveRunsForRecovery(safeCursor.page(), safeSize)
+                .map(runs -> WorkflowRunRecoveryPage.offset(runs, safeCursor, safeSize));
+    }
+
     Uni<Long> countActiveRuns(TenantId tenantId);
 
     Uni<Void> storeToken(ExecutionToken token);
@@ -60,6 +102,10 @@ public interface WorkflowRunRepository {
     Uni<Void> storeCallback(CallbackRegistration callback);
 
     Uni<Boolean> validateCallback(WorkflowRunId runId, String token);
+
+    default Uni<Boolean> validateCallback(WorkflowRunId runId, TenantId tenantId, String token) {
+        return validateCallback(runId, token);
+    }
 
     /**
      * Surgical update of a single context variable (JSONB performance)

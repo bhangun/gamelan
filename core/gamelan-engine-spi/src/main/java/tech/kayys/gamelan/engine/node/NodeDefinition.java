@@ -6,8 +6,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import tech.kayys.gamelan.engine.error.ErrorCode;
 import tech.kayys.gamelan.engine.error.GamelanException;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.run.RetryPolicy;
 import tech.kayys.gamelan.engine.run.Transition;
 import tech.kayys.gamelan.engine.run.Transition.TransitionType;
@@ -39,7 +42,7 @@ public record NodeDefinition(
 
         dependsOn = dependsOn != null ? List.copyOf(dependsOn) : List.of();
         transitions = transitions != null ? List.copyOf(transitions) : List.of();
-        configuration = configuration != null ? Map.copyOf(configuration) : Map.of();
+        configuration = ExecutionPayloads.immutableMap(configuration);
 
         retryPolicy = retryPolicy != null ? retryPolicy : RetryPolicy.none();
         timeout = timeout != null ? timeout : Duration.ZERO;
@@ -50,10 +53,12 @@ public record NodeDefinition(
 
     // ==================== ROLE ====================
 
+    @JsonIgnore
     public boolean isStartNode() {
         return dependsOn.isEmpty();
     }
 
+    @JsonIgnore
     public boolean isEndNode() {
         return transitions.isEmpty();
     }
@@ -118,10 +123,12 @@ public record NodeDefinition(
 
     // ==================== INTROSPECTION ====================
 
+    @JsonIgnore
     public boolean hasRetry() {
         return retryPolicy.maxAttempts() > 1;
     }
 
+    @JsonIgnore
     public boolean hasTimeout() {
         return !timeout.isZero() && !timeout.isNegative();
     }
@@ -168,12 +175,12 @@ public record NodeDefinition(
         }
 
         public Builder configuration(Map<String, Object> configuration) {
-            this.configuration = new java.util.HashMap<>(configuration);
+            this.configuration = ExecutionPayloads.mutableMap(configuration);
             return this;
         }
 
         public Builder addConfig(String key, Object value) {
-            this.configuration.put(key, value);
+            this.configuration.put(key, ExecutionPayloads.immutableValue(value));
             return this;
         }
 

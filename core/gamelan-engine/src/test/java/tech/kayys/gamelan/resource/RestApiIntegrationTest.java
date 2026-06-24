@@ -3,11 +3,13 @@ package tech.kayys.gamelan.resource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.notNullValue;
 
 @QuarkusTest
+@EnabledIfSystemProperty(named = "gamelan.http.it", matches = "true")
 public class RestApiIntegrationTest {
 
     @Test

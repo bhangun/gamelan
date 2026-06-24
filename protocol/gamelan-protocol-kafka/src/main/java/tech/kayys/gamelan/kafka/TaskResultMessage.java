@@ -8,6 +8,7 @@ import java.util.Map;
  */
 record TaskResultMessage(
         String runId,
+        String tenantId,
         String nodeId,
         int attempt,
         String status,

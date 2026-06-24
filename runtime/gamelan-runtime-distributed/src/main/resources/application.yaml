@@ -32,6 +32,8 @@ quarkus:
   application:
     name: gamelan-workflow-engine
     version: 1.0.0
+  arc:
+    selected-alternatives: tech.kayys.gamelan.kafka.KafkaEventPublisher
 
   # ==================== HTTP CONFIGURATION ====================
   http:
@@ -314,9 +316,22 @@ quarkus:
 # ==================== GAMELAN-SPECIFIC CONFIGURATION ====================
 
 gamelan:
+  workflow:
+    persistence:
+      store: postgres
+    wakeup:
+      outbox:
+        store: postgres
+  event:
+    publisher:
+      family: kafka
+  agent:
+    context:
+      store: postgres
+      max-document-bytes: ${GAMELAN_AGENT_CONTEXT_MAX_DOCUMENT_BYTES:8388608}
+      max-metadata-bytes: ${GAMELAN_AGENT_CONTEXT_MAX_METADATA_BYTES:262144}
+      max-list-results: ${GAMELAN_AGENT_CONTEXT_MAX_LIST_RESULTS:1000}
   distributed:
-    mode: redis
-  scheduler:
     mode: redis
   # Workflow Engine Configuration
   engine:
@@ -348,6 +363,8 @@ gamelan:
       
   # Scheduler Configuration
   scheduler:
+    mode: redis
+
     # Task queue size
     task-queue-size: 10000
     
@@ -374,7 +391,9 @@ gamelan:
   # Service Registry Configuration
   registry:
     type: ${REGISTRY_TYPE:static}  # static, consul, kubernetes
-    
+    selection:
+      prefer-local: false
+
     # Consul configuration (if type=consul)
     consul:
       host: ${CONSUL_HOST:localhost}
@@ -438,7 +457,9 @@ gamelan:
       devservices:
         enabled: true
     hibernate-orm:
-      database.generation: drop-and-create
+      database.generation: none
+    flyway:
+      migrate-at-start: true
       
 # Production profile
 "%prod":
@@ -455,3 +476,9 @@ gamelan:
   gamelan:
     engine:
       max-concurrent-executions: 5000
+    agent:
+      context:
+        store: postgres
+        max-document-bytes: ${GAMELAN_AGENT_CONTEXT_MAX_DOCUMENT_BYTES:8388608}
+        max-metadata-bytes: ${GAMELAN_AGENT_CONTEXT_MAX_METADATA_BYTES:262144}
+        max-list-results: ${GAMELAN_AGENT_CONTEXT_MAX_LIST_RESULTS:1000}

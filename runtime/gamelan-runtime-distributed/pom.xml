@@ -25,6 +25,9 @@
         <lombok.version>1.18.42</lombok.version>
         <protobuf.version>3.25.5</protobuf.version>
         <quarkus.grpc.protoc-artifact>com.google.protobuf:protoc:${protobuf.version}</quarkus.grpc.protoc-artifact>
+        <runtime.http.excluded.groups>runtime-http</runtime.http.excluded.groups>
+        <runtime.http.resource.test.exclude>**/runtime/**/resource/*ResourceTest.java</runtime.http.resource.test.exclude>
+        <runtime.http.resource.it.exclude>**/runtime/**/resource/*ResourceIT.java</runtime.http.resource.it.exclude>
     </properties>
 
     <dependencyManagement>
@@ -90,6 +93,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>tech.kayys.gamelan</groupId>
@@ -216,6 +223,10 @@
                 <version>${surefire-plugin.version}</version>
                 <configuration>
                     <argLine>@{argLine} --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+                    <excludedGroups>${runtime.http.excluded.groups}</excludedGroups>
+                    <excludes>
+                        <exclude>${runtime.http.resource.test.exclude}</exclude>
+                    </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
@@ -235,6 +246,10 @@
                 </executions>
                 <configuration>
                     <argLine>@{argLine} --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+                    <excludedGroups>${runtime.http.excluded.groups}</excludedGroups>
+                    <excludes>
+                        <exclude>${runtime.http.resource.it.exclude}</exclude>
+                    </excludes>
                     <systemPropertyVariables>
                         <native.image.path>
                             ${project.build.directory}/${project.build.finalName}-runner</native.image.path>
@@ -247,6 +262,20 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>runtime-http-tests</id>
+            <activation>
+                <property>
+                    <name>gamelan.runtime.http.tests</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <runtime.http.excluded.groups></runtime.http.excluded.groups>
+                <runtime.http.resource.test.exclude>__no_runtime_http_exclusion__</runtime.http.resource.test.exclude>
+                <runtime.http.resource.it.exclude>__no_runtime_http_exclusion__</runtime.http.resource.it.exclude>
+            </properties>
+        </profile>
         <profile>
             <id>native</id>
             <activation>

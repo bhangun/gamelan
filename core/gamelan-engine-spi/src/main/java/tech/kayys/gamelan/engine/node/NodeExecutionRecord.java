@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import tech.kayys.gamelan.engine.execution.ExecutionError;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 /**
  * Record of a node execution for history tracking.
@@ -31,10 +32,10 @@ public class NodeExecutionRecord {
         this.startedAt = startedAt;
         this.completedAt = completedAt;
         this.duration = duration;
-        this.inputs = inputs;
-        this.outputs = outputs;
+        this.inputs = ExecutionPayloads.immutableMap(inputs);
+        this.outputs = ExecutionPayloads.immutableMap(outputs);
         this.error = error;
-        this.metadata = metadata;
+        this.metadata = ExecutionPayloads.immutableMap(metadata);
         this.attempt = attempt;
     }
 

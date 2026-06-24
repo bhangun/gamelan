@@ -1,8 +1,5 @@
 package tech.kayys.gamelan.engine.impl;
 
-import java.util.Map;
-import java.util.Set;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.run.ValidationResult;
@@ -10,16 +7,12 @@ import tech.kayys.gamelan.engine.run.ValidationResult;
 @ApplicationScoped
 public class StateTransitionValidator {
 
-    private static final Map<RunStatus, Set<RunStatus>> ALLOWED = Map.of(
-            RunStatus.CREATED, Set.of(RunStatus.RUNNING, RunStatus.CANCELLED),
-            RunStatus.RUNNING, Set.of(RunStatus.SUSPENDED, RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED),
-            RunStatus.SUSPENDED, Set.of(RunStatus.RUNNING, RunStatus.CANCELLED),
-            RunStatus.COMPLETED, Set.of(),
-            RunStatus.FAILED, Set.of(),
-            RunStatus.CANCELLED, Set.of());
-
     public ValidationResult validate(RunStatus from, RunStatus to) {
-        boolean allowed = ALLOWED.getOrDefault(from, Set.of()).contains(to);
+        if (from == null || to == null) {
+            return ValidationResult.failure("Transition states cannot be null");
+        }
+
+        boolean allowed = from.canTransitionTo(to);
         if (allowed) {
             return ValidationResult.success();
         } else {

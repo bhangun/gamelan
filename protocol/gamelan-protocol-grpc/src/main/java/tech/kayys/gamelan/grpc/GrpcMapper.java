@@ -4,6 +4,7 @@ import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -11,11 +12,11 @@ import org.slf4j.LoggerFactory;
 
 import tech.kayys.gamelan.engine.execution.ExecutionHistory;
 import tech.kayys.gamelan.engine.node.NodeExecutionResult;
-import tech.kayys.gamelan.engine.execution.ExecutionContext;
-import tech.kayys.gamelan.engine.execution.ExecutionError;
+import tech.kayys.gamelan.engine.node.NodeExecutionTask;
+import tech.kayys.gamelan.engine.node.NodeExecutionResults;
 import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
-import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
@@ -133,113 +134,76 @@ public class GrpcMapper {
     // ==================== NODE RESULT MAPPING ====================
 
     public NodeExecutionResult toDomainNodeResult(TaskResult protoResult) {
-
-        return new SimpleNodeExecutionResult(
-                WorkflowRunId.of(protoResult.getRunId()),
-                NodeId.of(protoResult.getNodeId()),
+        return NodeExecutionResults.fromExternal(
+                protoResult.getRunId(),
+                protoResult.getNodeId(),
                 protoResult.getAttempt(),
-                toDomainTaskStatus(protoResult.getStatus()),
+                protoResult.getStatus().name(),
                 structToMap(protoResult.getOutput()),
                 protoResult.hasError() ? toDomainErrorInfo(protoResult.getError()) : null,
-                new ExecutionToken(
-                        protoResult.getExecutionToken(),
-                        WorkflowRunId.of(protoResult.getRunId()),
-                        NodeId.of(protoResult.getNodeId()),
-                        protoResult.getAttempt(),
-                        Instant.now().plusSeconds(3600)),
-                Instant.now(),
-                java.time.Duration.ZERO,
-                Map.of(),
-                null);
+                protoResult.getExecutionToken(),
+                protoResult.getTenantId(),
+                Instant.now().plusSeconds(3600));
     }
 
-    private record SimpleNodeExecutionResult(
-            WorkflowRunId runId,
-            NodeId nodeId,
-            int attempt,
-            NodeExecutionStatus statusVal,
-            Map<String, Object> updatedContextVal,
-            tech.kayys.gamelan.engine.error.ErrorInfo errorVal,
-            ExecutionToken executionToken,
-            Instant executedAtVal,
-            java.time.Duration durationVal,
-            Map<String, String> metadataVal,
-            tech.kayys.gamelan.engine.run.WaitInfo waitInfoVal) implements NodeExecutionResult {
-
-        @Override
-        public String getNodeId() {
-            return nodeId.value();
+    public ExecutionTask toProtoExecutionTask(String taskId, NodeExecutionTask task) {
+        Map<String, Object> context = task.context() != null ? task.context() : Map.of();
+        Map<String, Object> configuration = task.nodeConfiguration();
+        if (configuration.isEmpty()) {
+            configuration = context;
         }
 
-        @Override
-        public NodeExecutionStatus getStatus() {
-            return statusVal;
+        ExecutionTask.Builder builder = ExecutionTask.newBuilder()
+                .setTaskId(taskId != null && !taskId.isBlank() ? taskId : toTaskId(task))
+                .setRunId(task.runId().value())
+                .setNodeId(task.nodeId().value())
+                .setNodeName(text(context, "__node_name__", task.nodeId().value()))
+                .setNodeType(text(context, "__node_type__", text(context, "nodeType", task.nodeId().value())))
+                .setAttempt(task.attempt())
+                .setContext(mapToStruct(context))
+                .setConfiguration(mapToStruct(configuration))
+                .setScheduledAt(toProtoTimestamp(Instant.now()));
+
+        String tenantId = text(context, NodeExecutionTask.TENANT_ID_KEY, "");
+        if (tenantId.isBlank() && task.token() != null && task.token().tenantId() != null) {
+            tenantId = task.token().tenantId().value();
+        }
+        if (!tenantId.isBlank()) {
+            builder.setTenantId(tenantId);
         }
 
-        @Override
-        public ExecutionContext getUpdatedContext() {
-            return ExecutionContext.builder()
-                    .runId(runId)
-                    .variables(updatedContextVal)
-                    .build();
+        if (task.token() != null && task.token().token() != null) {
+            builder.setExecutionToken(task.token().token());
         }
 
-        @Override
-        public ExecutionError getError() {
-            if (errorVal == null)
-                return null;
-            return new ExecutionError() {
-                @Override
-                public String getCode() {
-                    return errorVal.code();
-                }
-
-                @Override
-                public Category getCategory() {
-                    return Category.SYSTEM;
-                }
-
-                @Override
-                public String getMessage() {
-                    return errorVal.message();
-                }
-
-                @Override
-                public boolean isRetriable() {
-                    return false;
-                }
-
-                @Override
-                public String getCompensationHint() {
-                    return null;
-                }
-
-                @Override
-                public Map<String, Object> getDetails() {
-                    return errorVal.context();
-                }
-            };
+        long timeoutSeconds = longValue(context.get(NodeExecutionTask.TIMEOUT_SECONDS_KEY));
+        if (timeoutSeconds > 0) {
+            builder.setTimeoutSeconds(timeoutSeconds);
         }
 
-        @Override
-        public Instant getExecutedAt() {
-            return executedAtVal;
-        }
+        return builder.build();
+    }
 
-        @Override
-        public java.time.Duration getDuration() {
-            return durationVal;
+    public Optional<TenantId> toTenantId(TaskResult result) {
+        if (result == null || result.getTenantId() == null || result.getTenantId().isBlank()) {
+            return Optional.empty();
         }
+        return Optional.of(TenantId.of(result.getTenantId()));
+    }
 
-        @Override
-        public Map<String, Object> getMetadata() {
-            return new java.util.HashMap<>(metadataVal);
-        }
+    public String toTaskId(NodeExecutionTask task) {
+        return task.taskId();
+    }
 
-        @Override
-        public tech.kayys.gamelan.engine.run.WaitInfo getWaitInfo() {
-            return waitInfoVal;
+    public String toTaskId(TaskResult result) {
+        if (result.getTaskId() != null && !result.getTaskId().isBlank()) {
+            return result.getTaskId();
         }
+        NodeExecutionResults.validateExternalAttempt(result.getAttempt());
+        return NodeExecutionTask.taskId(
+                WorkflowRunId.of(result.getRunId()),
+                NodeId.of(result.getNodeId()),
+                result.getAttempt());
     }
 
     // ==================== UTILITY METHODS ====================
@@ -262,7 +226,7 @@ public class GrpcMapper {
     }
 
     public NodeExecutionStatus toDomainTaskStatus(TaskStatus status) {
-        return NodeExecutionStatus.valueOf(status.name().replace("TASK_STATUS_", ""));
+        return NodeExecutionResults.statusFromExternal(status != null ? status.name() : null);
     }
 
     public Struct mapToStruct(Map<String, Object> map) {
@@ -297,5 +261,28 @@ public class GrpcMapper {
                 error.getMessage(),
                 error.getStackTrace(),
                 structToMap(error.getContext()));
+    }
+
+    private String text(Map<String, Object> map, String key, String fallback) {
+        Object value = map.get(key);
+        if (value == null) {
+            return fallback;
+        }
+        String text = String.valueOf(value);
+        return text.isBlank() ? fallback : text;
+    }
+
+    private long longValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException ignored) {
+                return 0L;
+            }
+        }
+        return 0L;
     }
 }

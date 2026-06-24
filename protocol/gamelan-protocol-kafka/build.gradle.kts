@@ -16,6 +16,7 @@ dependencies {
     api(libs.io.smallrye.reactive.mutiny.x2)
     api(libs.io.quarkus.quarkus.messaging.kafka.x1)
     compileOnly(libs.org.projectlombok.lombok)
+    testImplementation(libs.org.junit.jupiter.junit.jupiter)
 }
 
 description = "Gamelan Kafka Protocol"

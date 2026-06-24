@@ -71,41 +71,73 @@ GAMELAN WORKFLOW ENGINE - PROJECT STRUCTURE
   Build Profiles
   ==============
 
-  Gamelan can build either the full reactor or focused module sets:
+  Gamelan uses Gradle profile tasks as the primary build strategy. Built-in
+  modules and profiles are defined in Gradle catalog files, while local or
+  CI-specific module/profile catalogs can be layered without editing Kotlin
+  build logic.
+
+  Gradle profile builder examples:
 
   ```bash
   # Core engine and SDK only
-  mvn -Pcore test
+  ./gradlew gamelanCoreTest
 
-  # Core plus runtimes
-  mvn -Pcore,runtimes test
+  # Local-first agentic AI / agent orchestration profile
+  ./gradlew gamelanAgenticLocalTest
+
+  # Business automation / EIP server profile
+  ./gradlew gamelanBusinessAutomationCheck
 
   # Core plus server app
-  mvn -Pcore,server test
+  ./gradlew gamelanProfileCompile -Pgamelan.profile=core,server
 
-  # Historical full build
-  mvn test
+  # Custom profile and lifecycle task
+  ./gradlew gamelanProfileRun -Pgamelan.profile=plugins,extensions -Pgamelan.task=check
+
+  # Print available profile definitions
+  ./gradlew gamelanProfiles
+
+  # Print included Gradle projects
+  ./gradlew gamelanProjects
+
+  # Validate profile catalog files and runtime migration parity
+  ./gradlew gamelanValidateProfiles
+
+  # Validate only standalone/distributed Flyway migration parity
+  ./gradlew gamelanValidateMigrations
   ```
 
   See `docs/BUILD_PROFILES.md` for the profile matrix.
 
+  Agent Context Persistence
+  =========================
+
+  Gamelan now has a profile/config-driven `AgentContextStore` for local-first
+  agent context such as `AGENTS.md`, `SKILL.md`, prompt logs, and thread
+  history. Use `gamelan.agent.context.store=file` for local/standalone coding
+  agent workflows, or `gamelan.agent.context.store=postgres` for server/cloud
+  persistence. See `docs/AGENT_CONTEXT_PERSISTENCE.md`.
+
   Usage
   =====
 
-  CLI Usage
-  ---------
+  Gradle Usage
+  ------------
 
-  The Gamelan CLI provides command-line access to the workflow engine via gRPC. Install and run the CLI as follows:
+  Use the Gradle profile builder to work against focused workflow-engine slices:
 
   ```bash
-  # Build the CLI module
-  mvn clean install -pl gamelan-cli
+  # Print profile definitions
+  ./gradlew gamelanProfiles
 
-  # Run the CLI
-  java -jar gamelan-cli/target/gamelan-cli-*.jar [OPTIONS] [COMMAND] [SUBCOMMAND] [ARGS]
+  # Run core engine and SDK tests
+  ./gradlew gamelanCoreTest
 
-  # Show help
-  gamelan --help
+  # Build client SDK modules
+  ./gradlew gamelanClientBuild
+
+  # Check business automation / EIP server modules
+  ./gradlew gamelanBusinessAutomationCheck
   ```
 
   ### Error Codes

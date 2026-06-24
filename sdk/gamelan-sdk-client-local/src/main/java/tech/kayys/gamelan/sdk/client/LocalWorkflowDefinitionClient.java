@@ -9,6 +9,7 @@ import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
 import tech.kayys.gamelan.engine.workflow.dto.CreateWorkflowDefinitionRequest;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Local implementation of {@link WorkflowDefinitionClient} that directly calls the engine services.
@@ -17,6 +18,7 @@ public class LocalWorkflowDefinitionClient implements WorkflowDefinitionClient {
 
     private final WorkflowDefinitionService definitionService;
     private final TenantId tenantId;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public LocalWorkflowDefinitionClient(WorkflowDefinitionService definitionService, String tenantId) {
         this.definitionService = definitionService;
@@ -25,32 +27,55 @@ public class LocalWorkflowDefinitionClient implements WorkflowDefinitionClient {
 
     @Override
     public Uni<WorkflowDefinition> createWorkflow(WorkflowDefinition request) {
+        checkClosed();
         CreateWorkflowDefinitionRequest dto = WorkflowDefinitionMapper.toCreateRequest(request);
-        return definitionService.create(dto, tenantId);
+        return definitionService().create(dto, tenantId);
     }
 
     @Override
     public Uni<WorkflowDefinition> getWorkflow(String workflowId) {
-        return definitionService.get(WorkflowDefinitionId.of(workflowId), tenantId);
+        checkClosed();
+        return definitionService().get(WorkflowDefinitionId.of(workflowId), tenantId);
     }
 
     @Override
     public Uni<WorkflowDefinition> getWorkflowByName(String name) {
-        return Uni.createFrom().failure(new UnsupportedOperationException("getWorkflowByName not implemented in local client yet"));
+        checkClosed();
+        return definitionService().getByName(name, tenantId);
     }
 
     @Override
     public Uni<List<WorkflowDefinition>> listWorkflows() {
-        return definitionService.list(tenantId, false);
+        return listWorkflows(true);
+    }
+
+    @Override
+    public Uni<List<WorkflowDefinition>> listWorkflows(boolean activeOnly) {
+        checkClosed();
+        return definitionService().list(tenantId, activeOnly);
     }
 
     @Override
     public Uni<Void> deleteWorkflow(String workflowId) {
-        return definitionService.delete(WorkflowDefinitionId.of(workflowId), tenantId);
+        checkClosed();
+        return definitionService().delete(WorkflowDefinitionId.of(workflowId), tenantId);
+    }
+
+    private WorkflowDefinitionService definitionService() {
+        if (definitionService == null) {
+            throw new IllegalStateException("WorkflowDefinitionService not provided for LOCAL transport");
+        }
+        return definitionService;
+    }
+
+    private void checkClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("Client is closed");
+        }
     }
 
     @Override
     public void close() {
-        // No-op for local client as it doesn't own the definitionService
+        closed.set(true);
     }
 }

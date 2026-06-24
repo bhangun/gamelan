@@ -192,18 +192,13 @@ public class RestTaskDispatcher implements TaskDispatcher {
         }
 
         static RestExecutionRequest from(NodeExecutionTask task, ExecutorInfo executor) {
-
-            String idempotencyKey = task.runId().value()
-                    + ":" + task.nodeId().value()
-                    + ":" + task.attempt();
-
             return new RestExecutionRequest(
                     task.runId().value(),
                     task.nodeId().value(),
                     task.attempt(),
                     task.token(),
                     task.context(),
-                    idempotencyKey,
+                    task.idempotencyKey(),
                     sign(task, executor));
         }
 

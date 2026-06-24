@@ -2,6 +2,8 @@ package tech.kayys.gamelan.engine.error;
 
 import java.util.Map;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+
 /**
  * Error Information
  */
@@ -11,7 +13,7 @@ public record ErrorInfo(
         String stackTrace,
         Map<String, Object> context) {
     public ErrorInfo {
-        context = context != null ? Map.copyOf(context) : Map.of();
+        context = ExecutionPayloads.immutableMap(context);
     }
 
     public static ErrorInfo of(Throwable throwable) {

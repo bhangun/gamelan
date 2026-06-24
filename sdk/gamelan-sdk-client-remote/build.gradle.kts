@@ -30,7 +30,7 @@ dependencies {
     }
     testImplementation(libs.jakarta.enterprise.jakarta.enterprise.cdi.api.x1)
     compileOnly(libs.org.projectlombok.lombok)
-    providedCompile(project(":gamelan-engine-spi"))
+    compileOnly(project(":gamelan-engine-spi"))
 }
 
 description = "Gamelan SDK Client"

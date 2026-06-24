@@ -6,6 +6,10 @@ import java.util.List;
  * Validation Result
  */
 public record ValidationResult(boolean isValid, String message, List<String> errors) {
+    public ValidationResult {
+        errors = errors != null ? List.copyOf(errors) : List.of();
+    }
+
     public static ValidationResult success() {
         return new ValidationResult(true, null, List.of());
     }

@@ -14,6 +14,7 @@ import static jakarta.interceptor.Interceptor.Priority.APPLICATION;
 import tech.kayys.gamelan.engine.event.ExecutionEvent;
 import tech.kayys.gamelan.engine.context.WorkflowContext;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 /**
@@ -47,12 +48,37 @@ public class EventPublisher implements tech.kayys.gamelan.engine.event.EventPubl
     public Uni<Void> publishRetry(
             WorkflowRunId runId,
             NodeId nodeId) {
+        return publishRetry(runId, null, nodeId);
+    }
+
+    @Override
+    public Uni<Void> publishRetry(
+            WorkflowRunId runId,
+            TenantId tenantId,
+            NodeId nodeId) {
+        return publishRetry(runId, tenantId, nodeId, 0);
+    }
+
+    @Override
+    public Uni<Void> publishRetry(
+            WorkflowRunId runId,
+            TenantId tenantId,
+            NodeId nodeId,
+            int attempt) {
+        java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+        metadata.put("nodeId", nodeId.value());
+        if (tenantId != null) {
+            metadata.put("tenantId", tenantId.value());
+        }
+        if (attempt > 0) {
+            metadata.put("attempt", attempt);
+        }
         ExecutionEvent event = new tech.kayys.gamelan.engine.event.GenericExecutionEvent(
                 runId,
                 "RetryScheduled",
                 "Node retry scheduled",
                 java.time.Instant.now(),
-                java.util.Map.of("nodeId", nodeId.value()));
+                java.util.Map.copyOf(metadata));
         return publish(List.of(event));
     }
 }

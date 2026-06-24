@@ -59,7 +59,7 @@ if (compensationService.needsCompensation(workflowRun)) {
     CompensationResult result = compensationService
         .compensate(workflowRun)
         .await().atMost(Duration.ofMinutes(5));
-    
+
     if (result.success()) {
         LOG.info("Compensation successful: {}", result.message());
     } else {
@@ -112,7 +112,34 @@ NodeDefinition node = new NodeDefinition(
 
 ### Sequential Compensation
 - Compensates nodes in **reverse order** of execution
+- Resumes from persisted compensation progress without re-running completed undo work
+- Persists each successful rollback node before moving to the next node
+- Writes durable processed-node markers for rollback progress across memory, file, and Postgres stores
+- Shares marker/history conformance tests through `ExecutionHistoryRepositoryHistoryContract`,
+  `ExecutionHistoryRepositoryCompensationMarkerContract`, and
+  `ExecutionHistoryRepositoryIdempotencyMarkerContract`
+- Shares definition/run persistence conformance through `WorkflowDefinitionRepositoryContract`
+  and `WorkflowRunRepositoryContract`
+- Checks persisted run state before invoking each rollback handler to skip stale duplicate coordinator work
+- Claims each rollback node with a durable lease before handler execution to prevent concurrent duplicate rollback
+- Supports profile-configurable default claim leases via `gamelan.workflow.compensation.claim-lease`
+- Supports traceable coordinator ownership via `gamelan.workflow.compensation.coordinator-id`
+- Publishes compensation history names through the shared `CompensationEventTypes` SPI catalog for runtimes and extensions
+- Normalizes compensation failure codes/messages through the shared `CompensationErrors` SPI helper
+- Publishes compensation audit metadata keys and stable values through the shared `CompensationHistoryMetadata` SPI catalog
+- Builds compensation audit append payloads through the typed `CompensationHistoryRecords` SPI factory
+- Audits state-changing claim and release operations with `COMPENSATION_NODE_CLAIMED` and `COMPENSATION_NODE_CLAIM_RELEASED`
+- Audits expired-claim takeovers with `COMPENSATION_NODE_CLAIM_EXPIRED`
+- Audits blocked claim attempts with `COMPENSATION_NODE_CLAIM_SKIPPED`
+- Audits failed rollback nodes with `COMPENSATION_NODE_FAILED`
+- Audits already-compensated stale skips with `COMPENSATION_NODE_SKIPPED`
+- Treats duplicate in-flight node completion acknowledgements as idempotent
+- Normalizes restored compensation state by removing duplicate and already-finished work
+- Enforces terminal state consistency for completed/failed compensation snapshots
+- Rejects invalid command transitions after compensation has already completed or failed
+- Applies per-node compensation `timeout` and retries transient failures up to `maxRetries`
 - Stops on first error if `failOnCompensationError = true`
+- Returns an overall failure when any mandatory compensation fails
 - Best for dependent operations
 
 ```java
@@ -121,7 +148,11 @@ CompensationPolicy policy = CompensationPolicy.sequential();
 
 ### Parallel Compensation
 - Compensates **all nodes simultaneously**
+- Persists each successful rollback node as it completes
+- Writes durable processed-node markers for each successful rollback completion
+- Applies per-node compensation `timeout` and retries transient failures up to `maxRetries`
 - Continues even if some compensations fail
+- Returns an overall failure when any mandatory compensation fails
 - Best for independent operations
 
 ```java

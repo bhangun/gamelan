@@ -78,6 +78,7 @@ quarkus:
   hibernate-orm:
     database:
       generation: drop-and-create
+    sql-load-script: no-file
     log:
       sql: ${HIBERNATE_LOG_SQL:false}
       format-sql: true
@@ -316,9 +317,26 @@ quarkus:
 # ==================== GAMELAN-SPECIFIC CONFIGURATION ====================
 
 gamelan:
+  workflow:
+    persistence:
+      store: file
+      file:
+        root: ${GAMELAN_WORKFLOW_STORE_DIR:.gamelan/workflow}
+    wakeup:
+      outbox:
+        store: file
+  event:
+    publisher:
+      family: local
+  agent:
+    context:
+      store: file
+      max-document-bytes: ${GAMELAN_AGENT_CONTEXT_MAX_DOCUMENT_BYTES:8388608}
+      max-metadata-bytes: ${GAMELAN_AGENT_CONTEXT_MAX_METADATA_BYTES:262144}
+      max-list-results: ${GAMELAN_AGENT_CONTEXT_MAX_LIST_RESULTS:1000}
+      local:
+        root: ${GAMELAN_AGENT_CONTEXT_DIR:.gamelan/agent-context}
   distributed:
-    mode: local
-  scheduler:
     mode: local
   # Workflow Engine Configuration
   engine:
@@ -350,6 +368,8 @@ gamelan:
       
   # Scheduler Configuration
   scheduler:
+    mode: local
+
     # Task queue size
     task-queue-size: 10000
     
@@ -376,7 +396,9 @@ gamelan:
   # Service Registry Configuration
   registry:
     type: ${REGISTRY_TYPE:static}  # static, consul, kubernetes
-    
+    selection:
+      prefer-local: true
+
     # Consul configuration (if type=consul)
     consul:
       host: ${CONSUL_HOST:localhost}
@@ -450,6 +472,7 @@ gamelan:
       dialect: org.hibernate.dialect.PostgreSQLDialect
       database:
         generation: drop-and-create
+      sql-load-script: no-file
       mapping:
         format:
           global: ignore

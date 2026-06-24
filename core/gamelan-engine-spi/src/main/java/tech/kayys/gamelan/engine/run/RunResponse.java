@@ -3,6 +3,8 @@ package tech.kayys.gamelan.engine.run;
 import java.time.Instant;
 import java.util.Map;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+
 public class RunResponse {
     private String runId;
     private String workflowId;
@@ -18,7 +20,7 @@ public class RunResponse {
     private Integer attemptNumber;
     private Integer maxAttempts;
     private String errorMessage;
-    private Map<String, Object> outputs;
+    private Map<String, Object> outputs = Map.of();
 
     public RunResponse() {
     }
@@ -41,7 +43,7 @@ public class RunResponse {
         this.attemptNumber = attemptNumber;
         this.maxAttempts = maxAttempts;
         this.errorMessage = errorMessage;
-        this.outputs = outputs;
+        setOutputs(outputs);
     }
 
     public String getRunId() {
@@ -161,7 +163,7 @@ public class RunResponse {
     }
 
     public void setOutputs(Map<String, Object> outputs) {
-        this.outputs = outputs;
+        this.outputs = ExecutionPayloads.immutableMap(outputs);
     }
 
     public static Builder builder() {

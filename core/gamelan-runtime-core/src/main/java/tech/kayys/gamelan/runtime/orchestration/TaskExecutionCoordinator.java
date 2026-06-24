@@ -63,9 +63,12 @@ public class TaskExecutionCoordinator {
             Map<String, Object> variables,
             int maxRetries) {
 
-        return Uni.createFrom().completionStage(
-                execute(executorType, nodeContext, variables))
-                .onFailure().retry().atMost(maxRetries)
-                .subscribeAsCompletionStage();
+        int retryAttempts = Math.max(0, maxRetries);
+        Uni<NodeResult> execution = Uni.createFrom().deferred(() -> Uni.createFrom()
+                .completionStage(execute(executorType, nodeContext, variables)));
+        if (retryAttempts == 0) {
+            return execution.subscribeAsCompletionStage();
+        }
+        return execution.onFailure().retry().atMost(retryAttempts).subscribeAsCompletionStage();
     }
 }

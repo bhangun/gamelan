@@ -42,18 +42,17 @@ gamelan.plugin.disabled=legacy-plugin
 gamelan.plugin.fail-on-error=false
 Verification
 1. Unit Tests
-cd wayang-workflow/core/gamelan-engine-core
-mvn test
+./gradlew :gamelan-engine-core:test
 2. Integration Tests
-mvn verify -Pintegration-tests
+./gradlew check -Dgamelan.runtime.http.tests=true
 3. End-to-End with Example Plugin
 # Build
-mvn clean install -DskipTests
+./gradlew :gamelan-plugin-example:build
 # Deploy plugin
 mkdir -p plugins
-cp examples/gamelan-plugin-example/target/*.jar plugins/
+cp examples/gamelan-plugin-example/build/libs/*.jar plugins/
 # Run
-java -jar runtime/gamelan-runtime-standalone/target/*-runner.jar
+./gradlew :gamelan-runtime-standalone:quarkusRun
 Architecture Flow
 WorkflowRunManager.startRun()
   → publishes "gamelan.runs.v1.updated"

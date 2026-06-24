@@ -11,9 +11,9 @@ The Gamelan Plugin System is **complete and functional**. This guide demonstrate
 - **Location**: `gamelan-plugin-spi/`
 - **Build Command**:
   ```bash
-  mvn clean install -pl gamelan-plugin-spi -DskipTests
+  ./gradlew :gamelan-plugin-spi:build
   ```
-- **Output**: `gamelan-plugin-spi-1.0.0-SNAPSHOT.jar`
+- **Output**: `core/gamelan-plugin-spi/build/libs/gamelan-plugin-spi-0.1.0.jar`
 
 ### 2. Example Plugin
 - **Status**: ✅ Built successfully
@@ -21,9 +21,9 @@ The Gamelan Plugin System is **complete and functional**. This guide demonstrate
 - **Plugin**: LoggingInterceptorPlugin
 - **Build Command**:
   ```bash
-  mvn clean package -f examples/gamelan-plugin-example/pom.xml
+  ./gradlew :gamelan-plugin-example:build
   ```
-- **Output**: `gamelan-plugin-example-1.0.0-SNAPSHOT.jar`
+- **Output**: `examples/gamelan-plugin-example/build/libs/gamelan-plugin-example-0.1.0.jar`
 
 ### 3. Plugin Infrastructure
 - **Status**: ✅ Code complete
@@ -220,12 +220,12 @@ com.example.MyPlugin
 
 ### Step 4: Build Plugin
 ```bash
-mvn clean package
+./gradlew build
 ```
 
 ### Step 5: Deploy
 ```bash
-cp target/my-plugin-1.0.0.jar /opt/gamelan/plugins/
+cp build/libs/my-plugin-1.0.0.jar /opt/gamelan/plugins/
 ```
 
 ## 🎯 Example: LoggingInterceptorPlugin
@@ -242,13 +242,12 @@ The example plugin demonstrates a complete implementation:
 
 **Build**:
 ```bash
-cd examples/gamelan-plugin-example
-mvn clean package
+./gradlew :gamelan-plugin-example:build
 ```
 
 **Output**:
 ```
-target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar
+examples/gamelan-plugin-example/build/libs/gamelan-plugin-example-0.1.0.jar
 ```
 
 ## 📚 Documentation
@@ -293,7 +292,7 @@ PluginManager pluginManager;
 @Test
 void testPluginSystem() {
     // Load plugin
-    Path jar = Paths.get("examples/gamelan-plugin-example/target/gamelan-plugin-example-1.0.0-SNAPSHOT.jar");
+    Path jar = Paths.get("examples/gamelan-plugin-example/build/libs/gamelan-plugin-example-0.1.0.jar");
     Plugin plugin = pluginManager.loadPlugin(jar).await().indefinitely();
     
     // Verify metadata

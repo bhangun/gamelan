@@ -2,40 +2,33 @@ package tech.kayys.gamelan.runtime;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import jakarta.enterprise.inject.Instance;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
+
+import tech.kayys.gamelan.engine.executor.ExecutorClient;
+import tech.kayys.gamelan.engine.node.NodeContext;
+import tech.kayys.gamelan.engine.node.NodeResult;
 
 class ExecutorAdapterRegistryTest {
 
-    @Mock
-    private Instance<ExecutorAdapter> adapterInstances;
-
-    @Mock
-    private ExecutorAdapter mockAdapter;
-
+    private ExecutorAdapter adapter;
     private ExecutorAdapterRegistry registry;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
-        when(mockAdapter.getExecutorType()).thenReturn("test");
-        when(adapterInstances.stream()).thenReturn(Stream.of(mockAdapter));
-
-        registry = new ExecutorAdapterRegistry(adapterInstances);
+        adapter = new TestExecutorAdapter("test");
+        registry = new ExecutorAdapterRegistry(Stream.of(adapter));
     }
 
     @Test
     void testRegisterAdapter() {
         assertTrue(registry.hasAdapter("test"));
-        assertEquals(mockAdapter, registry.getAdapter("test"));
+        assertEquals(adapter, registry.getAdapter("test"));
     }
 
     @Test
@@ -49,5 +42,28 @@ class ExecutorAdapterRegistryTest {
     void testGetAllAdapters() {
         assertEquals(1, registry.getAllAdapters().size());
         assertTrue(registry.getAllAdapters().containsKey("test"));
+    }
+
+    private record TestExecutorAdapter(String executorType) implements ExecutorAdapter {
+
+        @Override
+        public boolean supports(String executorType) {
+            return this.executorType.equals(executorType);
+        }
+
+        @Override
+        public ExecutorClient adapt(ExecutorClient client) {
+            return client;
+        }
+
+        @Override
+        public CompletionStage<NodeResult> execute(NodeContext nodeContext, Map<String, Object> variables) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public String getExecutorType() {
+            return executorType;
+        }
     }
 }

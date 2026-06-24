@@ -1,34 +1,32 @@
 package tech.kayys.gamelan.registry.persistence;
 
-import io.quarkus.test.InjectMock;
-import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.mutiny.Uni;
-import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
 import tech.kayys.gamelan.registry.repository.ExecutorJpaRepositoryImpl;
 import tech.kayys.gamelan.registry.entity.ExecutorEntity;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 
-@QuarkusTest
-@io.quarkus.test.junit.TestProfile(DatabaseTestProfile.class)
 class DatabaseExecutorRepositoryTest {
 
-    @InjectMock
-    ExecutorJpaRepositoryImpl executorJpaRepository;
+    private FakeExecutorJpaRepository executorJpaRepository;
+    private DatabaseExecutorRepository databaseExecutorRepository;
 
-    @Inject
-    DatabaseExecutorRepository databaseExecutorRepository;
+    @BeforeEach
+    void setUp() {
+        executorJpaRepository = new FakeExecutorJpaRepository();
+        databaseExecutorRepository = new DatabaseExecutorRepository();
+        databaseExecutorRepository.executorJpaRepository = executorJpaRepository;
+    }
 
     @Test
     void save_ValidExecutor_ShouldSaveSuccessfully() {
@@ -41,16 +39,14 @@ class DatabaseExecutorRepositoryTest {
                 Duration.ofSeconds(30),
                 Map.of("key1", "value1"));
 
-        Mockito.when(executorJpaRepository.save(any())).thenReturn(Uni.createFrom().voidItem());
-
         // Act
         Uni<Void> result = databaseExecutorRepository.save(executor);
 
         // Assert
         assertNotNull(result);
-        result.subscribe().with(item -> {
-        }, failure -> fail(failure));
-        Mockito.verify(executorJpaRepository).save(any(ExecutorEntity.class));
+        assertDoesNotThrow(() -> result.await().indefinitely());
+        assertNotNull(executorJpaRepository.saved);
+        assertEquals("executor-1", executorJpaRepository.saved.getExecutorId());
     }
 
     @Test
@@ -62,18 +58,16 @@ class DatabaseExecutorRepositoryTest {
         mockEntity.setCommunicationType(CommunicationType.REST);
         mockEntity.setEndpoint("http://localhost:8081");
 
-        Mockito.when(executorJpaRepository.findById(eq("executor-find-test")))
-                .thenReturn(Uni.createFrom().item(mockEntity));
+        executorJpaRepository.byId = mockEntity;
 
         // Act
         Uni<Optional<ExecutorInfo>> result = databaseExecutorRepository.findById("executor-find-test");
 
         // Assert
         assertNotNull(result);
-        result.subscribe().with(opt -> {
-            assertTrue(opt.isPresent());
-            assertEquals("executor-find-test", opt.get().executorId());
-        }, failure -> fail(failure));
+        Optional<ExecutorInfo> executor = result.await().indefinitely();
+        assertTrue(executor.isPresent());
+        assertEquals("executor-find-test", executor.get().executorId());
     }
 
     @Test
@@ -81,36 +75,64 @@ class DatabaseExecutorRepositoryTest {
         // Arrange
         var mockEntity1 = new ExecutorEntity();
         mockEntity1.setExecutorId("executor-all-1");
+        mockEntity1.setExecutorType("all-type");
+        mockEntity1.setCommunicationType(CommunicationType.GRPC);
+        mockEntity1.setEndpoint("http://localhost:8082");
 
         var mockEntity2 = new ExecutorEntity();
         mockEntity2.setExecutorId("executor-all-2");
+        mockEntity2.setExecutorType("all-type");
+        mockEntity2.setCommunicationType(CommunicationType.REST);
+        mockEntity2.setEndpoint("http://localhost:8083");
 
-        Mockito.when(executorJpaRepository.getAllExecutors())
-                .thenReturn(Uni.createFrom().item(List.of(mockEntity1, mockEntity2)));
+        executorJpaRepository.all = List.of(mockEntity1, mockEntity2);
 
         // Act
         Uni<List<ExecutorInfo>> result = databaseExecutorRepository.findAll();
 
         // Assert
         assertNotNull(result);
-        result.subscribe().with(list -> {
-            assertEquals(2, list.size());
-        }, failure -> fail(failure));
+        List<ExecutorInfo> executors = result.await().indefinitely();
+        assertEquals(2, executors.size());
     }
 
     @Test
     void delete_ExistingExecutor_ShouldRemoveExecutor() {
-        // Arrange
-        Mockito.when(executorJpaRepository.deleteById(eq("executor-delete-test")))
-                .thenReturn(Uni.createFrom().voidItem());
-
         // Act
         Uni<Void> result = databaseExecutorRepository.delete("executor-delete-test");
 
         // Assert
         assertNotNull(result);
-        result.subscribe().with(item -> {
-        }, failure -> fail(failure));
-        Mockito.verify(executorJpaRepository).deleteById("executor-delete-test");
+        assertDoesNotThrow(() -> result.await().indefinitely());
+        assertEquals("executor-delete-test", executorJpaRepository.deletedId);
+    }
+
+    static class FakeExecutorJpaRepository extends ExecutorJpaRepositoryImpl {
+        ExecutorEntity saved;
+        ExecutorEntity byId;
+        List<ExecutorEntity> all = new ArrayList<>();
+        String deletedId;
+
+        @Override
+        public Uni<Void> save(ExecutorEntity executor) {
+            saved = executor;
+            return Uni.createFrom().voidItem();
+        }
+
+        @Override
+        public Uni<ExecutorEntity> findById(String executorId) {
+            return Uni.createFrom().item(byId);
+        }
+
+        @Override
+        public Uni<List<ExecutorEntity>> getAllExecutors() {
+            return Uni.createFrom().item(all);
+        }
+
+        @Override
+        public Uni<Void> deleteById(String executorId) {
+            deletedId = executorId;
+            return Uni.createFrom().voidItem();
+        }
     }
 }

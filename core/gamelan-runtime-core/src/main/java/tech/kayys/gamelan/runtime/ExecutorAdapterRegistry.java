@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * Registry for managing executor adapters.
@@ -22,10 +23,14 @@ public class ExecutorAdapterRegistry {
 
     @Inject
     public ExecutorAdapterRegistry(Instance<ExecutorAdapter> adapterInstances) {
+        this(adapterInstances.stream());
+    }
+
+    public ExecutorAdapterRegistry(Stream<ExecutorAdapter> adapterInstances) {
         this.adapters = new ConcurrentHashMap<>();
 
         // Auto-register all CDI-discovered adapters
-        adapterInstances.stream().forEach(adapter -> {
+        adapterInstances.forEach(adapter -> {
             register(adapter);
             LOG.info("Registered executor adapter: {}", adapter.getExecutorType());
         });

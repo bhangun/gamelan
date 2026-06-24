@@ -2,9 +2,12 @@ package tech.kayys.gamelan.kafka;
 
 import static jakarta.interceptor.Interceptor.Priority.APPLICATION;
 
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,16 +21,18 @@ import org.slf4j.LoggerFactory;
 import io.smallrye.mutiny.Uni;
 import tech.kayys.gamelan.engine.context.WorkflowContext;
 import tech.kayys.gamelan.engine.event.EventPublisher;
+import tech.kayys.gamelan.engine.event.EventPublisherDiagnostics;
 import tech.kayys.gamelan.engine.event.ExecutionEvent;
 import tech.kayys.gamelan.engine.event.GenericExecutionEvent;
 import tech.kayys.gamelan.engine.event.NodeCompletedEvent;
 import tech.kayys.gamelan.engine.event.NodeFailedEvent;
 import tech.kayys.gamelan.engine.event.WorkflowStartedEvent;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 /**
- * Publishes domain events to Kafka
+ * Publishes workflow domain events to Kafka for distributed runtime profiles.
  */
 @Priority(APPLICATION + 10)
 @ApplicationScoped
@@ -39,6 +44,14 @@ public class KafkaEventPublisher implements EventPublisher {
     @Channel("workflow-events")
     Emitter<WorkflowEventMessage> eventEmitter;
 
+    private final AtomicLong directEventsPublished = new AtomicLong();
+    private final AtomicLong systemEventsPublished = new AtomicLong();
+    private final AtomicLong batchEventsPublished = new AtomicLong();
+    private final AtomicLong retryEventsPublished = new AtomicLong();
+    private final AtomicLong publishFailures = new AtomicLong();
+    private volatile String lastFailure;
+    private volatile Instant lastFailureAt;
+
     @Override
     public void publish(String eventType, Object payload, WorkflowContext workflowContext) {
         LOG.debug("Publishing direct event to Kafka: {}", eventType);
@@ -48,9 +61,16 @@ public class KafkaEventPublisher implements EventPublisher {
                 workflowContext.tenantId().value(),
                 eventType,
                 java.time.Instant.now(),
-                (payload instanceof Map) ? (Map<String, Object>) payload : Map.of("data", payload));
+                payloadMap(payload));
 
-        eventEmitter.send(message);
+        eventEmitter.send(message)
+                .whenComplete((ignored, error) -> {
+                    if (error == null) {
+                        directEventsPublished.incrementAndGet();
+                    } else {
+                        recordFailure(error);
+                    }
+                });
     }
 
     @Override
@@ -62,9 +82,16 @@ public class KafkaEventPublisher implements EventPublisher {
                 "system",
                 eventType,
                 java.time.Instant.now(),
-                (payload instanceof Map) ? (Map<String, Object>) payload : Map.of("data", payload));
+                payloadMap(payload));
 
-        eventEmitter.send(message);
+        eventEmitter.send(message)
+                .whenComplete((ignored, error) -> {
+                    if (error == null) {
+                        systemEventsPublished.incrementAndGet();
+                    } else {
+                        recordFailure(error);
+                    }
+                });
     }
 
     @Override
@@ -74,10 +101,13 @@ public class KafkaEventPublisher implements EventPublisher {
         return Uni.join().all(
                 events.stream()
                         .map(this::publishEvent)
-                        .toList())
+                .toList())
                 .andFailFast()
                 .replaceWithVoid()
-                .onFailure().invoke(throwable -> LOG.error("Failed to publish events to Kafka", throwable));
+                .onFailure().invoke(throwable -> {
+                    recordFailure(throwable);
+                    LOG.error("Failed to publish events to Kafka", throwable);
+                });
     }
 
     private Uni<Void> publishEvent(ExecutionEvent event) {
@@ -89,8 +119,9 @@ public class KafkaEventPublisher implements EventPublisher {
                 event.occurredAt(),
                 serializeEvent(event));
 
-        return Uni.createFrom().completionStage(
-                eventEmitter.send(message));
+        return Uni.createFrom().completionStage(eventEmitter.send(message))
+                .invoke(() -> batchEventsPublished.incrementAndGet())
+                .onFailure().invoke(this::recordFailure);
     }
 
     private String extractTenantId(ExecutionEvent event) {
@@ -124,14 +155,78 @@ public class KafkaEventPublisher implements EventPublisher {
         return data;
     }
 
+    private static Map<String, Object> payloadMap(Object payload) {
+        Map<String, Object> data = new HashMap<>();
+        if (payload instanceof Map<?, ?> map) {
+            map.forEach((key, value) -> {
+                if (key != null) {
+                    data.put(String.valueOf(key), value);
+                }
+            });
+            return data;
+        }
+        data.put("data", payload);
+        return data;
+    }
+
     @Override
     public Uni<Void> publishRetry(WorkflowRunId runId, NodeId nodeId) {
+        return publishRetry(runId, null, nodeId);
+    }
+
+    @Override
+    public Uni<Void> publishRetry(WorkflowRunId runId, TenantId tenantId, NodeId nodeId) {
+        return publishRetry(runId, tenantId, nodeId, 0);
+    }
+
+    @Override
+    public Uni<Void> publishRetry(WorkflowRunId runId, TenantId tenantId, NodeId nodeId, int attempt) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("nodeId", nodeId.value());
+        if (tenantId != null) {
+            metadata.put("tenantId", tenantId.value());
+        }
+        if (attempt > 0) {
+            metadata.put("attempt", attempt);
+        }
         ExecutionEvent event = new GenericExecutionEvent(
                 runId,
                 "RetryScheduled",
                 "Node retry scheduled",
                 java.time.Instant.now(),
-                java.util.Map.of("nodeId", nodeId.value()));
-        return publish(List.of(event));
+                Map.copyOf(metadata));
+        return publish(List.of(event))
+                .invoke(() -> retryEventsPublished.incrementAndGet());
+    }
+
+    @Override
+    public EventPublisherDiagnostics diagnostics() {
+        Map<String, Long> counters = new LinkedHashMap<>();
+        counters.put("directEventsPublished", directEventsPublished.get());
+        counters.put("systemEventsPublished", systemEventsPublished.get());
+        counters.put("batchEventsPublished", batchEventsPublished.get());
+        counters.put("retryEventsPublished", retryEventsPublished.get());
+        counters.put("publishFailures", publishFailures.get());
+        return EventPublisherDiagnostics.available(
+                getClass().getName(),
+                counters,
+                lastFailure,
+                lastFailureAt);
+    }
+
+    private void recordFailure(Throwable error) {
+        publishFailures.incrementAndGet();
+        lastFailure = errorSummary(error);
+        lastFailureAt = Instant.now();
+    }
+
+    private static String errorSummary(Throwable error) {
+        if (error == null) {
+            return "unknown";
+        }
+        String message = error.getMessage();
+        return message == null || message.isBlank()
+                ? error.getClass().getSimpleName()
+                : error.getClass().getSimpleName() + ": " + message.replaceAll("\\s+", " ").trim();
     }
 }

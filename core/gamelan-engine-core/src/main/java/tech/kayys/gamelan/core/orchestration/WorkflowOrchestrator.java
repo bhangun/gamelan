@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import io.quarkus.vertx.ConsumeEvent;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import tech.kayys.gamelan.core.engine.WorkflowEngine;
 import tech.kayys.gamelan.core.node.DefaultNodeExecutionContext;
 import tech.kayys.gamelan.engine.context.EngineContext;
@@ -20,6 +21,7 @@ import tech.kayys.gamelan.engine.context.WorkflowContext;
 import tech.kayys.gamelan.engine.error.ErrorCode;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
 import tech.kayys.gamelan.engine.error.GamelanException;
+import tech.kayys.gamelan.engine.event.WorkflowRunUpdateEvent;
 import tech.kayys.gamelan.engine.node.DefaultNodeExecutionResult;
 import tech.kayys.gamelan.engine.node.NodeContext;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
@@ -35,11 +37,12 @@ import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionService;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
+import tech.kayys.gamelan.engine.saga.CompensationErrors;
 import tech.kayys.gamelan.engine.saga.CompensationService;
 
 /**
  * WorkflowOrchestrator
- * 
+ *
  * Orchestrates workflow execution by:
  * 1. Listening to workflow run state changes
  * 2. Scheduling ready nodes for execution
@@ -72,13 +75,23 @@ public class WorkflowOrchestrator {
         /**
          * Listens to workflow run updates and triggers node execution
          */
-        @ConsumeEvent("gamelan.runs.v1.updated")
-        public Uni<Void> onWorkflowRunUpdated(String runIdValue) {
+        @ConsumeEvent(WorkflowRunUpdateEvent.ADDRESS)
+        public Uni<Void> onWorkflowRunUpdated(Object payload) {
+                Optional<RunUpdateSignal> signal = decodeRunUpdate(payload);
+                if (signal.isEmpty()) {
+                        return Uni.createFrom().voidItem();
+                }
+
+                WorkflowRunId runId = signal.get().runId();
+                Optional<TenantId> tenantId = signal.get().tenantId();
+                String runIdValue = runId.value();
                 LOG.info("Workflow run updated: {}", runIdValue);
 
-                WorkflowRunId runId = WorkflowRunId.of(runIdValue);
+                Uni<WorkflowRun> runLookup = tenantId
+                                .map(tenant -> runRepository.findById(runId, tenant))
+                                .orElseGet(() -> runRepository.findById(runId));
 
-                return runRepository.findById(runId)
+                return runLookup
                                 .onItem().ifNull()
                                 .failWith(() -> new GamelanException(
                                                 ErrorCode.RUN_NOT_FOUND,
@@ -103,11 +116,8 @@ public class WorkflowOrchestrator {
                                                                                 return runManager.failCompensation(
                                                                                                 runId,
                                                                                                 run.getTenantId(),
-                                                                                                new ErrorInfo(
-                                                                                                                "COMPENSATION_FAILED",
-                                                                                                                result.message(),
-                                                                                                                "",
-                                                                                                                Map.of()));
+                                                                                                CompensationErrors.failed(
+                                                                                                                result.message()));
                                                                         }
                                                                 });
                                         }
@@ -166,6 +176,58 @@ public class WorkflowOrchestrator {
                                 })
                                 .onFailure()
                                 .invoke(error -> LOG.error("Error orchestrating workflow {}", runIdValue, error));
+        }
+
+        Optional<RunUpdateSignal> decodeRunUpdate(Object payload) {
+                if (payload instanceof WorkflowRunUpdateEvent event) {
+                        return Optional.of(new RunUpdateSignal(event.workflowRunId(), event.tenant()));
+                }
+                if (payload instanceof JsonObject json) {
+                        return decodeRunUpdate(json);
+                }
+                if (payload instanceof String runIdValue) {
+                        return decodeLegacyRunId(runIdValue);
+                }
+                if (payload == null) {
+                        LOG.warn("Ignoring workflow run update without run id");
+                } else {
+                        LOG.warn("Ignoring unsupported workflow run update payload type: {}",
+                                        payload.getClass().getName());
+                }
+                return Optional.empty();
+        }
+
+        private Optional<RunUpdateSignal> decodeRunUpdate(JsonObject payload) {
+                if (payload == null || payload.isEmpty()) {
+                        LOG.warn("Ignoring empty workflow run update");
+                        return Optional.empty();
+                }
+                try {
+                        WorkflowRunUpdateEvent event = payload.mapTo(WorkflowRunUpdateEvent.class);
+                        return Optional.of(new RunUpdateSignal(event.workflowRunId(), event.tenant()));
+                } catch (RuntimeException error) {
+                        LOG.warn("Ignoring malformed workflow run update: {}", error.getMessage());
+                        LOG.debug("Malformed workflow run update payload={}", payload.encode(), error);
+                        return Optional.empty();
+                }
+        }
+
+        private Optional<RunUpdateSignal> decodeLegacyRunId(String runIdValue) {
+                if (runIdValue == null || runIdValue.isBlank()) {
+                        LOG.warn("Ignoring workflow run update without run id");
+                        return Optional.empty();
+                }
+                try {
+                        return Optional.of(new RunUpdateSignal(
+                                        WorkflowRunId.of(runIdValue.trim()),
+                                        Optional.empty()));
+                } catch (RuntimeException error) {
+                        LOG.warn("Ignoring malformed workflow run update for run id '{}': {}",
+                                        runIdValue,
+                                        error.getMessage());
+                        LOG.debug("Malformed workflow run update details", error);
+                        return Optional.empty();
+                }
         }
 
         /**
@@ -410,6 +472,16 @@ public class WorkflowOrchestrator {
                                                                 NodeExecution exec = entry.getValue();
                                                                 return NodeResult.success(exec.getOutput());
                                                         }));
+                }
+        }
+
+        record RunUpdateSignal(
+                        WorkflowRunId runId,
+                        Optional<TenantId> tenantId) {
+
+                RunUpdateSignal {
+                        java.util.Objects.requireNonNull(runId, "WorkflowRunId cannot be null");
+                        tenantId = tenantId != null ? tenantId : Optional.empty();
                 }
         }
 }

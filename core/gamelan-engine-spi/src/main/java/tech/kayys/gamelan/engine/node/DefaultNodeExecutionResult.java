@@ -8,6 +8,7 @@ import tech.kayys.gamelan.engine.error.ErrorInfo;
 import tech.kayys.gamelan.engine.execution.ExecutionContext;
 import tech.kayys.gamelan.engine.execution.ExecutionError;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.run.WaitInfo;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
@@ -23,6 +24,12 @@ public record DefaultNodeExecutionResult(
                 Map<String, Object> output,
                 ErrorInfo error,
                 ExecutionToken executionToken) implements NodeExecutionResult {
+
+        public DefaultNodeExecutionResult {
+                NodeExecutionResults.validateIdentity(runId, nodeId, attempt, status, executionToken);
+                NodeExecutionResults.validateResultSemantics(status, error, "NodeExecutionResult");
+                output = ExecutionPayloads.immutableMap(output);
+        }
 
         @Override
         public NodeExecutionStatus getStatus() {

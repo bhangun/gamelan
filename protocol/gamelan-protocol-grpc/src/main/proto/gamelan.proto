@@ -80,6 +80,9 @@ service ExecutorService {
   // Stream tasks to executor (server streaming)
   rpc StreamTasks(StreamTasksRequest) returns (stream ExecutionTask);
 
+  // Acknowledge task receipt before execution completion
+  rpc AcknowledgeTask(TaskAcknowledgement) returns (google.protobuf.Empty);
+
   // Report task result (client streaming)
   rpc ReportResults(stream TaskResult) returns (google.protobuf.Empty);
 
@@ -95,6 +98,9 @@ message CreateRunRequest {
   google.protobuf.Struct inputs = 3;
   map<string, string> labels = 4;
   TriggerInfo trigger = 5;
+  string workflow_version = 6;
+  string correlation_id = 7;
+  bool auto_start = 8;
 }
 
 message GetRunRequest {
@@ -132,6 +138,7 @@ message SignalRequest {
   string signal_name = 2;
   string target_node_id = 3;
   google.protobuf.Struct payload = 4;
+  string idempotency_key = 5;
 }
 
 message GetExecutionHistoryRequest {
@@ -239,6 +246,7 @@ message ExecutionTask {
   google.protobuf.Struct configuration = 9;
   int64 timeout_seconds = 10;
   google.protobuf.Timestamp scheduled_at = 11;
+  string tenant_id = 12;
 }
 
 message TaskResult {
@@ -251,6 +259,7 @@ message TaskResult {
   google.protobuf.Struct output = 7;
   ErrorInfo error = 8;
   google.protobuf.Timestamp completed_at = 9;
+  string tenant_id = 10;
 }
 
 // Bidirectional streaming messages
@@ -406,6 +415,7 @@ message CreateDefinitionRequest {
 message GetDefinitionRequest {
   string tenant_id = 1;
   string definition_id = 2;
+  string name = 3;
 }
 
 message ListDefinitionsRequest {
@@ -419,7 +429,7 @@ message UpdateDefinitionRequest {
   string tenant_id = 1;
   string definition_id = 2;
   string description = 3;
-  bool is_active = 4;
+  optional bool is_active = 4;
   map<string, string> metadata = 5;
 }
 
@@ -439,6 +449,11 @@ message DefinitionResponse {
   bool is_active = 6;
   google.protobuf.Timestamp created_at = 7;
   map<string, string> metadata = 8;
+  map<string, InputDefinition> inputs = 9;
+  map<string, OutputDefinition> outputs = 10;
+  RetryPolicy default_retry_policy = 11;
+  CompensationPolicy compensation_policy = 12;
+  string tenant_id = 13;
 }
 
 message ListDefinitionsResponse {
@@ -483,6 +498,8 @@ message CompensationPolicy {
   string strategy = 1;
   int64 timeout_seconds = 2;
   bool fail_on_compensation_error = 3;
+  bool enabled = 4;
+  int32 max_retries = 5;
 }
 
 message InputDefinition {

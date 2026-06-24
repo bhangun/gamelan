@@ -13,6 +13,7 @@ public class SignalBuilder {
     private final String runId;
     private String signalName;
     private String targetNodeId;
+    private String idempotencyKey;
     private final Map<String, Object> payload = new HashMap<>();
 
     public SignalBuilder(WorkflowRunClient client, String runId) {
@@ -30,13 +31,20 @@ public class SignalBuilder {
         return this;
     }
 
+    public SignalBuilder idempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
+        return this;
+    }
+
     public SignalBuilder data(String key, Object value) {
         this.payload.put(key, value);
         return this;
     }
 
     public SignalBuilder payload(Map<String, Object> payload) {
-        this.payload.putAll(payload);
+        if (payload != null) {
+            this.payload.putAll(payload);
+        }
         return this;
     }
 
@@ -44,6 +52,6 @@ public class SignalBuilder {
         if (signalName == null || signalName.trim().isEmpty()) {
             throw new IllegalArgumentException("Signal name cannot be null or empty");
         }
-        return client.signal(runId, signalName, targetNodeId, payload);
+        return client.signal(runId, signalName, targetNodeId, payload, idempotencyKey);
     }
 }

@@ -115,12 +115,15 @@ public class WorkflowRunResource {
     @Path("/{id}/signal")
     @SuppressWarnings("unchecked")
     public Uni<Void> signal(@PathParam("id") String id, Map<String, Object> payload) {
-        String name = (String) payload.get("name");
+        String name = (String) payload.getOrDefault("signalName", payload.get("name"));
         String targetNodeIdStr = (String) payload.get("targetNodeId");
         Map<String, Object> data = (Map<String, Object>) payload.get("payload");
-        tech.kayys.gamelan.engine.node.NodeId targetNodeId = targetNodeIdStr != null
-                ? tech.kayys.gamelan.engine.node.NodeId.of(targetNodeIdStr)
+        String idempotencyKey = (String) payload.get("idempotencyKey");
+        tech.kayys.gamelan.engine.node.NodeId targetNodeId = targetNodeIdStr != null && !targetNodeIdStr.isBlank()
+                ? tech.kayys.gamelan.engine.node.NodeId.of(targetNodeIdStr.trim())
                 : null;
-        return runManager.signal(WorkflowRunId.of(id), new Signal(name, targetNodeId, data, java.time.Instant.now()));
+        return runManager.signal(
+                WorkflowRunId.of(id),
+                new Signal(name, targetNodeId, data, java.time.Instant.now(), idempotencyKey));
     }
 }

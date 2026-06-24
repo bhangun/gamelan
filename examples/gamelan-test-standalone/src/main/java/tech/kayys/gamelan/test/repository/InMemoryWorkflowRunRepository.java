@@ -11,11 +11,14 @@ import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.run.RunStatus;
+import tech.kayys.gamelan.engine.execution.BearerTokenHash;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
+import tech.kayys.gamelan.engine.execution.ExecutionTokenHash;
 import tech.kayys.gamelan.engine.callback.CallbackRegistration;
 
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.node.NodeExecutionSnapshot;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,8 +30,8 @@ import java.util.function.Function;
 public class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
 
     private final Map<String, WorkflowRun> runs = new ConcurrentHashMap<>();
-    private final Map<String, ExecutionToken> tokens = new ConcurrentHashMap<>();
-    private final Map<String, CallbackRegistration> callbacks = new ConcurrentHashMap<>();
+    private final Map<String, StoredExecutionToken> tokens = new ConcurrentHashMap<>();
+    private final Map<String, StoredCallbackRegistration> callbacks = new ConcurrentHashMap<>();
 
     @Override
     public Uni<WorkflowRun> persist(WorkflowRun run) {
@@ -86,24 +89,37 @@ public class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
 
     @Override
     public Uni<Void> storeToken(ExecutionToken token) {
-        tokens.put(token.value(), token);
+        tokens.put(ExecutionTokenHash.sha256(token.value()), StoredExecutionToken.from(token));
         return Uni.createFrom().voidItem();
     }
 
     @Override
     public Uni<Boolean> validateToken(ExecutionToken token) {
-        return Uni.createFrom().item(tokens.containsKey(token.value()));
+        if (token == null) {
+            return Uni.createFrom().item(false);
+        }
+        StoredExecutionToken stored = tokens.get(ExecutionTokenHash.sha256(token.value()));
+        return Uni.createFrom().item(stored != null
+                && !stored.isExpired()
+                && stored.matches(token));
     }
 
     @Override
     public Uni<Void> storeCallback(CallbackRegistration callback) {
-        callbacks.put(callback.callbackToken(), callback);
+        callbacks.put(BearerTokenHash.sha256(callback.callbackToken()), StoredCallbackRegistration.from(callback));
         return Uni.createFrom().voidItem();
     }
 
     @Override
     public Uni<Boolean> validateCallback(WorkflowRunId runId, String token) {
-        return Uni.createFrom().item(callbacks.containsKey(token));
+        if (runId == null || token == null || token.isBlank()) {
+            return Uni.createFrom().item(false);
+        }
+
+        StoredCallbackRegistration stored = callbacks.get(BearerTokenHash.sha256(token));
+        return Uni.createFrom().item(stored != null
+                && !stored.isExpired()
+                && stored.runId().equals(runId));
     }
 
     @Override
@@ -114,5 +130,50 @@ public class InMemoryWorkflowRunRepository implements WorkflowRunRepository {
     @Override
     public Uni<Void> updateContextVariable(WorkflowRunId runId, String key, Object value) {
         return Uni.createFrom().voidItem();
+    }
+
+    private record StoredExecutionToken(
+            WorkflowRunId runId,
+            TenantId tenantId,
+            NodeId nodeId,
+            int attempt,
+            Instant expiresAt) {
+
+        static StoredExecutionToken from(ExecutionToken token) {
+            return new StoredExecutionToken(
+                    token.runId(),
+                    token.tenantId(),
+                    token.nodeId(),
+                    token.attempt(),
+                    token.expiresAt());
+        }
+
+        boolean isExpired() {
+            return Instant.now().isAfter(expiresAt);
+        }
+
+        boolean matches(ExecutionToken token) {
+            return runId.equals(token.runId())
+                    && tenantMatches(token)
+                    && nodeId.equals(token.nodeId())
+                    && attempt == token.attempt();
+        }
+
+        private boolean tenantMatches(ExecutionToken token) {
+            return tenantId == null || tenantId.equals(token.tenantId());
+        }
+    }
+
+    private record StoredCallbackRegistration(
+            WorkflowRunId runId,
+            Instant expiresAt) {
+
+        static StoredCallbackRegistration from(CallbackRegistration callback) {
+            return new StoredCallbackRegistration(callback.runId(), callback.expiresAt());
+        }
+
+        boolean isExpired() {
+            return Instant.now().isAfter(expiresAt);
+        }
     }
 }

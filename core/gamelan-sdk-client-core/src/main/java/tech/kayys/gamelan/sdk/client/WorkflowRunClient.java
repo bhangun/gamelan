@@ -16,7 +16,7 @@ import tech.kayys.gamelan.engine.execution.ExecutionHistory;
 public interface WorkflowRunClient extends AutoCloseable {
     /**
      * Creates a new workflow run based on the provided request.
-     * 
+     *
      * @param request the run creation details
      * @return a Uni containing the created run details
      */
@@ -24,7 +24,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Retrieves the current state of a workflow run.
-     * 
+     *
      * @param runId the unique ID of the workflow run
      * @return a Uni containing the run details
      */
@@ -32,7 +32,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Starts execution of a previously created workflow run.
-     * 
+     *
      * @param runId the unique ID of the workflow run
      * @return a Uni containing the updated run details
      */
@@ -40,7 +40,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Suspends a running workflow execution.
-     * 
+     *
      * @param runId           the unique ID of the workflow run
      * @param reason          the reason for suspension
      * @param waitingOnNodeId optionally, the node ID that the workflow is waiting
@@ -51,7 +51,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Resumes a suspended workflow execution.
-     * 
+     *
      * @param runId       the unique ID of the workflow run
      * @param resumeData  data to pass back into the workflow upon resumption
      * @param humanTaskId optionally, the ID of the human task being completed
@@ -61,7 +61,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Cancels a workflow run, stopping all execution.
-     * 
+     *
      * @param runId  the unique ID of the workflow run
      * @param reason the reason for cancellation
      * @return a Uni representing completion
@@ -70,7 +70,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Sends a signal to a running workflow.
-     * 
+     *
      * @param runId        the unique ID of the workflow run
      * @param signalName   the name of the signal
      * @param targetNodeId optionally, the target node that should receive the
@@ -81,8 +81,29 @@ public interface WorkflowRunClient extends AutoCloseable {
     Uni<Void> signal(String runId, String signalName, String targetNodeId, Map<String, Object> payload);
 
     /**
+     * Sends a signal with a client-provided idempotency key.
+     *
+     * @param runId          the unique ID of the workflow run
+     * @param signalName     the name of the signal
+     * @param targetNodeId   optionally, the target node that should receive the
+     *                       signal
+     * @param payload        the signal data
+     * @param idempotencyKey stable client key used to distinguish retries from
+     *                       new same-content signals
+     * @return a Uni representing completion
+     */
+    default Uni<Void> signal(
+            String runId,
+            String signalName,
+            String targetNodeId,
+            Map<String, Object> payload,
+            String idempotencyKey) {
+        return signal(runId, signalName, targetNodeId, payload);
+    }
+
+    /**
      * Retrieves the execution history (event log) for a workflow run.
-     * 
+     *
      * @param runId the unique ID of the workflow run
      * @return a Uni containing the history
      */
@@ -90,7 +111,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Queries workflow runs based on filtering criteria.
-     * 
+     *
      * @param workflowId filter by workflow definition ID
      * @param status     filter by run status
      * @param page       page number for pagination
@@ -101,7 +122,7 @@ public interface WorkflowRunClient extends AutoCloseable {
 
     /**
      * Returns the count of currently active runs.
-     * 
+     *
      * @return a Uni containing the count
      */
     Uni<Long> getActiveRunsCount();

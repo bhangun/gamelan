@@ -11,8 +11,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import jakarta.inject.Inject;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import tech.kayys.gamelan.engine.executor.ExecutorPlacementRequirements;
+import tech.kayys.gamelan.engine.protocol.CommunicationType;
 
 /**
  * Service to handle executor registration and heartbeating
@@ -44,14 +47,14 @@ public class ExecutorRegistrationService {
             return Uni.createFrom().voidItem();
         }
 
+        Map<String, String> metadata = executorMetadata(config);
         ExecutorInfo info = new ExecutorInfo(
                 executorId,
                 executorType,
                 config.communicationType(),
                 "local", // Default for now, should be discovered or configured
                 Duration.ofSeconds(30), // Default timeout
-                Map.of("version", "1.0.0") // Default metadata
-        );
+                metadata);
 
         // Convert to JsonObject for Vert.x event bus
         JsonObject json = JsonObject.mapFrom(info);
@@ -97,5 +100,22 @@ public class ExecutorRegistrationService {
             vertx.cancelTimer(heartbeatTimerId);
             heartbeatTimerId = -1;
         }
+    }
+
+    private static Map<String, String> executorMetadata(ExecutorConfig config) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("version", "1.0.0");
+
+        CommunicationType communicationType = config.communicationType();
+        if (communicationType == CommunicationType.LOCAL) {
+            metadata.put(ExecutorPlacementRequirements.METADATA_RUNTIMES_KEY, "local");
+            metadata.put(ExecutorPlacementRequirements.METADATA_ISOLATIONS_KEY, "none");
+        } else if (communicationType == CommunicationType.GRPC
+                || communicationType == CommunicationType.REST
+                || communicationType == CommunicationType.KAFKA) {
+            metadata.put(ExecutorPlacementRequirements.METADATA_RUNTIMES_KEY, "remote,distributed");
+        }
+
+        return metadata;
     }
 }

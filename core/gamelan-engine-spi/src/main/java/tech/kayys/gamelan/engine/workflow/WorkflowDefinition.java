@@ -16,11 +16,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import tech.kayys.gamelan.engine.error.ErrorCode;
 import tech.kayys.gamelan.engine.error.GamelanException;
+import tech.kayys.gamelan.engine.executor.ExecutorSelectionPolicy;
 import tech.kayys.gamelan.engine.node.InputDefinition;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.node.OutputDefinition;
 import tech.kayys.gamelan.engine.run.RetryPolicy;
+import tech.kayys.gamelan.engine.run.Transition;
+import tech.kayys.gamelan.engine.run.ValidationResult;
 import tech.kayys.gamelan.engine.saga.CompensationPolicy;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 
@@ -51,6 +54,7 @@ public record WorkflowDefinition(
         nodes = nodes != null ? List.copyOf(nodes) : List.of();
         inputs = inputs != null ? Map.copyOf(inputs) : Map.of();
         outputs = outputs != null ? Map.copyOf(outputs) : Map.of();
+        metadata = metadata != null ? metadata : WorkflowMetadata.system();
         defaultRetryPolicy = defaultRetryPolicy != null ? defaultRetryPolicy : RetryPolicy.none();
         compensationPolicy = compensationPolicy != null ? compensationPolicy : CompensationPolicy.disabled();
     }
@@ -81,31 +85,76 @@ public record WorkflowDefinition(
 
     @JsonIgnore
     public boolean isValid() {
-        return hasAtLeastOneStartNode()
-                && hasNoCircularDependenciesIfDag()
-                && hasValidDependencies()
-                && hasValidIO();
+        return validate().isValid();
     }
 
-    private boolean hasAtLeastOneStartNode() {
-        return !getStartNodes().isEmpty();
-    }
+    @JsonIgnore
+    public ValidationResult validate() {
+        List<String> errors = new ArrayList<>();
 
-    private boolean hasNoCircularDependenciesIfDag() {
-        if (mode != WorkflowMode.DAG) {
-            return true;
+        validateNodes(errors);
+        validateExecutorSelection(errors);
+        validateDependencies(errors);
+        validateTransitions(errors);
+        validateIO(errors);
+
+        if (mode == WorkflowMode.DAG && hasCircularDependencies()) {
+            errors.add("DAG workflow contains circular dependencies");
         }
-        // Simple DFS cycle detection
+
+        if (errors.isEmpty()) {
+            return ValidationResult.success();
+        }
+        return ValidationResult.failure("Invalid workflow definition", errors);
+    }
+
+    private void validateNodes(List<String> errors) {
+        if (nodes.isEmpty()) {
+            errors.add("Workflow must have at least one node");
+            return;
+        }
+
+        Set<NodeId> seen = new HashSet<>();
+        for (NodeDefinition node : nodes) {
+            if (node.id().value().isBlank()) {
+                errors.add("Node id cannot be blank");
+            }
+            if (!seen.add(node.id())) {
+                errors.add("Duplicate node id: " + node.id().value());
+            }
+        }
+
+        if (getStartNodes().isEmpty()) {
+            errors.add("Workflow must have at least one start node");
+        }
+    }
+
+    private void validateExecutorSelection(List<String> errors) {
+        for (NodeDefinition node : nodes) {
+            try {
+                ExecutorSelectionPolicy policy = ExecutorSelectionPolicy.fromContext(node.configuration());
+                for (String error : policy.validationErrors()) {
+                    errors.add("Node " + node.id().value() + " has invalid executor selection: " + error);
+                }
+            } catch (GamelanException error) {
+                errors.add("Node " + node.id().value()
+                        + " has invalid executor selection: "
+                        + error.getSafeMessage());
+            }
+        }
+    }
+
+    private boolean hasCircularDependencies() {
         Map<NodeId, List<NodeId>> graph = buildDependencyGraph();
         Set<NodeId> visited = new HashSet<>();
         Set<NodeId> stack = new HashSet<>();
 
         for (NodeId nodeId : graph.keySet()) {
             if (detectCycle(nodeId, graph, visited, stack)) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     private boolean detectCycle(
@@ -140,20 +189,49 @@ public record WorkflowDefinition(
         return graph;
     }
 
-    private boolean hasValidDependencies() {
+    private void validateDependencies(List<String> errors) {
         Set<NodeId> nodeIds = nodes.stream()
                 .map(NodeDefinition::id)
                 .collect(Collectors.toSet());
 
-        return nodes.stream()
-                .flatMap(n -> n.dependsOn().stream())
-                .allMatch(nodeIds::contains);
+        for (NodeDefinition node : nodes) {
+            for (NodeId dependency : node.dependsOn()) {
+                if (node.id().equals(dependency)) {
+                    errors.add("Node " + node.id().value() + " cannot depend on itself");
+                }
+                if (!nodeIds.contains(dependency)) {
+                    errors.add("Node " + node.id().value()
+                            + " references unknown dependency: " + dependency.value());
+                }
+            }
+        }
     }
 
-    private boolean hasValidIO() {
-        // Inputs referenced must exist
-        return inputs.keySet().stream().allMatch(Objects::nonNull)
-                && outputs.keySet().stream().allMatch(Objects::nonNull);
+    private void validateTransitions(List<String> errors) {
+        Set<NodeId> nodeIds = nodes.stream()
+                .map(NodeDefinition::id)
+                .collect(Collectors.toSet());
+
+        for (NodeDefinition node : nodes) {
+            for (Transition transition : node.transitions()) {
+                if (transition.type() == null) {
+                    errors.add("Node " + node.id().value() + " has transition without type");
+                }
+                if (transition.targetNodeId() != null && !nodeIds.contains(transition.targetNodeId())) {
+                    errors.add("Node " + node.id().value()
+                            + " transitions to unknown node: " + transition.targetNodeId().value());
+                }
+            }
+        }
+    }
+
+    private void validateIO(List<String> errors) {
+        inputs.keySet().stream()
+                .filter(key -> key == null || key.isBlank())
+                .forEach(key -> errors.add("Workflow input name cannot be blank"));
+        outputs.keySet().stream()
+                .filter(key -> key == null || key.isBlank())
+                .forEach(key -> errors.add("Workflow output name cannot be blank"));
     }
 
     // ==================== COMPENSATION ====================
@@ -217,7 +295,7 @@ public record WorkflowDefinition(
             this.description = description;
             return this;
         }
-        
+
         public Builder mode(WorkflowMode mode) {
             this.mode = mode != null ? mode : WorkflowMode.FLOW;
             return this;
@@ -286,8 +364,11 @@ public record WorkflowDefinition(
 
         public WorkflowDefinition buildAndValidate() {
             WorkflowDefinition workflowDefinition = build();
-            if (!workflowDefinition.isValid()) {
-                throw new GamelanException(ErrorCode.WORKFLOW_INVALID_DEFINITION, "Invalid workflow definition");
+            ValidationResult validation = workflowDefinition.validate();
+            if (!validation.isValid()) {
+                throw new GamelanException(
+                        ErrorCode.WORKFLOW_INVALID_DEFINITION,
+                        validation.message() + ": " + String.join("; ", validation.errors()));
             }
             return workflowDefinition;
         }

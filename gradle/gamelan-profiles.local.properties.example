@@ -1,0 +1,8 @@
+# Copy this file to gradle/gamelan-profiles.local.properties for machine-local
+# profile builders. Local profiles override gradle/gamelan-profiles.properties
+# and are ignored by git.
+#
+# Example:
+# profile.my-local-agent.description=Local coding-agent profile with custom modules
+# profile.my-local-agent.projects=:gamelan-engine-spi,:gamelan-plugin-spi,:gamelan-engine-core,:gamelan-runtime-core,:gamelan-runtime-standalone,:gamelan-dag
+# profile.my-local-agent.runtime-contract=offline-agent

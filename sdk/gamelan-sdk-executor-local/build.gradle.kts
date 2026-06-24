@@ -14,13 +14,8 @@ dependencies {
     api(libs.org.slf4j.slf4j.api)
     api(libs.io.quarkus.quarkus.arc)
     api(libs.io.smallrye.reactive.mutiny)
-    api(libs.io.quarkus.quarkus.messaging.kafka)
-    api(libs.io.quarkus.quarkus.grpc) {
-        // TODO: This exclude was sourced from a POM exclusion and is NOT exactly equivalent, see: https://docs.gradle.org/9.4.0/userguide/build_init_plugin.html#sec:pom_maven_conversion
-        exclude(mapOf("group" to "com.google.android", "module" to "annotations"))
-    }
+    api(libs.io.smallrye.reactive.smallrye.mutiny.vertx.core)
     testImplementation(libs.org.junit.jupiter.junit.jupiter)
-    testImplementation(libs.org.mockito.mockito.junit.jupiter)
     compileOnly(libs.org.projectlombok.lombok)
 }
 

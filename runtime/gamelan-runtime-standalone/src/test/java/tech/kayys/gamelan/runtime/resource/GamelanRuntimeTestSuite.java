@@ -1,4 +1,4 @@
-package tech.kayys.gamelan.runtime.resource;
+package tech.kayys.gamelan.runtime.standalone.resource;
 
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;

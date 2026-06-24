@@ -4,6 +4,7 @@ import java.util.Map;
 
 public record TaskMessage(
         String runId,
+        String tenantId,
         String nodeId,
         int attempt,
         String token,

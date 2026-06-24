@@ -24,23 +24,18 @@ StateTransitionPlugin: Hook into workflow state changes
 ValidationPlugin: Validate workflow definitions and inputs
 Creating a Plugin
 Step 1: Set Up Project
-Create a new Maven project:
+Create a new Gradle Java project:
 
-<project>
-    <groupId>com.example</groupId>
-    <artifactId>my-gamelan-plugin</artifactId>
-    <version>1.0.0</version>
-    <packaging>jar</packaging>
-    
-    <dependencies>
-        <dependency>
-            <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-plugin-spi</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-</project>
+plugins {
+    `java-library`
+}
+
+group = "com.example"
+version = "1.0.0"
+
+dependencies {
+    compileOnly("tech.kayys.gamelan:gamelan-plugin-spi:0.1.0")
+}
 Step 2: Implement Plugin Interface
 packagetech.kayys;
 import tech.kayys.gamelan.engine.plugin.*;
@@ -104,11 +99,11 @@ src/main/resources/META-INF/services/tech.kayys.gamelan.engine.plugin.GamelanPlu
 
 com.example.MyPlugin
 Step 4: Build Plugin JAR
-mvn clean package
+./gradlew build
 Step 5: Deploy Plugin
 Copy the JAR to the plugins directory:
 
-cp target/my-gamelan-plugin-1.0.0.jar /path/to/gamelan/plugins/
+cp build/libs/my-gamelan-plugin-1.0.0.jar /path/to/gamelan/plugins/
 Plugin Context
 Plugins receive a 
 PluginContext

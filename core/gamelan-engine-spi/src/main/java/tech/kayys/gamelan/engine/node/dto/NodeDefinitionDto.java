@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 import tech.kayys.gamelan.engine.node.NodeDefinition;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.run.dto.RetryPolicyDto;
 import tech.kayys.gamelan.engine.transition.dto.TransitionDto;
 
@@ -38,6 +39,12 @@ public record NodeDefinitionDto(
         @Schema(description = "Timeout in seconds") Long timeoutSeconds,
 
         @Schema(description = "Is critical") boolean critical) {
+    public NodeDefinitionDto {
+        configuration = ExecutionPayloads.immutableMap(configuration);
+        dependsOn = ExecutionPayloads.immutableListCopy(dependsOn);
+        transitions = ExecutionPayloads.immutableListCopy(transitions);
+    }
+
     public static NodeDefinitionDto from(NodeDefinition node) {
         return new NodeDefinitionDto(
                 node.id().value(),

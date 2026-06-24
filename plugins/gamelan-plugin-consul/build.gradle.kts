@@ -11,7 +11,7 @@ plugins {
 dependencies {
     api(libs.io.smallrye.reactive.smallrye.mutiny.vertx.web.client)
     api(libs.com.fasterxml.jackson.core.jackson.databind)
-    providedCompile(project(":gamelan-plugin-spi"))
+    compileOnly(project(":gamelan-plugin-spi"))
 }
 
 description = "gamelan-plugin-consul"

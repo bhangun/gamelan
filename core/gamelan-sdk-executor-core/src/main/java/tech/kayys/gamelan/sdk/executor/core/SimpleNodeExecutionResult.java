@@ -11,6 +11,8 @@ import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
+import tech.kayys.gamelan.engine.node.NodeExecutionResults;
 import tech.kayys.gamelan.engine.run.WaitInfo;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
@@ -30,6 +32,13 @@ public record SimpleNodeExecutionResult(
         ExecutionContext updatedContext,
         WaitInfo waitInfo,
         Map<String, Object> metadata) implements NodeExecutionResult {
+
+    public SimpleNodeExecutionResult {
+        NodeExecutionResults.validateIdentity(runId, nodeId, attempt, status, executionToken);
+        NodeExecutionResults.validateResultSemantics(status, error, "NodeExecutionResult");
+        output = ExecutionPayloads.immutableMap(output);
+        metadata = ExecutionPayloads.immutableMap(metadata);
+    }
 
     @Override
     public NodeExecutionStatus getStatus() {

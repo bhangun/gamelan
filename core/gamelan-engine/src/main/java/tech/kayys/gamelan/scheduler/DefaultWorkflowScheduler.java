@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 import tech.kayys.gamelan.engine.event.EventPublisher;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.event.ExecutionEvent;
 
@@ -46,6 +47,25 @@ public class DefaultWorkflowScheduler implements WorkflowScheduler {
             NodeId nodeId,
             Duration delay) {
         return retryManager.scheduleRetry(runId, nodeId, delay);
+    }
+
+    @Override
+    public Uni<Void> scheduleRetry(
+            WorkflowRunId runId,
+            TenantId tenantId,
+            NodeId nodeId,
+            Duration delay) {
+        return retryManager.scheduleRetry(runId, tenantId, nodeId, delay);
+    }
+
+    @Override
+    public Uni<Void> scheduleRetry(
+            WorkflowRunId runId,
+            TenantId tenantId,
+            NodeId nodeId,
+            int attempt,
+            Duration delay) {
+        return retryManager.scheduleRetry(runId, tenantId, nodeId, attempt, delay);
     }
 
     @Override

@@ -171,11 +171,26 @@ public class RestWorkflowRunClient implements WorkflowRunClient {
 
     @Override
     public Uni<Void> signal(String runId, String signalName, String targetNodeId, Map<String, Object> payload) {
+        return signal(runId, signalName, targetNodeId, payload, null);
+    }
+
+    @Override
+    public Uni<Void> signal(
+            String runId,
+            String signalName,
+            String targetNodeId,
+            Map<String, Object> payload,
+            String idempotencyKey) {
         checkClosed();
         JsonObject body = new JsonObject()
                 .put("signalName", signalName)
-                .put("targetNodeId", targetNodeId)
-                .put("payload", new JsonObject(payload));
+                .put("payload", new JsonObject(payload != null ? payload : Map.of()));
+        if (targetNodeId != null && !targetNodeId.isBlank()) {
+            body.put("targetNodeId", targetNodeId.trim());
+        }
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            body.put("idempotencyKey", idempotencyKey.trim());
+        }
         return sendJson(createRequest(io.vertx.core.http.HttpMethod.POST, "/api/v1/workflow-runs/" + runId + "/signal"),
                 body)
                 .onItem().transformToUni(response -> {
@@ -239,7 +254,9 @@ public class RestWorkflowRunClient implements WorkflowRunClient {
 
     private <T> Uni<io.vertx.mutiny.ext.web.client.HttpResponse<Buffer>> sendJson(HttpRequest<Buffer> request, T body) {
         try {
-            String json = mapper.writeValueAsString(body);
+            String json = body instanceof JsonObject jsonObject
+                    ? jsonObject.encode()
+                    : mapper.writeValueAsString(body);
             return request.sendBuffer(Buffer.buffer(json));
         } catch (Exception e) {
             return Uni.createFrom().failure(new GamelanClientException("Failed to serialize request", e));

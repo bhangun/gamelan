@@ -11,7 +11,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import tech.kayys.gamelan.engine.io.dto.InputDefinitionDto;
 import tech.kayys.gamelan.engine.io.dto.OutputDefinitionDto;
 import tech.kayys.gamelan.engine.node.dto.NodeDefinitionDto;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
+import tech.kayys.gamelan.engine.workflow.WorkflowMetadata;
 
 /**
  * Workflow definition response
@@ -38,7 +40,16 @@ public record WorkflowDefinitionResponse(
                 @Schema(description = "Created timestamp") Instant createdAt,
 
                 @Schema(description = "Metadata") Map<String, String> metadata) {
+        public WorkflowDefinitionResponse {
+                nodes = ExecutionPayloads.immutableListCopy(nodes);
+                inputs = ExecutionPayloads.immutableMapCopy(inputs);
+                outputs = ExecutionPayloads.immutableMapCopy(outputs);
+                metadata = ExecutionPayloads.immutableMapCopy(metadata);
+        }
+
         public static WorkflowDefinitionResponse from(WorkflowDefinition definition) {
+                WorkflowMetadata metadata = definition.metadata();
+
                 return new WorkflowDefinitionResponse(
                                 definition.id().value(),
                                 definition.name(),
@@ -50,7 +61,7 @@ public record WorkflowDefinitionResponse(
                                 null, // simplified
                                 null, // simplified
                                 true,
-                                definition.metadata().createdAt(),
-                                definition.metadata().labels());
+                                metadata != null ? metadata.createdAt() : null,
+                                metadata != null ? metadata.labels() : Map.of());
         }
 }

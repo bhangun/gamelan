@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.hibernate.reactive.panache.PanacheRepositoryBase;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.sqlclient.Pool;
 import io.vertx.mutiny.sqlclient.RowSet;
@@ -26,14 +27,20 @@ import jakarta.persistence.LockModeType;
 import tech.kayys.gamelan.domain.WorkflowRunEntity;
 import tech.kayys.gamelan.engine.node.NodeExecutionSnapshot;
 import tech.kayys.gamelan.engine.callback.CallbackRegistration;
+import tech.kayys.gamelan.engine.execution.BearerTokenHash;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
+import tech.kayys.gamelan.engine.execution.ExecutionTokenHash;
+import tech.kayys.gamelan.engine.repository.WorkflowDefinitionRepository;
+import tech.kayys.gamelan.engine.repository.WorkflowRunRepository;
+import tech.kayys.gamelan.engine.repository.WorkflowRunRecoveryCursor;
+import tech.kayys.gamelan.engine.repository.WorkflowRunRecoveryPage;
 import tech.kayys.gamelan.engine.run.RunStatus;
 import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRun;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunSnapshot;
-import tech.kayys.gamelan.engine.repository.WorkflowRunRepository;
 
 /**
  * Enhanced PostgreSQL repository with performance optimizations:
@@ -45,6 +52,7 @@ import tech.kayys.gamelan.engine.repository.WorkflowRunRepository;
  */
 @ApplicationScoped
 @io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
+@io.quarkus.arc.properties.IfBuildProperty(name = "gamelan.workflow.persistence.store", stringValue = "postgres", enableIfMissing = true)
 public class OptimizedPostgresWorkflowRunRepository implements WorkflowRunRepository,
                 PanacheRepositoryBase<WorkflowRunEntity, String> {
 
@@ -56,12 +64,15 @@ public class OptimizedPostgresWorkflowRunRepository implements WorkflowRunReposi
         @Inject
         Pool pgPool;
 
+        @Inject
+        WorkflowDefinitionRepository definitionRepository;
+
         // Snapshot frequency threshold - create snapshot every N events
         private static final int SNAPSHOT_FREQUENCY = 50; // Reduced from 100 for better read performance
 
         @Override
         public Uni<WorkflowRun> persist(WorkflowRun run) {
-                WorkflowRunEntity entity = toEntity(run);
+                WorkflowRunEntity entity = WorkflowRunEntityMapper.toEntity(run);
                 return persist(entity)
                                 .map(saved -> run)
                                 .onFailure()
@@ -72,7 +83,7 @@ public class OptimizedPostgresWorkflowRunRepository implements WorkflowRunReposi
         @Override
         public Uni<WorkflowRun> update(WorkflowRun run) {
                 // Optimized: Use merge for update
-                WorkflowRunEntity entity = toEntity(run);
+                WorkflowRunEntity entity = WorkflowRunEntityMapper.toEntity(run);
                 return Panache.withTransaction(() -> getSession().flatMap(session -> session.merge(entity)))
                                 .map(merged -> run);
         }
@@ -238,6 +249,9 @@ public class OptimizedPostgresWorkflowRunRepository implements WorkflowRunReposi
                                                 snapshot,
                                                 new HashMap<>(),
                                                 new ArrayList<>(),
+                                                null,
+                                                Map.of(),
+                                                null,
                                                 Instant.now(),
                                                 Instant.now(),
                                                 Instant.now(),
@@ -256,25 +270,35 @@ public class OptimizedPostgresWorkflowRunRepository implements WorkflowRunReposi
                                                 return Uni.createFrom().failure(new NoSuchElementException(
                                                                 "WorkflowRun not found: " + runId.value()));
                                         }
-                                        WorkflowRun run = toDomain(entity);
-                                        if (run == null) {
-                                                return Uni.createFrom().failure(new IllegalStateException(
-                                                                "Failed to map entity to domain"));
+                                        return toDomain(entity).flatMap(run -> action.apply(run));
+                                }));
+        }
+
+        @Override
+        public <T> Uni<T> withLock(WorkflowRunId runId, TenantId tenantId, Function<WorkflowRun, Uni<T>> action) {
+                return Panache.withTransaction(() -> find("runId = ?1 and tenantId = ?2", runId.value(),
+                                tenantId.value())
+                                .withLock(LockModeType.PESSIMISTIC_WRITE)
+                                .firstResult()
+                                .flatMap(entity -> {
+                                        if (entity == null) {
+                                                return Uni.createFrom().failure(new NoSuchElementException(
+                                                                "WorkflowRun not found: " + runId.value()));
                                         }
-                                        return action.apply(run);
+                                        return toDomain(entity).flatMap(run -> action.apply(run));
                                 }));
         }
 
         @Override
         public Uni<WorkflowRun> findById(WorkflowRunId id) {
                 return find("runId", id.value()).firstResult()
-                                .map(this::toDomain);
+                                .flatMap(this::toDomain);
         }
 
         @Override
         public Uni<WorkflowRun> findById(WorkflowRunId id, TenantId tenantId) {
                 return find("runId = ?1 and tenantId = ?2", id.value(), tenantId.value()).firstResult()
-                                .map(this::toDomain);
+                                .flatMap(this::toDomain);
         }
 
         @Override
@@ -284,102 +308,207 @@ public class OptimizedPostgresWorkflowRunRepository implements WorkflowRunReposi
                 String query = "tenantId = ?1";
                 List<Object> params = new ArrayList<>();
                 params.add(tenantId.value());
-                
+
                 if (definitionId != null) {
                         query += " and definitionId = ?" + (params.size() + 1);
                         params.add(definitionId.value());
                 }
-                
+
                 if (status != null) {
                         query += " and status = ?" + (params.size() + 1);
-                        params.add(status.name());
+                        params.add(status);
                 }
-                
+
                 return find(query, params.toArray())
                                 .page(page, size)
                                 .list()
-                                .map(entities -> entities.stream().map(this::toDomain).toList());
+                                .flatMap(this::toDomains);
+        }
+
+        @Override
+        public Uni<List<WorkflowRun>> queryActiveRunsForRecovery(int page, int size) {
+                int safePage = Math.max(0, page);
+                int safeSize = size > 0 ? size : 100;
+                return find("status in ?1 order by runId", RunStatus.activeStatuses())
+                                .page(safePage, safeSize)
+                                .list()
+                                .flatMap(this::toDomains);
+        }
+
+        @Override
+        public Uni<WorkflowRunRecoveryPage> scanActiveRunsForRecovery(WorkflowRunRecoveryCursor cursor, int size) {
+                WorkflowRunRecoveryCursor safeCursor = cursor != null ? cursor : WorkflowRunRecoveryCursor.start();
+                int safeSize = size > 0 ? size : 100;
+                Uni<List<WorkflowRunEntity>> page = safeCursor.hasAfterRunId()
+                                ? find("status in ?1 and runId > ?2 order by runId",
+                                                RunStatus.activeStatuses(),
+                                                safeCursor.afterRunId())
+                                                .page(0, safeSize + 1)
+                                                .list()
+                                : find("status in ?1 order by runId", RunStatus.activeStatuses())
+                                                .page(0, safeSize + 1)
+                                                .list();
+                return page.flatMap(this::toDomains)
+                                .map(runs -> WorkflowRunRecoveryPage.keyset(runs, safeSize));
         }
 
         @Override
         public Uni<Long> countActiveRuns(TenantId tenantId) {
-                return count("tenantId = ?1 and status in ?2", 
-                                tenantId.value(), 
-                                List.of(RunStatus.RUNNING.name(), RunStatus.PENDING.name()));
+                return count("tenantId = ?1 and status in ?2",
+                                tenantId.value(),
+                                RunStatus.activeStatuses());
         }
 
         @Override
         public Uni<Void> storeToken(ExecutionToken token) {
-                // Store in Redis for fast lookup (implemented in RedisExecutorRepository)
-                return Uni.createFrom().voidItem();
+                String tenantId = token.tenantId() != null ? token.tenantId().value() : null;
+                String sql = """
+                                INSERT INTO execution_tokens
+                                (token_hash, run_id, tenant_id, node_id, attempt, expires_at, created_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                                ON CONFLICT (token_hash) DO NOTHING
+                                """;
+
+                return pgPool.preparedQuery(sql)
+                                .execute(Tuple.tuple()
+                                                .addValue(ExecutionTokenHash.sha256(token.value()))
+                                                .addValue(token.runId().value())
+                                                .addValue(tenantId)
+                                                .addValue(token.nodeId().value())
+                                                .addValue(token.attempt())
+                                                .addValue(token.expiresAt())
+                                                .addValue(Instant.now()))
+                                .replaceWithVoid();
         }
 
         @Override
         public Uni<Boolean> validateToken(ExecutionToken token) {
-                // Validate from Redis
-                return Uni.createFrom().item(true);
+                if (token == null) {
+                        return Uni.createFrom().item(false);
+                }
+
+                String sql = """
+                                SELECT EXISTS(
+                                    SELECT 1 FROM execution_tokens
+                                    WHERE token_hash = $1
+                                    AND run_id = $2
+                                    AND node_id = $3
+                                    AND attempt = $4
+                                    AND (tenant_id IS NULL OR tenant_id = $5)
+                                    AND expires_at > $6
+                                )
+                                """;
+
+                return pgPool.preparedQuery(sql)
+                                .execute(Tuple.of(
+                                                ExecutionTokenHash.sha256(token.value()),
+                                                token.runId().value(),
+                                                token.nodeId().value(),
+                                                token.attempt(),
+                                                token.tenantId() != null ? token.tenantId().value() : null,
+                                                Instant.now()))
+                                .map(RowSet::iterator)
+                                .map(iter -> iter.hasNext() && iter.next().getBoolean(0));
         }
 
         @Override
         public Uni<Void> storeCallback(CallbackRegistration callback) {
-                // Store in Redis for fast lookup
-                return Uni.createFrom().voidItem();
+                String tenantId = callback.tenantId() != null ? callback.tenantId().value() : null;
+                String sql = """
+                                INSERT INTO workflow_callbacks
+                                (callback_token_hash, run_id, tenant_id, node_id, callback_url, expires_at, created_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                                """;
+
+                return pgPool.preparedQuery(sql)
+                                .execute(Tuple.tuple()
+                                                .addValue(BearerTokenHash.sha256(callback.callbackToken()))
+                                                .addValue(callback.runId().value())
+                                                .addValue(tenantId)
+                                                .addValue(callback.nodeId().value())
+                                                .addValue(callback.callbackUrl())
+                                                .addValue(callback.expiresAt())
+                                                .addValue(Instant.now()))
+                                .replaceWithVoid();
         }
 
         @Override
         public Uni<Boolean> validateCallback(WorkflowRunId runId, String token) {
-                // Validate from Redis
-                return Uni.createFrom().item(true);
+                if (runId == null || token == null || token.isBlank()) {
+                        return Uni.createFrom().item(false);
+                }
+
+                String sql = """
+                                SELECT EXISTS(
+                                    SELECT 1 FROM workflow_callbacks
+                                    WHERE run_id = $1
+                                    AND callback_token_hash = $2
+                                    AND expires_at > $3
+                                )
+                                """;
+
+                return pgPool.preparedQuery(sql)
+                                .execute(Tuple.of(runId.value(), BearerTokenHash.sha256(token), Instant.now()))
+                                .map(RowSet::iterator)
+                                .map(iter -> iter.hasNext() && iter.next().getBoolean(0));
+        }
+
+        @Override
+        public Uni<Boolean> validateCallback(WorkflowRunId runId, TenantId tenantId, String token) {
+                if (runId == null || token == null || token.isBlank()) {
+                        return Uni.createFrom().item(false);
+                }
+
+                String sql = """
+                                SELECT EXISTS(
+                                    SELECT 1 FROM workflow_callbacks
+                                    WHERE run_id = $1
+                                    AND callback_token_hash = $2
+                                    AND (tenant_id IS NULL OR tenant_id = $3)
+                                    AND expires_at > $4
+                                )
+                                """;
+
+                return pgPool.preparedQuery(sql)
+                                .execute(Tuple.of(
+                                                runId.value(),
+                                                BearerTokenHash.sha256(token),
+                                                tenantId != null ? tenantId.value() : null,
+                                                Instant.now()))
+                                .map(RowSet::iterator)
+                                .map(iter -> iter.hasNext() && iter.next().getBoolean(0));
         }
 
         // Helper methods
-        private WorkflowRunEntity toEntity(WorkflowRun run) {
-                if (run == null) return null;
-                WorkflowRunSnapshot snap = run.createSnapshot();
-                WorkflowRunEntity entity = new WorkflowRunEntity();
-                entity.setRunId(run.getId().value());
-                entity.setTenantId(run.getTenantId().value());
-                entity.setDefinitionId(run.getDefinitionId().value());
-                entity.setStatus(run.getStatus());
-                entity.setContextVariables(snap.variables());
-                
-                Map<String, NodeExecutionSnapshot> nodeExecutions = new HashMap<>();
-                if (snap.nodeExecutions() != null) {
-                        for (var entry : snap.nodeExecutions().entrySet()) {
-                                var exec = entry.getValue();
-                                tech.kayys.gamelan.engine.error.ErrorSnapshot errSnap = null;
-                                if (exec.getLastError() != null) {
-                                        errSnap = new tech.kayys.gamelan.engine.error.ErrorSnapshot(
-                                                exec.getLastError().code(),
-                                                exec.getLastError().message(),
-                                                exec.getLastError().stackTrace()
-                                        );
-                                }
-                                nodeExecutions.put(entry.getKey().value(), new NodeExecutionSnapshot(
-                                        entry.getKey().value(),
-                                        exec.getStatus().name(),
-                                        exec.getAttempt(),
-                                        exec.getStartedAt(),
-                                        exec.getCompletedAt(),
-                                        exec.getOutput(),
-                                        errSnap
-                                ));
-                        }
+        private Uni<WorkflowRun> toDomain(WorkflowRunEntity entity) {
+                if (entity == null) {
+                        return Uni.createFrom().nullItem();
                 }
-                entity.setNodeExecutions(nodeExecutions);
-                entity.setExecutionPath(snap.executionPath());
-                entity.setCreatedAt(run.getCreatedAt());
-                entity.setLastUpdatedAt(Instant.now());
-                return entity;
+
+                TenantId tenantId = TenantId.of(entity.getTenantId());
+                WorkflowDefinitionId definitionId = WorkflowDefinitionId.of(entity.getDefinitionId());
+                return definitionRepository.findByIdIncludingInactive(definitionId, tenantId)
+                                .flatMap(definition -> {
+                                        if (definition == null) {
+                                                return Uni.createFrom().failure(new NoSuchElementException(
+                                                                "WorkflowDefinition not found: "
+                                                                                + definitionId.value()));
+                                        }
+                                        return Uni.createFrom().item(toDomain(entity, definition));
+                                });
         }
 
-        private WorkflowRun toDomain(WorkflowRunEntity entity) {
-                if (entity == null) {
-                        return null;
+        private WorkflowRun toDomain(WorkflowRunEntity entity, WorkflowDefinition definition) {
+                return WorkflowRunEntityMapper.toDomain(entity, definition);
+        }
+
+        private Uni<List<WorkflowRun>> toDomains(List<WorkflowRunEntity> entities) {
+                if (entities == null || entities.isEmpty()) {
+                        return Uni.createFrom().item(List.of());
                 }
-                // Map entity to domain object
-                // Implementation depends on domain model structure
-                return null;
+                return Multi.createFrom().iterable(entities)
+                                .onItem().transformToUniAndConcatenate(this::toDomain)
+                                .collect().asList();
         }
 
         private WorkflowRunSnapshot toSnapshot(WorkflowRun run) {

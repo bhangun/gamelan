@@ -532,10 +532,10 @@ quarkus.native.additional-build-args=\
 **Build Command:**
 ```bash
 # Build native image
-mvn clean package -Pnative -Dquarkus.native.container-build=true
+./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true
 
 # Optimize for constrained environments
-mvn clean package -Pnative \
+./gradlew build -Dquarkus.native.enabled=true \
     -Dquarkus.native.additional-build-args="-H:+StaticExecutableWithDynamicLibC"
 ```
 

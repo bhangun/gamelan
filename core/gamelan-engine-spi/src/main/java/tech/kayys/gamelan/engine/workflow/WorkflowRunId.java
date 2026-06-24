@@ -30,6 +30,7 @@ public record WorkflowRunId(@JsonValue String value) {
         return new WorkflowRunId(UUID.randomUUID().toString());
     }
 
+    @com.fasterxml.jackson.annotation.JsonCreator
     public static WorkflowRunId of(String value) {
         return new WorkflowRunId(value);
     }

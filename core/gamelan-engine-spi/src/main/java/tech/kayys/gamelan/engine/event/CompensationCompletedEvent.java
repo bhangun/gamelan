@@ -13,6 +13,9 @@ public record CompensationCompletedEvent(
         TenantId tenantId,
         List<NodeId> compensatedNodes,
         Instant occurredAt) implements ExecutionEvent {
+    public CompensationCompletedEvent {
+        compensatedNodes = compensatedNodes != null ? List.copyOf(compensatedNodes) : List.of();
+    }
 
     @Override
     public String eventType() {

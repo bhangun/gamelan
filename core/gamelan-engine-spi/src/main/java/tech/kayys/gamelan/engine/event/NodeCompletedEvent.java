@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 public record NodeCompletedEvent(
@@ -13,6 +14,10 @@ public record NodeCompletedEvent(
         int attempt,
         Map<String, Object> output,
         Instant occurredAt) implements ExecutionEvent {
+    public NodeCompletedEvent {
+        output = ExecutionPayloads.immutableMap(output);
+    }
+
     @Override
     public String eventType() {
         return "NodeCompleted";

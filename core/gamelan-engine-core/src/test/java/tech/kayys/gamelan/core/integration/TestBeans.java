@@ -13,6 +13,7 @@ import tech.kayys.gamelan.engine.callback.CallbackRegistration;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
 import tech.kayys.gamelan.engine.execution.ExecutionHistory;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
+import tech.kayys.gamelan.engine.node.NodeDispatchReservation;
 import tech.kayys.gamelan.engine.node.NodeExecutionResult;
 import tech.kayys.gamelan.engine.node.NodeId;
 import tech.kayys.gamelan.engine.repository.WorkflowDefinitionRepository;
@@ -122,6 +123,12 @@ public class TestBeans {
         @Override public Uni<WorkflowRun> failRun(WorkflowRunId id, TenantId t, ErrorInfo e) { return Uni.createFrom().nullItem(); }
         @Override public Uni<Void> completeCompensation(WorkflowRunId id, TenantId t) { return Uni.createFrom().voidItem(); }
         @Override public Uni<Void> failCompensation(WorkflowRunId id, TenantId t, ErrorInfo e) { return Uni.createFrom().voidItem(); }
+        @Override public Uni<NodeDispatchReservation> reserveNodeForDispatch(WorkflowRunId id, TenantId t, NodeId node) {
+            return Uni.createFrom().item(NodeDispatchReservation.skipped(id, t, node, "mock"));
+        }
+        @Override public Uni<Void> failNodeExecution(WorkflowRunId id, TenantId t, NodeId node, int attempt, ErrorInfo e, String reason) {
+            return Uni.createFrom().voidItem();
+        }
         @Override public Uni<Void> handleNodeResult(WorkflowRunId id, NodeExecutionResult r) { return Uni.createFrom().voidItem(); }
         @Override public Uni<Void> signal(WorkflowRunId id, Signal s) { return Uni.createFrom().voidItem(); }
         @Override public Uni<WorkflowRun> getRun(WorkflowRunId id, TenantId t) { return Uni.createFrom().nullItem(); }

@@ -17,6 +17,7 @@ import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +27,7 @@ public class LocalWorkflowRunClient implements WorkflowRunClient {
 
     private final WorkflowRunManager runManager;
     private final TenantId tenantId;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public LocalWorkflowRunClient(WorkflowRunManager runManager, String tenantId) {
         this.runManager = runManager;
@@ -34,54 +36,81 @@ public class LocalWorkflowRunClient implements WorkflowRunClient {
 
     @Override
     public Uni<RunResponse> createRun(CreateRunRequest request) {
-        return runManager.createRun(request, tenantId)
+        checkClosed();
+        return runManager().createRun(request, tenantId)
+                .flatMap(run -> request.isAutoStart()
+                        ? runManager().startRun(run.getId(), tenantId)
+                        : Uni.createFrom().item(run))
                 .map(this::mapToResponse);
     }
 
     @Override
     public Uni<RunResponse> getRun(String runId) {
-        return runManager.getRun(WorkflowRunId.of(runId), tenantId)
+        checkClosed();
+        return runManager().getRun(WorkflowRunId.of(runId), tenantId)
                 .map(this::mapToResponse);
     }
 
     @Override
     public Uni<RunResponse> startRun(String runId) {
-        return runManager.startRun(WorkflowRunId.of(runId), tenantId)
+        checkClosed();
+        return runManager().startRun(WorkflowRunId.of(runId), tenantId)
                 .map(this::mapToResponse);
     }
 
     @Override
     public Uni<RunResponse> suspendRun(String runId, String reason, String waitingOnNodeId) {
-        return runManager.suspendRun(WorkflowRunId.of(runId), tenantId, reason, 
-                waitingOnNodeId != null ? NodeId.of(waitingOnNodeId) : null)
+        checkClosed();
+        return runManager().suspendRun(WorkflowRunId.of(runId), tenantId, reason,
+                waitingOnNodeId != null && !waitingOnNodeId.isBlank() ? NodeId.of(waitingOnNodeId.trim()) : null)
                 .map(this::mapToResponse);
     }
 
     @Override
     public Uni<RunResponse> resumeRun(String runId, Map<String, Object> resumeData, String humanTaskId) {
-        return runManager.resumeRun(WorkflowRunId.of(runId), tenantId, resumeData, humanTaskId)
+        checkClosed();
+        return runManager().resumeRun(WorkflowRunId.of(runId), tenantId, resumeData, humanTaskId)
                 .map(this::mapToResponse);
     }
 
     @Override
     public Uni<Void> cancelRun(String runId, String reason) {
-        return runManager.cancelRun(WorkflowRunId.of(runId), tenantId, reason);
+        checkClosed();
+        return runManager().cancelRun(WorkflowRunId.of(runId), tenantId, reason);
     }
 
     @Override
     public Uni<Void> signal(String runId, String signalName, String targetNodeId, Map<String, Object> payload) {
-        Signal signal = new Signal(signalName, targetNodeId != null ? NodeId.of(targetNodeId) : null, payload, Instant.now());
-        return runManager.signal(WorkflowRunId.of(runId), signal);
+        return signal(runId, signalName, targetNodeId, payload, null);
+    }
+
+    @Override
+    public Uni<Void> signal(
+            String runId,
+            String signalName,
+            String targetNodeId,
+            Map<String, Object> payload,
+            String idempotencyKey) {
+        checkClosed();
+        Signal signal = new Signal(
+                signalName,
+                targetNodeId != null && !targetNodeId.isBlank() ? NodeId.of(targetNodeId.trim()) : null,
+                payload,
+                Instant.now(),
+                idempotencyKey);
+        return runManager().signal(WorkflowRunId.of(runId), signal);
     }
 
     @Override
     public Uni<ExecutionHistory> getExecutionHistory(String runId) {
-        return runManager.getExecutionHistory(WorkflowRunId.of(runId), tenantId);
+        checkClosed();
+        return runManager().getExecutionHistory(WorkflowRunId.of(runId), tenantId);
     }
 
     @Override
     public Uni<List<RunResponse>> queryRuns(String workflowId, String status, int page, int size) {
-        return runManager.queryRuns(
+        checkClosed();
+        return runManager().queryRuns(
                 tenantId,
                 workflowId != null ? WorkflowDefinitionId.of(workflowId) : null,
                 status != null ? RunStatus.valueOf(status) : null,
@@ -92,18 +121,19 @@ public class LocalWorkflowRunClient implements WorkflowRunClient {
 
     @Override
     public Uni<Long> getActiveRunsCount() {
-        return runManager.getActiveRunsCount(tenantId);
+        checkClosed();
+        return runManager().getActiveRunsCount(tenantId);
     }
 
     @Override
     public void close() {
-        // No-op for local client as it doesn't own the runManager
+        closed.set(true);
     }
 
     private RunResponse mapToResponse(WorkflowRun run) {
-        Duration duration = run.getStartedAt() != null && run.getCompletedAt() != null 
-                ? Duration.between(run.getStartedAt(), run.getCompletedAt()) 
-                : Duration.ZERO;
+        Long durationMs = run.getStartedAt() != null && run.getCompletedAt() != null
+                ? Duration.between(run.getStartedAt(), run.getCompletedAt()).toMillis()
+                : null;
 
         return RunResponse.builder()
                 .runId(run.getId().value())
@@ -112,8 +142,22 @@ public class LocalWorkflowRunClient implements WorkflowRunClient {
                 .createdAt(run.getCreatedAt())
                 .startedAt(run.getStartedAt())
                 .completedAt(run.getCompletedAt())
-                .durationMs(duration.toMillis())
+                .durationMs(durationMs)
                 .outputs(run.getContext().getVariables())
+                .nodesExecuted(run.getAllNodeExecutions().size())
                 .build();
+    }
+
+    private WorkflowRunManager runManager() {
+        if (runManager == null) {
+            throw new IllegalStateException("WorkflowRunManager not provided for LOCAL transport");
+        }
+        return runManager;
+    }
+
+    private void checkClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("Client is closed");
+        }
     }
 }

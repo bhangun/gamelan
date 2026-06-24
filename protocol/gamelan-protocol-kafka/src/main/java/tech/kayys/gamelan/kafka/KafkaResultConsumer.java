@@ -7,16 +7,15 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.smallrye.mutiny.Uni;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import tech.kayys.gamelan.engine.error.ErrorInfo;
-import tech.kayys.gamelan.engine.execution.ExecutionToken;
-import tech.kayys.gamelan.engine.node.DefaultNodeExecutionResult;
 import tech.kayys.gamelan.engine.node.NodeExecutionResult;
-import tech.kayys.gamelan.engine.node.NodeExecutionStatus;
-import tech.kayys.gamelan.engine.node.NodeId;
-import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.engine.node.NodeExecutionResults;
+import tech.kayys.gamelan.engine.node.NodeResultHandlingOutcome;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
 
 /**
@@ -40,35 +39,58 @@ public class KafkaResultConsumer {
                                 result.runId(), result.nodeId());
 
                 try {
-                        // Convert to domain object
-                        NodeExecutionResult executionResult = new DefaultNodeExecutionResult(
-                                        WorkflowRunId.of(result.runId()),
-                                        NodeId.of(result.nodeId()),
+                        NodeExecutionResult executionResult = NodeExecutionResults.fromExternal(
+                                        result.runId(),
+                                        result.nodeId(),
                                         result.attempt(),
-                                        NodeExecutionStatus.valueOf(result.status()),
+                                        result.status(),
                                         result.output(),
-                                        result.error() != null ? new ErrorInfo(
-                                                        result.error().get("code"),
-                                                        result.error().get("message"),
-                                                        "",
-                                                        Map.of()) : null,
-                                        new ExecutionToken(
-                                                        result.executionToken(),
-                                                        WorkflowRunId.of(result.runId()),
-                                                        NodeId.of(result.nodeId()),
-                                                        result.attempt(),
-                                                        Instant.now().plusSeconds(3600)));
+                                        toErrorInfo(result.error()),
+                                        result.executionToken(),
+                                        result.tenantId(),
+                                        Instant.now().plusSeconds(3600));
 
-                        // Submit to run manager
-                        runManager.handleNodeResult(
-                                        WorkflowRunId.of(result.runId()),
-                                        executionResult).subscribe().with(
-                                                        v -> LOG.info("Result processed: run={}, node={}",
-                                                                        result.runId(), result.nodeId()),
+                        // Submit through the external executor boundary so execution tokens are validated.
+                        TenantId tenantId = tenantId(result.tenantId());
+                        Uni<NodeResultHandlingOutcome> completion = tenantId != null
+                                        ? runManager.onNodeExecutionCompletedWithOutcome(
+                                                        executionResult,
+                                                        tenantId,
+                                                        result.executionToken())
+                                        : runManager.onNodeExecutionCompletedWithOutcome(
+                                                        executionResult,
+                                                        result.executionToken());
+
+                        completion.subscribe().with(
+                                                        outcome -> LOG.info(
+                                                                        "Result processed: run={}, node={}, acceptance={}, duplicate={}, runUpdated={}",
+                                                                        result.runId(),
+                                                                        result.nodeId(),
+                                                                        outcome.acceptance(),
+                                                                        outcome.duplicate(),
+                                                                        outcome.runUpdated()),
                                                         error -> LOG.error("Failed to process result", error));
 
                 } catch (Exception e) {
                         LOG.error("Failed to consume result", e);
                 }
+        }
+
+        private ErrorInfo toErrorInfo(Map<String, String> error) {
+                if (error == null) {
+                        return null;
+                }
+                return new ErrorInfo(
+                                error.get("code"),
+                                error.get("message"),
+                                "",
+                                Map.of());
+        }
+
+        private TenantId tenantId(String tenantId) {
+                if (tenantId == null || tenantId.isBlank()) {
+                        return null;
+                }
+                return TenantId.of(tenantId);
         }
 }

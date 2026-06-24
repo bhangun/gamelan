@@ -64,6 +64,8 @@
         <profile>
             <id>runtimes</id>
             <modules>
+                <module>gamelan-executor-registry</module>
+                <module>gamelan-engine</module>
                 <module>gamelan-runtime-core</module>
                 <module>gamelan-executor-runtime-core</module>
                 <module>gamelan-executor-runtime</module>

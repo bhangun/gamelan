@@ -1,0 +1,6 @@
+# Copy this file to gradle/gamelan-modules.local.properties for machine-local
+# module inclusion. Local modules override gradle/gamelan-modules.properties
+# and are ignored by git.
+#
+# Example:
+# project.my-local-module=../my-local-gamelan-module

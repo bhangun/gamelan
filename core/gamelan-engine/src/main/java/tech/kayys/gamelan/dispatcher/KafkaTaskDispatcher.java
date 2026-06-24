@@ -175,6 +175,7 @@ public class KafkaTaskDispatcher implements TaskDispatcher {
                             // Serialize task to Kafka message
                             TaskMessage message = new TaskMessage(
                                     validTask.runId().value(),
+                                    tenantId(validTask),
                                     validTask.nodeId().value(),
                                     validTask.attempt(),
                                     validTask.token().value(),
@@ -337,6 +338,24 @@ public class KafkaTaskDispatcher implements TaskDispatcher {
         // For now, we'll just return the string as-is since JsonObject.mapFrom() should
         // handle this
         return jsonString;
+    }
+
+    private String tenantId(NodeExecutionTask task) {
+        if (task == null) {
+            return null;
+        }
+        if (task.context() != null) {
+            Object value = task.context().get(NodeExecutionTask.TENANT_ID_KEY);
+            if (value != null) {
+                String tenantId = String.valueOf(value);
+                if (!tenantId.isBlank()) {
+                    return tenantId;
+                }
+            }
+        }
+        return task.token() != null && task.token().tenantId() != null
+                ? task.token().tenantId().value()
+                : null;
     }
 
     public void close() {

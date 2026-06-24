@@ -25,12 +25,10 @@ gRPC is a modern, high-performance RPC framework built on HTTP/2 that provides:
 
 Add the following dependency to your project:
 
-```xml
-<dependency>
-    <groupId>tech.kayys.gamelan</groupId>
-    <artifactId>gamelan-protocol-grpc</artifactId>
-    <version>${gamelan.version}</version>
-</dependency>
+```kotlin
+dependencies {
+    implementation("tech.kayys.gamelan:gamelan-protocol-grpc:$gamelanVersion")
+}
 ```
 
 ## Architecture
@@ -166,13 +164,19 @@ message ExecutionTask {
   string task_id = 1;
   string run_id = 2;
   string node_id = 3;
-  int32 attempt = 4;
-  string token = 5;
-  google.protobuf.Struct context = 6;           // Input data
-  map<string, string> metadata = 7;
-  google.protobuf.Timestamp assigned_at = 8;
+  string node_name = 4;
+  string node_type = 5;
+  int32 attempt = 6;
+  string execution_token = 7;
+  google.protobuf.Struct context = 8;           // Enriched task context
+  google.protobuf.Struct configuration = 9;     // Node configuration snapshot
+  int64 timeout_seconds = 10;
+  google.protobuf.Timestamp scheduled_at = 11;
+  string tenant_id = 12;                        // Tenant scope for routing and token validation
 }
 ```
+
+Unary gRPC dispatch still uses the legacy `map<string,string>` request shape for wire compatibility. Scalar values are sent as plain strings; nested maps/lists are encoded as JSON strings so agent context and workflow variables remain parseable by remote executors.
 
 **TaskResult**: Result of task execution
 ```protobuf
@@ -181,13 +185,22 @@ message TaskResult {
   string run_id = 2;
   string node_id = 3;
   int32 attempt = 4;
-  string token = 5;
-  ExecutionStatus status = 6;                    // SUCCESS, FAILURE, TIMEOUT
+  string execution_token = 5;
+  TaskStatus status = 6;                         // TASK_STATUS_COMPLETED, TASK_STATUS_FAILED
   google.protobuf.Struct output = 7;             // Output data
   ErrorInfo error = 8;                           // Error details if failed
-  google.protobuf.Duration execution_time = 9;
+  google.protobuf.Timestamp completed_at = 9;
+  string tenant_id = 10;                         // Tenant scope for routing and token validation
 }
 ```
+
+When present, `tenant_id` is copied into the domain `ExecutionToken`. The engine
+validates new tokens against run id, tenant id, node id, attempt, expiry, and the
+stored token hash; legacy tokens without tenant scope remain accepted only as
+null-tenant rows for in-flight compatibility.
+Result ingestion uses the outcome-aware engine API internally, so duplicate,
+stale, already-applied, and newly-accepted results can be logged and observed
+without changing the protobuf `Empty` acknowledgement surface.
 
 **RunResponse**: Workflow run state
 ```protobuf

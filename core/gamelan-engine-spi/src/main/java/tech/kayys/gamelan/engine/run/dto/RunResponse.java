@@ -9,6 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import tech.kayys.gamelan.engine.node.dto.NodeExecutionDto;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 /**
  * Workflow run response
@@ -43,4 +44,11 @@ public record RunResponse(
         @Schema(description = "Labels") Map<String, String> labels,
 
         @Schema(description = "Metadata") Map<String, String> metadata) {
+    public RunResponse {
+        variables = ExecutionPayloads.immutableMap(variables);
+        nodeExecutions = ExecutionPayloads.immutableMapCopy(nodeExecutions);
+        executionPath = ExecutionPayloads.immutableListCopy(executionPath);
+        labels = ExecutionPayloads.immutableMapCopy(labels);
+        metadata = ExecutionPayloads.immutableMapCopy(metadata);
+    }
 }

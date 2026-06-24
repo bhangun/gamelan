@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import tech.kayys.gamelan.engine.repository.WorkflowDefinitionRepository;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinition;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
+import tech.kayys.gamelan.engine.workflow.WorkflowMetadata;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 import io.vertx.mutiny.sqlclient.Tuple;
 import java.time.ZoneOffset;
@@ -20,6 +21,7 @@ import java.time.ZoneOffset;
  */
 @ApplicationScoped
 @io.quarkus.arc.properties.IfBuildProperty(name = "quarkus.datasource.db-kind", stringValue = "postgresql")
+@io.quarkus.arc.properties.IfBuildProperty(name = "gamelan.workflow.persistence.store", stringValue = "postgres", enableIfMissing = true)
 public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(PostgresWorkflowDefinitionRepository.class);
@@ -55,6 +57,30 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
     }
 
     @Override
+    public Uni<WorkflowDefinition> findByIdIncludingInactive(
+            WorkflowDefinitionId id,
+            TenantId tenantId) {
+
+        String sql = """
+                SELECT definition_json, created_at
+                FROM workflow_definitions
+                WHERE definition_id = $1 AND tenant_id = $2
+                """;
+
+        return pgPool.preparedQuery(sql)
+                .execute(io.vertx.mutiny.sqlclient.Tuple.of(id.value(), tenantId.value()))
+                .map(rows -> {
+                    if (!rows.iterator().hasNext()) {
+                        return null;
+                    }
+
+                    io.vertx.mutiny.sqlclient.Row row = rows.iterator().next();
+                    return deserializeDefinition(row);
+                })
+                .onFailure().invoke(error -> LOG.error("Failed to load definition including inactive", error));
+    }
+
+    @Override
     public Uni<WorkflowDefinition> save(
             WorkflowDefinition definition,
             TenantId tenantId) {
@@ -62,17 +88,22 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
         String sql = """
                 INSERT INTO workflow_definitions
                 (definition_id, tenant_id, name, version, description, definition_json,
-                 created_at, created_by, is_active)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                 created_at, created_by, is_active, metadata)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 ON CONFLICT (tenant_id, name, version) DO UPDATE SET
+                    description = EXCLUDED.description,
                     definition_json = EXCLUDED.definition_json,
+                    metadata = EXCLUDED.metadata,
                     updated_at = NOW(),
+                    updated_by = EXCLUDED.created_by,
                     is_active = EXCLUDED.is_active
                 RETURNING definition_id
                 """;
 
         try {
+            WorkflowMetadata metadata = metadataOrDefault(definition.metadata());
             String definitionJson = objectMapper.writeValueAsString(definition);
+            String metadataJson = objectMapper.writeValueAsString(metadata.labels());
 
             return pgPool.preparedQuery(sql)
                     .execute(Tuple.tuple()
@@ -82,9 +113,10 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
                             .addValue(definition.version())
                             .addValue(definition.description())
                             .addValue(definitionJson)
-                            .addValue(definition.metadata().createdAt().atOffset(ZoneOffset.UTC))
-                            .addValue(definition.metadata().createdBy())
-                            .addValue(true))
+                            .addValue(metadata.createdAt().atOffset(ZoneOffset.UTC))
+                            .addValue(metadata.createdBy())
+                            .addValue(true)
+                            .addValue(metadataJson))
                     .map(rows -> definition)
                     .onFailure().invoke(error -> LOG.error("Failed to save definition", error));
 
@@ -138,15 +170,27 @@ public class PostgresWorkflowDefinitionRepository implements WorkflowDefinitionR
 
     @Override
     public Uni<Void> delete(WorkflowDefinitionId id, TenantId tenantId) {
+        return setActive(id, tenantId, false);
+    }
+
+    @Override
+    public Uni<Void> setActive(WorkflowDefinitionId id, TenantId tenantId, boolean active) {
         String sql = """
                 UPDATE workflow_definitions
-                SET is_active = false, updated_at = NOW()
+                SET is_active = $3, updated_at = NOW()
                 WHERE definition_id = $1 AND tenant_id = $2
                 """;
 
         return pgPool.preparedQuery(sql)
-                .execute(io.vertx.mutiny.sqlclient.Tuple.of(id.value(), tenantId.value()))
+                .execute(io.vertx.mutiny.sqlclient.Tuple.of(id.value(), tenantId.value(), active))
                 .replaceWithVoid();
+    }
+
+    private WorkflowMetadata metadataOrDefault(WorkflowMetadata metadata) {
+        if (metadata != null) {
+            return metadata;
+        }
+        return WorkflowMetadata.system();
     }
 
     private WorkflowDefinition deserializeDefinition(io.vertx.mutiny.sqlclient.Row row) {

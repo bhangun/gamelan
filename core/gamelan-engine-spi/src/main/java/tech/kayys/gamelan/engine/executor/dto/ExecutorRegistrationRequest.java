@@ -5,6 +5,7 @@ import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import jakarta.validation.constraints.NotBlank;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 /**
  * Executor registration request
@@ -21,6 +22,6 @@ public record ExecutorRegistrationRequest(
 
         @Schema(description = "Metadata") Map<String, String> metadata) {
     public ExecutorRegistrationRequest {
-        metadata = metadata != null ? metadata : Map.of();
+        metadata = ExecutionPayloads.immutableMapCopy(metadata);
     }
 }

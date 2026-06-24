@@ -17,10 +17,13 @@ dependencies {
     api(libs.io.quarkus.quarkus.arc)
     api(libs.io.quarkus.quarkus.rest)
     api(libs.io.quarkus.quarkus.rest.jackson)
+    api(libs.io.quarkus.quarkus.scheduler)
     api(project(":gamelan-executor-registry"))
     api(project(":gamelan-engine"))
     testImplementation(libs.org.junit.jupiter.junit.jupiter)
     testImplementation(libs.org.mockito.mockito.core)
+    testImplementation(testFixtures(project(":gamelan-engine-spi")))
+    testImplementation(testFixtures(project(":gamelan-engine")))
 }
 
 description = "Gamelan Runtime Core"

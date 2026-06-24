@@ -1,84 +1,113 @@
 package tech.kayys.gamelan.sdk.executor;
 
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import jakarta.enterprise.inject.Instance;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import tech.kayys.gamelan.engine.node.NodeExecutionResult;
+import tech.kayys.gamelan.engine.node.NodeExecutionTask;
+import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.sdk.executor.core.ExecutorTransport;
 import tech.kayys.gamelan.sdk.executor.core.WorkflowExecutor;
 
-import java.util.Collections;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class LocalExecutorRuntimeTest {
+class LocalExecutorRuntimeTest {
 
-    @Mock
-    LocalExecutorTransportFactory transportFactory;
+    private TestLocalExecutorRuntime runtime;
 
-    @Mock
-    ExecutorTransport transport;
-
-    @Mock
-    WorkflowExecutor executor;
-
-    @Mock
-    Instance<WorkflowExecutor> discoveredExecutors;
-
-    LocalExecutorRuntime runtime;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        when(transportFactory.createTransport()).thenReturn(transport);
-        when(transport.register(any())).thenReturn(Uni.createFrom().voidItem());
-        when(transport.unregister()).thenReturn(Uni.createFrom().voidItem());
-        when(transport.receiveTasks()).thenReturn(io.smallrye.mutiny.Multi.createFrom().empty());
-
-        when(executor.getExecutorType()).thenReturn("test-executor");
-        when(discoveredExecutors.iterator()).thenReturn(Collections.singletonList(executor).iterator());
-
-        runtime = new LocalExecutorRuntime();
-        runtime.transportFactory = transportFactory;
-        // Inject mocks into parent class fields using reflection or similar if access
-        // is restricted,
-        // but here we assume package-private access for testing or simple field
-        // injection simulation.
-        // Since fields are protected in BaseExecutorRuntime, we can access them if we
-        // are in the same package,
-        // but the test is usually in the same package structure.
-        // However, standard Mockito injection might be better if structured correctly.
-        // For simplicity, we'll assume we can't easily access protected fields of
-        // parent without reflection,
-        // but let's try to mock the discoveredExecutors injection.
-
-        // Simulating injection
-        try {
-            java.lang.reflect.Field discoveredField = tech.kayys.gamelan.sdk.executor.core.BaseExecutorRuntime.class
-                    .getDeclaredField("discoveredExecutors");
-            discoveredField.setAccessible(true);
-            discoveredField.set(runtime, discoveredExecutors);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    @AfterEach
+    void tearDown() {
+        if (runtime != null && runtime.isRunning()) {
+            runtime.stop();
         }
     }
 
     @Test
-    void testStartRegistersExecutors() {
+    void startRegistersExecutorsAndSubscribesToLocalTransport() {
+        RecordingTransport transport = new RecordingTransport();
+        runtime = new TestLocalExecutorRuntime(transport);
+        runtime.registerExecutor(new TestWorkflowExecutor("test-executor"));
+
         runtime.start();
 
-        verify(transport).register(anyList());
-        verify(transport).receiveTasks();
+        assertTrue(runtime.isRunning());
+        assertTrue(transport.receiveTasksCalled);
+        assertEquals(1, transport.registeredExecutors.size());
+        assertEquals("test-executor", transport.registeredExecutors.getFirst().getExecutorType());
     }
 
     @Test
-    void testStopUnregistersExecutors() {
-        runtime.start(); // Setup transport
+    void stopUnregistersLocalTransport() {
+        RecordingTransport transport = new RecordingTransport();
+        runtime = new TestLocalExecutorRuntime(transport);
+        runtime.registerExecutor(new TestWorkflowExecutor("test-executor"));
+
+        runtime.start();
         runtime.stop();
 
-        verify(transport).unregister();
+        assertTrue(transport.unregistered);
+    }
+
+    private static final class TestLocalExecutorRuntime extends LocalExecutorRuntime {
+        private final RecordingTransport transport;
+
+        private TestLocalExecutorRuntime(RecordingTransport transport) {
+            this.transport = transport;
+        }
+
+        @Override
+        protected ExecutorTransport createTransport() {
+            return transport;
+        }
+    }
+
+    private static final class RecordingTransport implements ExecutorTransport {
+        private boolean receiveTasksCalled;
+        private boolean unregistered;
+        private List<WorkflowExecutor> registeredExecutors = List.of();
+
+        @Override
+        public CommunicationType getCommunicationType() {
+            return CommunicationType.LOCAL;
+        }
+
+        @Override
+        public Multi<NodeExecutionTask> receiveTasks() {
+            receiveTasksCalled = true;
+            return Multi.createFrom().empty();
+        }
+
+        @Override
+        public Uni<Void> sendResult(NodeExecutionResult result) {
+            return Uni.createFrom().voidItem();
+        }
+
+        @Override
+        public Uni<Void> register(List<WorkflowExecutor> executors) {
+            registeredExecutors = List.copyOf(executors);
+            return Uni.createFrom().voidItem();
+        }
+
+        @Override
+        public Uni<Void> unregister() {
+            unregistered = true;
+            return Uni.createFrom().voidItem();
+        }
+    }
+
+    private record TestWorkflowExecutor(String executorType) implements WorkflowExecutor {
+        @Override
+        public Uni<NodeExecutionResult> execute(NodeExecutionTask task) {
+            return Uni.createFrom().nullItem();
+        }
+
+        @Override
+        public String getExecutorType() {
+            return executorType;
+        }
     }
 }

@@ -6,6 +6,7 @@
 
 plugins {
     id("buildlogic.java-conventions")
+    id("io.quarkus")
 }
 
 dependencies {
@@ -20,6 +21,7 @@ dependencies {
         // TODO: This exclude was sourced from a POM exclusion and is NOT exactly equivalent, see: https://docs.gradle.org/9.4.0/userguide/build_init_plugin.html#sec:pom_maven_conversion
         exclude(mapOf("group" to "org.checkerframework", "module" to "checker-qual"))
     }
+    testImplementation(libs.org.junit.jupiter.junit.jupiter)
     compileOnly(libs.org.projectlombok.lombok)
 }
 

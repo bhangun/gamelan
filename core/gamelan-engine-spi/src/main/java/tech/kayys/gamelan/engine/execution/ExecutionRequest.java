@@ -2,6 +2,7 @@ package tech.kayys.gamelan.engine.execution;
 
 import java.util.Map;
 
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
 
@@ -11,4 +12,7 @@ public record ExecutionRequest(
         Map<String, Object> input,
         ExecutionMode mode, // SYNC | ASYNC | DRY_RUN
         String correlationId) {
+    public ExecutionRequest {
+        input = ExecutionPayloads.immutableMap(input);
+    }
 }

@@ -1,0 +1,290 @@
+package tech.kayys.gamelan.engine.grpc;
+
+import com.google.protobuf.Empty;
+import io.grpc.Status;
+import io.quarkus.grpc.GrpcService;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import jakarta.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import tech.kayys.gamelan.engine.workflow.WorkflowRunManager;
+import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.signal.Signal;
+import tech.kayys.gamelan.engine.tenant.TenantId;
+import tech.kayys.gamelan.engine.workflow.WorkflowDefinitionId;
+import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
+import tech.kayys.gamelan.grpc.GrpcMapper;
+import tech.kayys.gamelan.grpc.v1.*;
+
+import java.time.Instant;
+import java.util.Map;
+
+/**
+ * ============================================================================
+ * gRPC WORKFLOW SERVICE IMPLEMENTATION
+ * ============================================================================
+ *
+ * High-performance gRPC service for workflow operations.
+ */
+@GrpcService
+public class WorkflowServiceImpl implements WorkflowService {
+
+        private static final Logger LOG = LoggerFactory.getLogger(WorkflowServiceImpl.class);
+
+        @Inject
+        WorkflowRunManager runManager;
+
+        @Inject
+        GrpcMapper mapper;
+
+        @Inject
+        tech.kayys.gamelan.engine.context.RequestContext requestContext;
+
+        @Inject
+        tech.kayys.gamelan.engine.config.GamelanConfig config;
+
+        private TenantId tenant() {
+                return requestContext.getTenantId().orElseGet(config::getDefaultTenant);
+        }
+
+        // ==================== CREATE RUN ====================
+
+        @Override
+        public Uni<RunResponse> createRun(CreateRunRequest request) {
+                LOG.info("gRPC: Creating workflow run for definition: {}", request.getWorkflowDefinitionId());
+
+                TenantId tenantId = tenant();
+
+                tech.kayys.gamelan.engine.run.CreateRunRequest domainRequest = new tech.kayys.gamelan.engine.run.CreateRunRequest(
+                                request.getWorkflowDefinitionId(),
+                                request.getWorkflowVersion(),
+                                mapper.structToMap(request.getInputs()),
+                                request.getCorrelationId(),
+                                request.getAutoStart());
+
+                return runManager.createRun(domainRequest, tenantId)
+                                .map(mapper::toProtoRunResponse)
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== GET RUN ====================
+
+        @Override
+        public Uni<RunResponse> getRun(GetRunRequest request) {
+                LOG.debug("gRPC: Getting workflow run: {}", request.getRunId());
+
+                TenantId tenantId = tenant();
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+
+                return runManager.getRun(runId, tenantId)
+                                .map(mapper::toProtoRunResponse)
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== START RUN ====================
+
+        @Override
+        public Uni<RunResponse> startRun(StartRunRequest request) {
+                LOG.info("gRPC: Starting workflow run: {}", request.getRunId());
+
+                TenantId tenantId = tenant();
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+
+                return runManager.startRun(runId, tenantId)
+                                .map(mapper::toProtoRunResponse)
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== SUSPEND RUN ====================
+
+        @Override
+        public Uni<RunResponse> suspendRun(SuspendRunRequest request) {
+                LOG.info("gRPC: Suspending workflow run: {}", request.getRunId());
+
+                TenantId tenantId = tenant();
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+                NodeId nodeId = !request.getWaitingOnNodeId().isEmpty() ? NodeId.of(request.getWaitingOnNodeId())
+                                : null;
+
+                return runManager.suspendRun(runId, tenantId, request.getReason(), nodeId)
+                                .map(mapper::toProtoRunResponse)
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== RESUME RUN ====================
+
+        @Override
+        public Uni<RunResponse> resumeRun(ResumeRunRequest request) {
+                LOG.info("gRPC: Resuming workflow run: {}", request.getRunId());
+
+                TenantId tenantId = tenant();
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+                Map<String, Object> resumeData = mapper.structToMap(request.getResumeData());
+                String humanTaskId = request.getHumanTaskId();
+
+                return runManager.resumeRun(runId, tenantId, resumeData, humanTaskId)
+                                .map(mapper::toProtoRunResponse)
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== CANCEL RUN ====================
+
+        @Override
+        public Uni<Empty> cancelRun(CancelRunRequest request) {
+                LOG.info("gRPC: Cancelling workflow run: {}", request.getRunId());
+
+                TenantId tenantId = tenant();
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+
+                return runManager.cancelRun(runId, tenantId, request.getReason())
+                                .map(v -> Empty.getDefaultInstance())
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== SIGNAL RUN ====================
+
+        @Override
+        public Uni<Empty> signalRun(SignalRequest request) {
+                LOG.info("gRPC: Sending signal to run: {}", request.getRunId());
+
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+                TenantId tenantId = tenant();
+                NodeId targetNodeId = !request.getTargetNodeId().isBlank()
+                                ? NodeId.of(request.getTargetNodeId())
+                                : null;
+
+                Signal signal = new Signal(
+                                request.getSignalName(),
+                                targetNodeId,
+                                mapper.structToMap(request.getPayload()),
+                                Instant.now(),
+                                request.getIdempotencyKey());
+
+                return runManager.signal(runId, tenantId, signal)
+                                .map(v -> Empty.getDefaultInstance())
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== GET EXECUTION HISTORY ====================
+
+        @Override
+        public Uni<ExecutionHistoryResponse> getExecutionHistory(GetExecutionHistoryRequest request) {
+                LOG.debug("gRPC: Getting execution history for run: {}", request.getRunId());
+
+                TenantId tenantId = tenant();
+                WorkflowRunId runId = WorkflowRunId.of(request.getRunId());
+
+                return runManager.getExecutionHistory(runId, tenantId)
+                                .map(mapper::toProtoHistoryResponse)
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== QUERY RUNS ====================
+
+        @Override
+        public Uni<QueryRunsResponse> queryRuns(QueryRunsRequest request) {
+                LOG.debug("gRPC: Querying runs");
+
+                TenantId tenantId = tenant();
+                WorkflowDefinitionId definitionId = !request.getWorkflowDefinitionId().isEmpty()
+                                ? WorkflowDefinitionId.of(request.getWorkflowDefinitionId())
+                                : null;
+                tech.kayys.gamelan.engine.run.RunStatus status = !request.getStatus().isEmpty()
+                                ? tech.kayys.gamelan.engine.run.RunStatus.valueOf(request.getStatus())
+                                : null;
+
+                return runManager.queryRuns(
+                                tenantId,
+                                definitionId,
+                                status,
+                                request.getPage(),
+                                request.getSize())
+                                .map(runs -> {
+                                        QueryRunsResponse.Builder builder = QueryRunsResponse.newBuilder()
+                                                        .setPage(request.getPage())
+                                                        .setSize(request.getSize())
+                                                        .setTotalElements(runs.size())
+                                                        .setHasMore(false);
+
+                                        runs.forEach(run -> builder.addRuns(mapper.toProtoRunResponse(run)));
+
+                                        return builder.build();
+                                })
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== GET ACTIVE RUNS COUNT ====================
+
+        @Override
+        public Uni<CountResponse> getActiveRunsCount(GetActiveRunsCountRequest request) {
+                TenantId tenantId = tenant();
+
+                return runManager.getActiveRunsCount(tenantId)
+                                .map(count -> CountResponse.newBuilder()
+                                                .setCount(count)
+                                                .build())
+                                .onFailure().transform(this::mapException);
+        }
+
+        // ==================== STREAM RUN STATUS (SERVER STREAMING)
+        // ====================
+
+        @Override
+        public Multi<RunStatusUpdate> streamRunStatus(StreamRunStatusRequest request) {
+                LOG.info("gRPC: Starting status stream for {} runs", request.getRunIdsCount());
+                return Multi.createFrom().empty();
+        }
+
+        // ==================== ERROR HANDLING ====================
+
+        private Throwable mapException(Throwable throwable) {
+                LOG.error("gRPC error", throwable);
+
+                ErrorCode errorCode = mapErrorCode(throwable);
+                String message = throwable.getMessage();
+                if (message == null || message.isBlank()) {
+                        message = errorCode.getDefaultMessage();
+                }
+
+                return mapStatus(errorCode.getHttpStatus())
+                                .withDescription(errorCode.getCode() + ": " + message)
+                                .asRuntimeException();
+        }
+
+        private ErrorCode mapErrorCode(Throwable throwable) {
+                if (throwable instanceof GamelanException ge) {
+                        return ge.getErrorCode();
+                }
+                if (throwable instanceof java.util.NoSuchElementException) {
+                        return ErrorCode.RUN_NOT_FOUND;
+                }
+                if (throwable instanceof IllegalArgumentException) {
+                        return ErrorCode.VALIDATION_FAILED;
+                }
+                if (throwable instanceof IllegalStateException) {
+                        return ErrorCode.RUNTIME_ERROR;
+                }
+                if (throwable instanceof SecurityException) {
+                        return ErrorCode.TENANT_UNAUTHORIZED;
+                }
+                return ErrorCode.INTERNAL_ERROR;
+        }
+
+        private Status mapStatus(int httpStatus) {
+                return switch (httpStatus) {
+                        case 400 -> Status.INVALID_ARGUMENT;
+                        case 401 -> Status.UNAUTHENTICATED;
+                        case 403 -> Status.PERMISSION_DENIED;
+                        case 404 -> Status.NOT_FOUND;
+                        case 409 -> Status.FAILED_PRECONDITION;
+                        case 429 -> Status.RESOURCE_EXHAUSTED;
+                        case 502, 503 -> Status.UNAVAILABLE;
+                        case 504 -> Status.DEADLINE_EXCEEDED;
+                        default -> Status.INTERNAL;
+                };
+        }
+}

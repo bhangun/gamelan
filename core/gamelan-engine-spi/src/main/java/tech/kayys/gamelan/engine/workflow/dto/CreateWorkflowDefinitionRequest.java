@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotEmpty;
 import tech.kayys.gamelan.engine.io.dto.InputDefinitionDto;
 import tech.kayys.gamelan.engine.io.dto.OutputDefinitionDto;
 import tech.kayys.gamelan.engine.node.dto.NodeDefinitionDto;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.run.dto.RetryPolicyDto;
 import tech.kayys.gamelan.engine.saga.dto.CompensationPolicyDto;
 
@@ -35,6 +36,12 @@ public record CreateWorkflowDefinitionRequest(
                 @Schema(description = "Compensation policy") CompensationPolicyDto compensationPolicy,
 
                 @Schema(description = "Metadata") Map<String, String> metadata) {
+        public CreateWorkflowDefinitionRequest {
+                nodes = ExecutionPayloads.immutableListCopy(nodes);
+                inputs = ExecutionPayloads.immutableMapCopy(inputs);
+                outputs = ExecutionPayloads.immutableMapCopy(outputs);
+                metadata = ExecutionPayloads.immutableMapCopy(metadata);
+        }
 
         public static Builder builder() {
                 return new Builder();

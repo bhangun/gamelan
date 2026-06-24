@@ -1,6 +1,8 @@
 package tech.kayys.gamelan.kafka;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.slf4j.Logger;
@@ -12,6 +14,7 @@ import jakarta.inject.Inject;
 import tech.kayys.gamelan.engine.node.NodeExecutionTask;
 import tech.kayys.gamelan.engine.execution.ExecutionToken;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
 /**
@@ -35,18 +38,29 @@ public class KafkaTaskConsumer {
         LOG.info("Received task from Kafka: {}", task.taskId());
 
         try {
+            Map<String, Object> context = new HashMap<>(task.context() != null ? task.context() : Map.of());
+            if (task.tenantId() != null && !task.tenantId().isBlank()) {
+                context.put(NodeExecutionTask.TENANT_ID_KEY, task.tenantId());
+            }
+            WorkflowRunId runId = WorkflowRunId.of(task.runId());
+            NodeId nodeId = NodeId.of(task.nodeId());
+            TenantId tenantId = task.tenantId() != null && !task.tenantId().isBlank()
+                    ? TenantId.of(task.tenantId())
+                    : null;
+
             // Convert to domain object
             NodeExecutionTask executionTask = new NodeExecutionTask(
-                    WorkflowRunId.of(task.runId()),
-                    NodeId.of(task.nodeId()),
+                    runId,
+                    nodeId,
                     task.attempt(),
                     new ExecutionToken(
                             task.executionToken(),
-                            WorkflowRunId.of(task.runId()),
-                            NodeId.of(task.nodeId()),
+                            runId,
+                            tenantId,
+                            nodeId,
                             task.attempt(),
                             Instant.now().plusSeconds(3600)),
-                    task.context(), null);
+                    context, null);
 
             // Hand off to executor
             taskHandler.executeTask(executionTask)

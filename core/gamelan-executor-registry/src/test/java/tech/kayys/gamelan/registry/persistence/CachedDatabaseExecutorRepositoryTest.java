@@ -1,6 +1,5 @@
 package tech.kayys.gamelan.registry.persistence;
 
-import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
@@ -10,7 +9,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@QuarkusTest
 class CachedDatabaseExecutorRepositoryTest {
 
     @Test

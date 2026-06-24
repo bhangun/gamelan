@@ -3,6 +3,7 @@ package tech.kayys.gamelan.engine.run.dto;
 import java.util.Map;
 
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 
 /**
  * Request to resume a workflow run
@@ -13,6 +14,6 @@ public record ResumeRunRequest(
 
         @Schema(description = "Human task ID if resuming from human task") String humanTaskId) {
     public ResumeRunRequest {
-        resumeData = resumeData != null ? resumeData : Map.of();
+        resumeData = ExecutionPayloads.immutableMap(resumeData);
     }
 }

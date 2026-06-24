@@ -8,13 +8,10 @@ The Gamelan Plugin System allows you to extend the workflow engine with custom f
 
 ### 1. Add Plugin API Dependency
 
-```xml
-<dependency>
-    <groupId>tech.kayys.gamelan</groupId>
-    <artifactId>gamelan-plugin-spi</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <scope>provided</scope>
-</dependency>
+```kotlin
+dependencies {
+    compileOnly("tech.kayys.gamelan:gamelan-plugin-spi:0.1.0")
+}
 ```
 
 ### 2. Create Your Plugin
@@ -70,7 +67,7 @@ com.example.MyPlugin
 ### 4. Build Plugin JAR
 
 ```bash
-mvn clean package
+./gradlew build
 ```
 
 ### 5. Deploy Plugin
@@ -78,7 +75,7 @@ mvn clean package
 Copy the JAR to the plugin directory:
 
 ```bash
-cp target/my-plugin-1.0.0.jar /opt/gamelan/plugins/
+cp build/libs/my-plugin-1.0.0.jar /opt/gamelan/plugins/
 ```
 
 ## Plugin Types
@@ -240,7 +237,7 @@ pluginManager.reloadPlugin("my-plugin", Paths.get("/path/to/plugin.jar"));
 ### ClassNotFoundException
 
 - Ensure all dependencies are packaged in the plugin JAR
-- Use maven-shade-plugin to create an uber-jar if needed
+- Use the Gradle Shadow plugin to create an uber-jar if needed
 
 ### Plugin conflicts
 

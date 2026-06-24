@@ -19,6 +19,11 @@ public class ExecutorHealthInfo {
     }
 
     public void updateHeartbeat() {
+        updateHeartbeat(taskCount);
+    }
+
+    public void updateHeartbeat(int taskCount) {
         this.lastHeartbeat = Instant.now();
+        this.taskCount = Math.max(0, taskCount);
     }
 }

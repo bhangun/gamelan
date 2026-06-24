@@ -256,6 +256,7 @@ Represents a task assignment sent to executors:
 public class TaskMessage {
     String taskId;                    // Unique task identifier
     String runId;                     // Workflow run ID
+    String tenantId;                  // Tenant scope for routing and token validation
     String nodeId;                    // Node being executed
     int attempt;                      // Retry attempt number
     String token;                     // Execution token
@@ -273,6 +274,7 @@ Represents task execution result:
 public class TaskResultMessage {
     String taskId;                    // Original task ID
     String runId;                     // Workflow run ID
+    String tenantId;                  // Tenant scope for routing and token validation
     String nodeId;                    // Executed node
     int attempt;                      // Attempt number
     String token;                     // Execution token
@@ -284,6 +286,14 @@ public class TaskResultMessage {
     Instant completedAt;              // When it completed
 }
 ```
+
+When `tenantId` is present on task and result messages, executor-side consumers
+reconstruct tenant-bound `ExecutionToken` instances and the engine validates the
+tenant scope before accepting the result. Existing null-tenant token rows are
+treated as legacy in-flight tokens for compatibility.
+Kafka result ingestion uses the outcome-aware engine API internally, so
+duplicate, stale, already-applied, and newly-accepted results can be logged and
+observed while keeping the existing message schema stable.
 
 ### WorkflowEventMessage
 

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import io.vertx.core.json.jackson.DatabindCodec;
 import org.junit.jupiter.api.BeforeAll;
 import java.util.Collections;
+import java.util.List;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -108,6 +109,65 @@ public class RestWorkflowDefinitionClientTest {
 
                 assertNotNull(result);
                 assertEquals("Test Workflow", result.name());
+        }
+
+        @Test
+        void testGetWorkflowByName() {
+                WorkflowDefinition definition = new WorkflowDefinition(
+                                new WorkflowDefinitionId("def-123"), TenantId.of("test-tenant"), "Test Workflow",
+                                "1.0.0", "Description",
+                                tech.kayys.gamelan.engine.workflow.WorkflowMode.FLOW,
+                                Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap(),
+                                null, null, null);
+
+                stubFor(get(urlEqualTo("/api/v1/workflow-definitions/name/Test%20Workflow"))
+                                .withHeader("X-Tenant-ID", equalTo("test-tenant"))
+                                .willReturn(aResponse()
+                                                .withStatus(200)
+                                                .withHeader("Content-Type", "application/json")
+                                                .withBody(toJson(definition))));
+
+                WorkflowDefinition result = client.getWorkflowByName("Test Workflow")
+                                .subscribe().withSubscriber(UniAssertSubscriber.create())
+                                .awaitItem()
+                                .getItem();
+
+                assertNotNull(result);
+                assertEquals("Test Workflow", result.name());
+        }
+
+        @Test
+        void testListWorkflowDefaultsToActiveOnlyAndCanIncludeInactive() {
+                WorkflowDefinition definition = new WorkflowDefinition(
+                                new WorkflowDefinitionId("def-123"), TenantId.of("test-tenant"), "Test Workflow",
+                                "1.0.0", "Description",
+                                tech.kayys.gamelan.engine.workflow.WorkflowMode.FLOW,
+                                Collections.emptyList(), Collections.emptyMap(), Collections.emptyMap(),
+                                null, null, null);
+
+                stubFor(get(urlEqualTo("/api/v1/workflow-definitions?activeOnly=true"))
+                                .withHeader("X-Tenant-ID", equalTo("test-tenant"))
+                                .willReturn(aResponse()
+                                                .withStatus(200)
+                                                .withHeader("Content-Type", "application/json")
+                                                .withBody(toJson(List.of(definition)))));
+                stubFor(get(urlEqualTo("/api/v1/workflow-definitions?activeOnly=false"))
+                                .withHeader("X-Tenant-ID", equalTo("test-tenant"))
+                                .willReturn(aResponse()
+                                                .withStatus(200)
+                                                .withHeader("Content-Type", "application/json")
+                                                .withBody(toJson(List.of(definition)))));
+
+                assertEquals(1, client.listWorkflows()
+                                .subscribe().withSubscriber(UniAssertSubscriber.create())
+                                .awaitItem()
+                                .getItem()
+                                .size());
+                assertEquals(1, client.listWorkflows(false)
+                                .subscribe().withSubscriber(UniAssertSubscriber.create())
+                                .awaitItem()
+                                .getItem()
+                                .size());
         }
 
         @Test

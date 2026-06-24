@@ -57,11 +57,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>tech.kayys.gamelan</groupId>
-            <artifactId>gamelan-plugin-consul</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>

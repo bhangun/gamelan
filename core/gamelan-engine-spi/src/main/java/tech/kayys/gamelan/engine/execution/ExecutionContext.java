@@ -12,6 +12,7 @@ import java.util.Optional;
 import tech.kayys.gamelan.engine.event.ExecutionEvent;
 import tech.kayys.gamelan.engine.node.NodeExecutionState;
 import tech.kayys.gamelan.engine.node.NodeId;
+import tech.kayys.gamelan.engine.payload.ExecutionPayloads;
 import tech.kayys.gamelan.engine.tenant.TenantId;
 import tech.kayys.gamelan.engine.workflow.WorkflowRunId;
 
@@ -41,11 +42,11 @@ public class ExecutionContext {
 
     public ExecutionContext(WorkflowRunId runId, TenantId tenantId, Map<String, Object> initialVariables) {
         this.identity = new ExecutionIdentity(runId, tenantId);
-        this.variables = new HashMap<>(initialVariables != null ? initialVariables : Map.of());
+        this.variables = ExecutionPayloads.mutableMap(initialVariables);
         this.nodeStates = new HashMap<>();
         this.events = new ArrayList<>();
-        this.metadata = new HashMap<>();
-        this.workflowState = new HashMap<>();
+        this.metadata = ExecutionPayloads.mutableMap(null);
+        this.workflowState = ExecutionPayloads.mutableMap(null);
     }
 
     private ExecutionContext(Builder b) {
@@ -53,9 +54,9 @@ public class ExecutionContext {
                 Objects.requireNonNull(b.runId, "runId required"),
                 Objects.requireNonNull(b.tenantId, "tenantId required"));
         this.currentNodeId = b.currentNodeId;
-        this.variables = b.variables != null ? new HashMap<>(b.variables) : new HashMap<>();
-        this.metadata = b.metadata != null ? new HashMap<>(b.metadata) : new HashMap<>();
-        this.workflowState = b.workflowState != null ? new HashMap<>(b.workflowState) : new HashMap<>();
+        this.variables = ExecutionPayloads.mutableMap(b.variables);
+        this.metadata = ExecutionPayloads.mutableMap(b.metadata);
+        this.workflowState = ExecutionPayloads.mutableMap(b.workflowState);
         this.nodeStates = b.nodeStates != null ? new HashMap<>(b.nodeStates) : new HashMap<>();
         this.events = b.events != null ? new ArrayList<>(b.events) : new ArrayList<>();
         this.createdAt = b.createdAt;
@@ -77,11 +78,11 @@ public class ExecutionContext {
 
     // --- Variables ---
 
-    public void setVariable(String key, Object value) { variables.put(key, value); }
+    public void setVariable(String key, Object value) { variables.put(key, ExecutionPayloads.immutableValue(value)); }
     public Object getVariable(String key) { return variables.get(key); }
     public Map<String, Object> getVariables() { return Collections.unmodifiableMap(variables); }
     public void setVariables(Map<String, Object> variables) {
-        this.variables = variables != null ? new HashMap<>(variables) : new HashMap<>();
+        this.variables = ExecutionPayloads.mutableMap(variables);
     }
 
     @SuppressWarnings("unchecked")
@@ -96,14 +97,14 @@ public class ExecutionContext {
 
     // --- Metadata & workflow state ---
 
-    public Map<String, Object> getMetadata() { return metadata; }
+    public Map<String, Object> getMetadata() { return Collections.unmodifiableMap(metadata); }
     public void setMetadata(Map<String, Object> metadata) {
-        this.metadata = metadata != null ? new HashMap<>(metadata) : new HashMap<>();
+        this.metadata = ExecutionPayloads.mutableMap(metadata);
     }
 
-    public Map<String, Object> getWorkflowState() { return workflowState; }
+    public Map<String, Object> getWorkflowState() { return Collections.unmodifiableMap(workflowState); }
     public void setWorkflowState(Map<String, Object> workflowState) {
-        this.workflowState = workflowState != null ? new HashMap<>(workflowState) : new HashMap<>();
+        this.workflowState = ExecutionPayloads.mutableMap(workflowState);
     }
 
     // --- Node states ---
@@ -133,7 +134,7 @@ public class ExecutionContext {
     // --- Fluent mutators ---
 
     public ExecutionContext withVariable(String name, Object value, String type) {
-        variables.put(name, value);
+        variables.put(name, ExecutionPayloads.immutableValue(value));
         return this;
     }
 
@@ -143,12 +144,12 @@ public class ExecutionContext {
     }
 
     public ExecutionContext withMetadata(String key, Object value) {
-        metadata.put(key, value);
+        metadata.put(key, ExecutionPayloads.immutableValue(value));
         return this;
     }
 
     public ExecutionContext withWorkflowState(Map<String, Object> updates) {
-        workflowState.putAll(updates);
+        ExecutionPayloads.mutableMap(updates).forEach(workflowState::put);
         return this;
     }
 

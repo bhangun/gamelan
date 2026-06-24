@@ -2,6 +2,8 @@ package tech.kayys.gamelan.registry.persistence;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.kayys.gamelan.engine.error.ErrorCode;
+import tech.kayys.gamelan.engine.error.GamelanException;
 import tech.kayys.gamelan.engine.protocol.CommunicationType;
 import tech.kayys.gamelan.engine.executor.ExecutorInfo;
 
@@ -41,10 +43,12 @@ class InMemoryExecutorRepositoryTest {
 
     @Test
     void save_EmptyId_ShouldFail() {
-        ExecutorInfo executor = createExecutor("", "type-A", CommunicationType.REST);
-        assertThrows(IllegalArgumentException.class, () -> {
-            repository.save(executor).await().indefinitely();
-        });
+        GamelanException exception = assertThrows(
+                GamelanException.class,
+                () -> createExecutor("", "type-A", CommunicationType.REST));
+
+        assertEquals(ErrorCode.VALIDATION_FAILED, exception.getErrorCode());
+        assertTrue(exception.getSafeMessage().contains("executorId"));
     }
 
     @Test

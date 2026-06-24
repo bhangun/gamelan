@@ -17,6 +17,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import tech.kayys.gamelan.engine.node.NodeExecutionSnapshot;
 import tech.kayys.gamelan.engine.run.RunStatus;
+import tech.kayys.gamelan.engine.run.SuspensionInfo;
+import tech.kayys.gamelan.engine.saga.CompensationState;
+import tech.kayys.gamelan.engine.signal.Signal;
 
 /**
  * Workflow Run Snapshot Entity
@@ -58,6 +61,18 @@ public class WorkflowRunEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "execution_path", columnDefinition = "jsonb")
     private List<String> executionPath;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "suspension_info", columnDefinition = "jsonb")
+    private SuspensionInfo suspensionInfo;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "pending_signals", columnDefinition = "jsonb")
+    private Map<String, Signal> pendingSignals;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "compensation_state", columnDefinition = "jsonb")
+    private CompensationState compensationState;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -190,5 +205,29 @@ public class WorkflowRunEntity {
 
     public void setCompletedAt(Instant completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public SuspensionInfo getSuspensionInfo() {
+        return suspensionInfo;
+    }
+
+    public void setSuspensionInfo(SuspensionInfo suspensionInfo) {
+        this.suspensionInfo = suspensionInfo;
+    }
+
+    public Map<String, Signal> getPendingSignals() {
+        return pendingSignals;
+    }
+
+    public void setPendingSignals(Map<String, Signal> pendingSignals) {
+        this.pendingSignals = pendingSignals;
+    }
+
+    public CompensationState getCompensationState() {
+        return compensationState;
+    }
+
+    public void setCompensationState(CompensationState compensationState) {
+        this.compensationState = compensationState;
     }
 }

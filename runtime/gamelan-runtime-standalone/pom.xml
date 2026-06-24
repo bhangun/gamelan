@@ -19,6 +19,10 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+        <runtime.http.excluded.groups>runtime-http</runtime.http.excluded.groups>
+        <runtime.http.resource.test.exclude>**/runtime/**/resource/*ResourceTest.java</runtime.http.resource.test.exclude>
+        <runtime.http.resource.it.exclude>**/runtime/**/resource/*ResourceIT.java</runtime.http.resource.it.exclude>
+        <runtime.http.suite.exclude>**/runtime/**/resource/GamelanRuntimeTestSuite.java</runtime.http.suite.exclude>
     </properties>
 
     <dependencyManagement>
@@ -194,6 +198,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
+                    <excludedGroups>${runtime.http.excluded.groups}</excludedGroups>
+                    <excludes>
+                        <exclude>${runtime.http.resource.test.exclude}</exclude>
+                        <exclude>${runtime.http.suite.exclude}</exclude>
+                    </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
@@ -247,6 +256,21 @@
 
     <profiles>
         <profile>
+            <id>runtime-http-tests</id>
+            <activation>
+                <property>
+                    <name>gamelan.runtime.http.tests</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <runtime.http.excluded.groups></runtime.http.excluded.groups>
+                <runtime.http.resource.test.exclude>__no_runtime_http_exclusion__</runtime.http.resource.test.exclude>
+                <runtime.http.resource.it.exclude>__no_runtime_http_exclusion__</runtime.http.resource.it.exclude>
+                <runtime.http.suite.exclude>__no_runtime_http_exclusion__</runtime.http.suite.exclude>
+            </properties>
+        </profile>
+        <profile>
             <id>native</id>
             <activation>
                 <property>
@@ -270,6 +294,10 @@
                                     <goal>verify</goal>
                                 </goals>
                                 <configuration>
+                                    <excludedGroups>${runtime.http.excluded.groups}</excludedGroups>
+                                    <excludes>
+                                        <exclude>${runtime.http.resource.it.exclude}</exclude>
+                                    </excludes>
                                     <systemPropertyVariables>
                                         <native.image.path>
                                             ${project.build.directory}/${project.build.finalName}-runner</native.image.path>

@@ -25,3 +25,28 @@ CREATE TABLE IF NOT EXISTS workflow_events (
     occurred_at TIMESTAMP NOT NULL,
     metadata TEXT
 );
+
+CREATE TABLE IF NOT EXISTS workflow_processed_node_results (
+    marker_id VARCHAR(64) PRIMARY KEY DEFAULT RANDOM_UUID(),
+    run_id VARCHAR(64) NOT NULL,
+    tenant_id VARCHAR(64),
+    node_id VARCHAR(128) NOT NULL,
+    attempt INTEGER NOT NULL,
+    processed_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS workflow_processed_external_signals (
+    marker_id VARCHAR(64) PRIMARY KEY DEFAULT RANDOM_UUID(),
+    run_id VARCHAR(64) NOT NULL,
+    tenant_id VARCHAR(64),
+    idempotency_key VARCHAR(128) NOT NULL,
+    processed_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS workflow_processed_compensation_nodes (
+    marker_id VARCHAR(64) PRIMARY KEY DEFAULT RANDOM_UUID(),
+    run_id VARCHAR(64) NOT NULL,
+    tenant_id VARCHAR(64),
+    node_id VARCHAR(128) NOT NULL,
+    processed_at TIMESTAMP NOT NULL
+);
