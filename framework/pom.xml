@@ -1,0 +1,35 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>tech.kayys.gamelan</groupId>
+        <artifactId>gamelan-parent</artifactId>
+        <version>0.1.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>gamelan-framework-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>Gamelan Framework Parent</name>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>${quarkus.platform.artifact-id}</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>gamelan-engine-spi</module>
+        <module>gamelan-plugin-spi</module>
+        <module>gamelan-engine-core</module>
+        <module>gamelan-sdk-client-core</module>
+        <module>gamelan-sdk-executor-core</module>
+        <module>gamelan-dag</module>
+    </modules>
+</project>

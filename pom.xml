@@ -42,7 +42,8 @@
     </properties>
 
     <modules>
-        <module>core</module>
+        <module>framework</module>
+        <module>runtime</module>
         <module>sdk</module>
     </modules>
 
@@ -57,12 +58,6 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <modules>
-                <module>protocol/gamelan-protocol-grpc</module>
-                <module>protocol/gamelan-protocol-kafka</module>
-                <module>runtime/gamelan-runtime-distributed</module>
-                <module>runtime/gamelan-runtime-standalone</module>
-                <module>plugins</module>
-                <module>extensions/gamelan-dag</module>
                 <module>examples/gamelan-test-client</module>
                 <module>examples/gamelan-test-executor</module>
                 <module>examples/gamelan-test-standalone</module>
@@ -74,16 +69,14 @@
         <profile>
             <id>protocols</id>
             <modules>
-                <module>protocol/gamelan-protocol-grpc</module>
-                <module>protocol/gamelan-protocol-kafka</module>
+                <module>runtime/protocol/gamelan-protocol-grpc</module>
+                <module>runtime/protocol/gamelan-protocol-kafka</module>
             </modules>
         </profile>
 
         <profile>
             <id>runtimes</id>
             <modules>
-                <module>protocol/gamelan-protocol-grpc</module>
-                <module>protocol/gamelan-protocol-kafka</module>
                 <module>runtime/gamelan-runtime-distributed</module>
                 <module>runtime/gamelan-runtime-standalone</module>
             </modules>
@@ -92,36 +85,36 @@
         <profile>
             <id>plugins</id>
             <modules>
-                <module>plugins</module>
+                <module>runtime/plugins</module>
             </modules>
         </profile>
 
         <profile>
             <id>extensions</id>
             <modules>
-                <module>extensions/gamelan-dag</module>
+                <module>framework/gamelan-dag</module>
             </modules>
         </profile>
 
         <profile>
             <id>server</id>
             <modules>
-                <module>protocol/gamelan-protocol-grpc</module>
-                <module>protocol/gamelan-protocol-kafka</module>
+                <module>runtime/protocol/gamelan-protocol-grpc</module>
+                <module>runtime/protocol/gamelan-protocol-kafka</module>
             </modules>
         </profile>
 
         <profile>
             <id>executor</id>
             <modules>
-                <module>protocol/gamelan-protocol-grpc</module>
+                <module>runtime/protocol/gamelan-protocol-grpc</module>
             </modules>
         </profile>
 
         <profile>
             <id>client</id>
             <modules>
-                <module>protocol/gamelan-protocol-grpc</module>
+                <module>runtime/protocol/gamelan-protocol-grpc</module>
             </modules>
         </profile>
 
