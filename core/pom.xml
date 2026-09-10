@@ -48,8 +48,6 @@
                 <module>gamelan-executor-registry</module>
                 <module>gamelan-engine</module>
                 <module>gamelan-runtime-core</module>
-                <module>gamelan-executor-runtime-core</module>
-                <module>gamelan-executor-runtime</module>
             </modules>
         </profile>
 
@@ -67,8 +65,6 @@
                 <module>gamelan-executor-registry</module>
                 <module>gamelan-engine</module>
                 <module>gamelan-runtime-core</module>
-                <module>gamelan-executor-runtime-core</module>
-                <module>gamelan-executor-runtime</module>
             </modules>
         </profile>
 
@@ -76,8 +72,6 @@
             <id>executor</id>
             <modules>
                 <module>gamelan-executor-registry</module>
-                <module>gamelan-executor-runtime-core</module>
-                <module>gamelan-executor-runtime</module>
             </modules>
         </profile>
     </profiles>
