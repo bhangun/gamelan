@@ -6,9 +6,9 @@
 
     <parent>
         <groupId>tech.kayys.gamelan</groupId>
-        <artifactId>gamelan-parent</artifactId>
+        <artifactId>gamelan-sdk-parent</artifactId>
         <version>0.1.0</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>gamelan-sdk-executor-remote</artifactId>
     <name>Gamelan SDK Executor Remote</name>

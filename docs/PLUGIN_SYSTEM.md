@@ -61,7 +61,7 @@ public class MyPlugin implements ExecutionInterceptorPlugin {
 Create `src/main/resources/META-INF/services/tech.kayys.gamelan.plugin.Plugin`:
 
 ```
-com.example.MyPlugin
+tech.kayys.MyPlugin
 ```
 
 ### 4. Build Plugin JAR

@@ -30,7 +30,7 @@ plugins {
     `java-library`
 }
 
-group = "com.example"
+group = "tech.kayys"
 version = "1.0.0"
 
 dependencies {
@@ -97,7 +97,7 @@ Create
 src/main/resources/META-INF/services/tech.kayys.gamelan.engine.plugin.GamelanPlugin
 :
 
-com.example.MyPlugin
+tech.kayys.MyPlugin
 Step 4: Build Plugin JAR
 ./gradlew build
 Step 5: Deploy Plugin

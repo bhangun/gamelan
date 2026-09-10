@@ -215,7 +215,7 @@ public class MyPlugin implements Plugin {
 ### Step 3: Register with ServiceLoader
 Create `src/main/resources/META-INF/services/tech.kayys.gamelan.plugin.Plugin`:
 ```
-com.example.MyPlugin
+tech.kayys.MyPlugin
 ```
 
 ### Step 4: Build Plugin
